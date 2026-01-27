@@ -537,8 +537,11 @@ function visualizarAluguel(aluguelId) {
 
 // Função para imprimir aluguel específico
 function imprimirAluguel(aluguelId) {
+  // Salvar no localStorage
   localStorage.setItem("aluguelParaImprimir", aluguelId);
-  window.open("imprimir.html", "_blank");
+
+  // Abrir página de impressão em nova aba
+  window.open("imprimir.html?id=" + aluguelId, "_blank");
 }
 
 // Função para finalizar aluguel
