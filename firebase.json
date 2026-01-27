@@ -13,31 +13,55 @@
         ]
       },
       {
+        "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|ico)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=86400"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(eot|otf|ttf|ttc|woff|woff2|font.css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=86400"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(js|css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=0, must-revalidate"
+          }
+        ]
+      },
+      {
         "source": "**/*.html",
         "headers": [
           {
             "key": "Cache-Control",
-            "value": "public, max-age=0"
+            "value": "max-age=0, must-revalidate"
           }
         ]
       },
       {
-        "source": "**/*.css",
+        "source": "sw.js",
         "headers": [
           {
             "key": "Cache-Control",
-            "value": "public, max-age=0"
+            "value": "no-cache, no-store, must-revalidate"
           }
         ]
-      },
+      }
+    ],
+    "rewrites": [
       {
-        "source": "**/*.js",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=0"
-          }
-        ]
+        "source": "**",
+        "destination": "/index.html"
       }
     ]
   }
