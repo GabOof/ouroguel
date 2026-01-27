@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema Ouroguel - Locação de Equipamentos</title>
+
+    <!-- CSS do Sistema -->
+    <link rel="stylesheet" href="css/style.css" />
+
+    <!-- Fontes grandes e acessíveis -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Ícones -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  </head>
+  <body>
+    <!-- Cabeçalho com navegação -->
+    <header class="header">
+      <div class="container">
+        <div class="logo">
+          <i class="fas fa-tools"></i>
+          <h1>Sistema Ouroguel</h1>
+        </div>
+        <nav class="nav">
+          <ul>
+            <li>
+              <a href="index.html" class="active"
+                ><i class="fas fa-home"></i> Início</a
+              >
+            </li>
+            <li>
+              <a href="clientes.html"><i class="fas fa-users"></i> Clientes</a>
+            </li>
+            <li>
+              <a href="equipamentos.html"
+                ><i class="fas fa-box"></i> Equipamentos</a
+              >
+            </li>
+            <li>
+              <a href="aluguel.html"
+                ><i class="fas fa-handshake"></i> Aluguel</a
+              >
+            </li>
+            <li>
+              <a href="estoque.html"
+                ><i class="fas fa-clipboard-list"></i> Estoque</a
+              >
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Conteúdo principal -->
+    <main class="main-content">
+      <div class="container">
+        <!-- Tela de boas-vindas -->
+        <section class="welcome-section">
+          <div class="welcome-card">
+            <i class="fas fa-user-circle welcome-icon"></i>
+            <h2>Bem-vindo ao Sistema Ouroguel</h2>
+            <p class="subtitle">
+              Sistema de locação de equipamentos desenvolvido com foco em
+              usabilidade para pessoas idosas
+            </p>
+
+            <div class="features-grid">
+              <div class="feature-card">
+                <i class="fas fa-user-plus"></i>
+                <h3>Cadastro de Clientes</h3>
+                <p>Cadastre clientes com todos os dados necessários</p>
+                <a href="clientes.html" class="btn">Acessar</a>
+              </div>
+
+              <div class="feature-card">
+                <i class="fas fa-box-open"></i>
+                <h3>Controle de Estoque</h3>
+                <p>Gerencie equipamentos disponíveis e alugados</p>
+                <a href="estoque.html" class="btn">Acessar</a>
+              </div>
+
+              <div class="feature-card">
+                <i class="fas fa-file-contract"></i>
+                <h3>Registro de Aluguéis</h3>
+                <p>Registre e imprima contratos de aluguel</p>
+                <a href="aluguel.html" class="btn">Acessar</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Informações do sistema -->
+        <section class="info-section">
+          <div class="info-card">
+            <h3><i class="fas fa-info-circle"></i> Sobre o Sistema</h3>
+            <p>
+              Este sistema foi desenvolvido como Trabalho de Conclusão de Curso
+              (TCC) com foco em Interação Humano-Computador (IHC) e
+              acessibilidade para pessoas idosas.
+            </p>
+
+            <h4>Princípios de Usabilidade Aplicados:</h4>
+            <ul>
+              <li><strong>Fontes grandes</strong> (mínimo 18px)</li>
+              <li><strong>Alto contraste</strong> para melhor visibilidade</li>
+              <li><strong>Navegação simples</strong> e linear</li>
+              <li><strong>Formulários claros</strong> e objetivos</li>
+              <li><strong>Feedback imediato</strong> das ações</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="footer">
+      <div class="container">
+        <p>Sistema desenvolvido para Ouroguel LTDA - TCC em IHC</p>
+        <p class="footer-small">Foco em usabilidade para pessoas idosas</p>
+      </div>
+    </footer>
+
+    <!-- JavaScript do Sistema -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>
