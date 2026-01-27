@@ -14,6 +14,6 @@ firebase.initializeApp(firebaseConfig);
 
 // Referências ao banco de dados
 const db = firebase.firestore();
-const auth = firebase.auth();
+// const auth = firebase.auth();
 
 console.log("Firebase configurado com sucesso!");
