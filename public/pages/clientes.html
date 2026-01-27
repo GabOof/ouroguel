@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cadastro de Clientes - Sistema Ouroguel</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="container">
+        <div class="logo">
+          <i class="fas fa-tools"></i>
+          <h1>Sistema Ouroguel</h1>
+        </div>
+        <nav class="nav">
+          <ul>
+            <li>
+              <a href="index.html"><i class="fas fa-home"></i> Início</a>
+            </li>
+            <li>
+              <a href="clientes.html" class="active"
+                ><i class="fas fa-users"></i> Clientes</a
+              >
+            </li>
+            <li>
+              <a href="equipamentos.html"
+                ><i class="fas fa-box"></i> Equipamentos</a
+              >
+            </li>
+            <li>
+              <a href="aluguel.html"
+                ><i class="fas fa-handshake"></i> Aluguel</a
+              >
+            </li>
+            <li>
+              <a href="estoque.html"
+                ><i class="fas fa-clipboard-list"></i> Estoque</a
+              >
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="container">
+        <h2 class="page-title">
+          <i class="fas fa-user-plus"></i> Cadastro de Clientes
+        </h2>
+
+        <!-- Formulário de Cadastro -->
+        <section class="form-section">
+          <div class="form-card">
+            <h3>Novo Cliente</h3>
+            <form id="clienteForm">
+              <div class="form-grid">
+                <!-- Dados Pessoais -->
+                <div class="form-group">
+                  <label for="nome"
+                    ><i class="fas fa-user"></i> Nome Completo *</label
+                  >
+                  <input
+                    type="text"
+                    id="nome"
+                    required
+                    placeholder="Digite o nome completo"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="dataNascimento"
+                    ><i class="fas fa-birthday-cake"></i> Data de
+                    Nascimento</label
+                  >
+                  <input type="date" id="dataNascimento" />
+                </div>
+
+                <div class="form-group">
+                  <label for="cpf"
+                    ><i class="fas fa-id-card"></i> CPF/CNPJ *</label
+                  >
+                  <input
+                    type="text"
+                    id="cpf"
+                    required
+                    placeholder="000.000.000-00"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="identidade"
+                    ><i class="fas fa-address-card"></i> Identidade (RG)</label
+                  >
+                  <input
+                    type="text"
+                    id="identidade"
+                    placeholder="Número da identidade"
+                  />
+                </div>
+
+                <!-- Contato -->
+                <div class="form-group">
+                  <label for="telefone"
+                    ><i class="fas fa-phone"></i> Telefone</label
+                  >
+                  <input
+                    type="tel"
+                    id="telefone"
+                    placeholder="(11) 9999-9999"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="celular"
+                    ><i class="fas fa-mobile-alt"></i> Celular *</label
+                  >
+                  <input
+                    type="tel"
+                    id="celular"
+                    required
+                    placeholder="(11) 99999-9999"
+                  />
+                </div>
+
+                <div class="form-group full-width">
+                  <label for="email"
+                    ><i class="fas fa-envelope"></i> E-mail</label
+                  >
+                  <input
+                    type="email"
+                    id="email"
+                    placeholder="cliente@email.com"
+                  />
+                </div>
+
+                <!-- Endereço -->
+                <div class="form-group">
+                  <label for="cep"><i class="fas fa-mail-bulk"></i> CEP</label>
+                  <input type="text" id="cep" placeholder="00000-000" />
+                </div>
+
+                <div class="form-group full-width">
+                  <label for="endereco"
+                    ><i class="fas fa-map-marker-alt"></i> Endereço</label
+                  >
+                  <input
+                    type="text"
+                    id="endereco"
+                    placeholder="Rua, Número, Complemento"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="bairro"><i class="fas fa-map"></i> Bairro</label>
+                  <input type="text" id="bairro" placeholder="Nome do bairro" />
+                </div>
+
+                <div class="form-group">
+                  <label for="cidade"><i class="fas fa-city"></i> Cidade</label>
+                  <input type="text" id="cidade" placeholder="Nome da cidade" />
+                </div>
+
+                <div class="form-group">
+                  <label for="estado"><i class="fas fa-flag"></i> Estado</label>
+                  <select id="estado">
+                    <option value="">Selecione</option>
+                    <option value="AC">Acre</option>
+                    <option value="AL">Alagoas</option>
+                    <option value="AP">Amapá</option>
+                    <option value="AM">Amazonas</option>
+                    <option value="BA">Bahia</option>
+                    <option value="CE">Ceará</option>
+                    <option value="DF">Distrito Federal</option>
+                    <option value="ES">Espírito Santo</option>
+                    <option value="GO">Goiás</option>
+                    <option value="MA">Maranhão</option>
+                    <option value="MT">Mato Grosso</option>
+                    <option value="MS">Mato Grosso do Sul</option>
+                    <option value="MG">Minas Gerais</option>
+                    <option value="PA">Pará</option>
+                    <option value="PB">Paraíba</option>
+                    <option value="PR">Paraná</option>
+                    <option value="PE">Pernambuco</option>
+                    <option value="PI">Piauí</option>
+                    <option value="RJ">Rio de Janeiro</option>
+                    <option value="RN">Rio Grande do Norte</option>
+                    <option value="RS">Rio Grande do Sul</option>
+                    <option value="RO">Rondônia</option>
+                    <option value="RR">Roraima</option>
+                    <option value="SC">Santa Catarina</option>
+                    <option value="SP">São Paulo</option>
+                    <option value="SE">Sergipe</option>
+                    <option value="TO">Tocantins</option>
+                  </select>
+                </div>
+
+                <!-- Outros dados -->
+                <div class="form-group">
+                  <label for="naturalidade"
+                    ><i class="fas fa-globe-americas"></i> Naturalidade</label
+                  >
+                  <input
+                    type="text"
+                    id="naturalidade"
+                    placeholder="Cidade/Estado de nascimento"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="nomePai"
+                    ><i class="fas fa-male"></i> Nome do Pai</label
+                  >
+                  <input
+                    type="text"
+                    id="nomePai"
+                    placeholder="Nome completo do pai"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="nomeMae"
+                    ><i class="fas fa-female"></i> Nome da Mãe</label
+                  >
+                  <input
+                    type="text"
+                    id="nomeMae"
+                    placeholder="Nome completo da mãe"
+                  />
+                </div>
+              </div>
+
+              <div class="form-buttons">
+                <button type="submit" class="btn btn-primary">
+                  <i class="fas fa-save"></i> Salvar Cliente
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  onclick="limparFormulario()"
+                >
+                  <i class="fas fa-eraser"></i> Limpar
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- Lista de Clientes Cadastrados -->
+        <section class="list-section">
+          <div class="list-card">
+            <h3>Clientes Cadastrados</h3>
+            <div class="search-box">
+              <input
+                type="text"
+                id="searchClientes"
+                placeholder="Buscar cliente por nome..."
+                onkeyup="buscarClientes()"
+              />
+              <i class="fas fa-search"></i>
+            </div>
+            <div class="table-container">
+              <table id="clientesTable">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>CPF/CNPJ</th>
+                    <th>Celular</th>
+                    <th>Cidade</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="clientesList">
+                  <!-- Lista de clientes será carregada aqui -->
+                  <tr>
+                    <td colspan="5" class="empty-message">
+                      <i class="fas fa-users"></i>
+                      <p>Nenhum cliente cadastrado ainda</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <p>Sistema desenvolvido para Ouroguel LTDA - TCC em IHC</p>
+        <p class="footer-small">Foco em usabilidade para pessoas idosas</p>
+      </div>
+    </footer>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="js/clientes.js"></script>
+  </body>
+</html>

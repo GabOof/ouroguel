@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Controle de Estoque - Sistema Ouroguel</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="container">
+        <div class="logo">
+          <i class="fas fa-tools"></i>
+          <h1>Sistema Ouroguel</h1>
+        </div>
+        <nav class="nav">
+          <ul>
+            <li>
+              <a href="index.html"><i class="fas fa-home"></i> Início</a>
+            </li>
+            <li>
+              <a href="clientes.html"><i class="fas fa-users"></i> Clientes</a>
+            </li>
+            <li>
+              <a href="equipamentos.html"
+                ><i class="fas fa-box"></i> Equipamentos</a
+              >
+            </li>
+            <li>
+              <a href="aluguel.html"
+                ><i class="fas fa-handshake"></i> Aluguel</a
+              >
+            </li>
+            <li>
+              <a href="estoque.html" class="active"
+                ><i class="fas fa-clipboard-list"></i> Estoque</a
+              >
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="container">
+        <h2 class="page-title">
+          <i class="fas fa-warehouse"></i> Controle de Estoque
+        </h2>
+
+        <!-- Estatísticas em Tempo Real -->
+        <section class="info-section">
+          <div class="features-grid">
+            <div class="feature-card">
+              <i class="fas fa-boxes"></i>
+              <h3 id="totalItens">0</h3>
+              <p>Total de Itens</p>
+            </div>
+            <div class="feature-card">
+              <i class="fas fa-check-circle" style="color: #27ae60"></i>
+              <h3 id="disponiveis">0</h3>
+              <p>Disponíveis</p>
+            </div>
+            <div class="feature-card">
+              <i class="fas fa-handshake" style="color: #3498db"></i>
+              <h3 id="alugados">0</h3>
+              <p>Alugados</p>
+            </div>
+            <div class="feature-card">
+              <i class="fas fa-times-circle" style="color: #e74c3c"></i>
+              <h3 id="indisponiveis">0</h3>
+              <p>Indisponíveis</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Filtros -->
+        <section class="form-section">
+          <div class="form-card">
+            <h3><i class="fas fa-filter"></i> Filtros</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="filtroCategoria"
+                  ><i class="fas fa-list"></i> Categoria</label
+                >
+                <select id="filtroCategoria" onchange="filtrarEstoque()">
+                  <option value="">Todas as categorias</option>
+                  <option value="andaime">Andaime</option>
+                  <option value="escada">Escada</option>
+                  <option value="betoneira">Betoneira</option>
+                  <option value="compactador">Compactador</option>
+                  <option value="ferramentas">Ferramentas</option>
+                  <option value="outros">Outros</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="filtroStatus"
+                  ><i class="fas fa-check-circle"></i> Status</label
+                >
+                <select id="filtroStatus" onchange="filtrarEstoque()">
+                  <option value="">Todos os status</option>
+                  <option value="disponivel">Disponível</option>
+                  <option value="alugado">Alugado</option>
+                  <option value="indisponivel">Indisponível</option>
+                  <option value="manutencao">Em Manutenção</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="filtroBusca"
+                  ><i class="fas fa-search"></i> Buscar</label
+                >
+                <input
+                  type="text"
+                  id="filtroBusca"
+                  placeholder="Nome do equipamento..."
+                  onkeyup="filtrarEstoque()"
+                />
+              </div>
+
+              <div class="form-group">
+                <label style="visibility: hidden">Ações</label>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  onclick="limparFiltros()"
+                >
+                  <i class="fas fa-eraser"></i> Limpar Filtros
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Controle de Estoque -->
+        <section class="list-section">
+          <div class="list-card">
+            <h3>Estoque Completo</h3>
+            <div class="table-container">
+              <table id="estoqueTable">
+                <thead>
+                  <tr>
+                    <th>Equipamento</th>
+                    <th>Categoria</th>
+                    <th>Quantidade Total</th>
+                    <th>Disponível</th>
+                    <th>Alugado</th>
+                    <th>Status</th>
+                    <th>Valor/Dia</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="estoqueList">
+                  <!-- Estoque será carregado aqui -->
+                  <tr>
+                    <td colspan="8" class="empty-message">
+                      <i class="fas fa-clipboard-list"></i>
+                      <p>Nenhum equipamento cadastrado no estoque</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Ajustes de Estoque -->
+        <section class="form-section">
+          <div class="form-card">
+            <h3><i class="fas fa-edit"></i> Ajuste Rápido de Estoque</h3>
+            <div class="alert alert-warning">
+              <i class="fas fa-exclamation-triangle"></i>
+              <div>
+                <strong>Atenção:</strong>
+                <p>
+                  Use esta função apenas para ajustes manuais de estoque. Os
+                  aluguéis ajustam automaticamente as quantidades.
+                </p>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="ajusteEquipamento"
+                  ><i class="fas fa-box"></i> Equipamento</label
+                >
+                <select id="ajusteEquipamento">
+                  <option value="">Selecione um equipamento</option>
+                  <!-- Equipamentos serão carregados aqui -->
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="ajusteTipo"
+                  ><i class="fas fa-exchange-alt"></i> Tipo de Ajuste</label
+                >
+                <select id="ajusteTipo">
+                  <option value="entrada">Entrada no Estoque (+)</option>
+                  <option value="saida">Saída do Estoque (-)</option>
+                  <option value="manutencao">Enviar para Manutenção</option>
+                  <option value="retorno">Retornar da Manutenção</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="ajusteQuantidade"
+                  ><i class="fas fa-layer-group"></i> Quantidade</label
+                >
+                <input type="number" id="ajusteQuantidade" min="1" value="1" />
+              </div>
+
+              <div class="form-group full-width">
+                <label for="ajusteMotivo"
+                  ><i class="fas fa-sticky-note"></i> Motivo do Ajuste</label
+                >
+                <input
+                  type="text"
+                  id="ajusteMotivo"
+                  placeholder="Ex: Compra nova, perda, devolução antecipada..."
+                />
+              </div>
+            </div>
+
+            <div class="form-buttons">
+              <button
+                type="button"
+                class="btn btn-primary"
+                onclick="realizarAjuste()"
+              >
+                <i class="fas fa-check"></i> Aplicar Ajuste
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="limparAjuste()"
+              >
+                <i class="fas fa-times"></i> Cancelar
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Histórico de Ajustes -->
+        <section class="list-section">
+          <div class="list-card">
+            <h3><i class="fas fa-history"></i> Histórico de Ajustes</h3>
+            <div class="table-container">
+              <table id="historicoTable">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Equipamento</th>
+                    <th>Tipo</th>
+                    <th>Quantidade</th>
+                    <th>Motivo</th>
+                    <th>Responsável</th>
+                  </tr>
+                </thead>
+                <tbody id="historicoList">
+                  <!-- Histórico será carregado aqui -->
+                  <tr>
+                    <td colspan="6" class="empty-message">
+                      <i class="fas fa-history"></i>
+                      <p>Nenhum ajuste registrado</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <p>Sistema desenvolvido para Ouroguel LTDA - TCC em IHC</p>
+        <p class="footer-small">Foco em usabilidade para pessoas idosas</p>
+      </div>
+    </footer>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="js/estoque.js"></script>
+  </body>
+</html>
