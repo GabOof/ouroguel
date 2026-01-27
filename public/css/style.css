@@ -3,20 +3,20 @@
    ============================================ */
 :root {
   /* Cores principais - ALTO CONTRASTE */
-  --primary-color: #2c3e50; /* Azul escuro */
-  --secondary-color: #3498db; /* Azul claro */
-  --accent-color: #e74c3c; /* Vermelho para destaque */
+  --primary-color: #004589; /* Azul escuro */
+  --secondary-color: #c72424; /* Azul claro */
+  --accent-color: #c72424; /* Vermelho para destaque */
   --success-color: #27ae60; /* Verde */
   --warning-color: #f39c12; /* Amarelo/Laranja */
 
   /* Cores neutras */
   --light-color: #ecf0f1; /* Fundo claro */
   --dark-color: #2c3e50; /* Texto escuro */
-  --gray-color: #95a5a6; /* Texto secundário */
+  --gray-color: #2c3e50; /* Texto secundário */
 
   /* Cores de status */
   --available-color: #2ecc71; /* Disponível */
-  --unavailable-color: #e74c3c; /* Indisponível */
+  --unavailable-color: #c72424; /* Indisponível */
 
   /* Espaçamentos */
   --spacing-xs: 5px;
@@ -58,7 +58,7 @@ html {
 body {
   font-family: "Open Sans", sans-serif;
   line-height: 1.6;
-  color: var(--dark-color);
+  color: var(--primary-color);
   background-color: var(--light-color);
   min-height: 100vh;
   display: flex;
@@ -120,8 +120,8 @@ a:hover {
    CABEÇALHO
    ============================================ */
 .header {
-  background-color: var(--primary-color);
-  color: white;
+  background-color: var(--light-color);
+  color: var(--primary-color);
   padding: var(--spacing-md) 0;
   box-shadow: var(--shadow-md);
   position: sticky;
@@ -136,23 +136,6 @@ a:hover {
   flex-wrap: wrap;
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
-.logo i {
-  font-size: 2.5rem;
-  color: white;
-}
-
-.logo h1 {
-  color: white;
-  font-size: var(--font-size-lg);
-  margin: 0;
-}
-
 .nav ul {
   display: flex;
   list-style: none;
@@ -161,7 +144,7 @@ a:hover {
 }
 
 .nav a {
-  color: white;
+  color: var(--primary-color);
   text-decoration: none;
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--border-radius);
@@ -180,6 +163,7 @@ a:hover {
 .nav a.active {
   background-color: var(--secondary-color);
   font-weight: 600;
+  color: var(--light-color);
 }
 
 /* ============================================
@@ -203,28 +187,6 @@ a:hover {
 /* ============================================
    CARDS E SEÇÕES
    ============================================ */
-.welcome-card,
-.form-card,
-.list-card,
-.info-card,
-.feature-card {
-  background-color: white;
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-xl);
-  margin-bottom: var(--spacing-lg);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid #e0e0e0;
-  transition: box-shadow 0.3s ease;
-}
-
-.welcome-card:hover,
-.form-card:hover,
-.list-card:hover,
-.info-card:hover,
-.feature-card:hover {
-  box-shadow: var(--shadow-md);
-}
-
 .welcome-section {
   text-align: center;
 }
@@ -484,7 +446,7 @@ td {
    ============================================ */
 .footer {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--light-color);
   padding: var(--spacing-md) 0;
   text-align: center;
   margin-top: auto;
@@ -492,12 +454,13 @@ td {
 
 .footer p {
   margin-bottom: var(--spacing-xs);
-  color: white;
+  color: var(--light-color);
 }
 
 .footer-small {
   font-size: var(--font-size-xs);
   opacity: 0.8;
+  color: var(--light-color);
 }
 
 /* ============================================
