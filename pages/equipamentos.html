@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cadastro de Equipamentos - Sistema Ouroguel</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="container">
+        <div class="logo">
+          <i class="fas fa-tools"></i>
+          <h1>Sistema Ouroguel</h1>
+        </div>
+        <nav class="nav">
+          <ul>
+            <li>
+              <a href="index.html"><i class="fas fa-home"></i> Início</a>
+            </li>
+            <li>
+              <a href="clientes.html"><i class="fas fa-users"></i> Clientes</a>
+            </li>
+            <li>
+              <a href="equipamentos.html" class="active"
+                ><i class="fas fa-box"></i> Equipamentos</a
+              >
+            </li>
+            <li>
+              <a href="aluguel.html"
+                ><i class="fas fa-handshake"></i> Aluguel</a
+              >
+            </li>
+            <li>
+              <a href="estoque.html"
+                ><i class="fas fa-clipboard-list"></i> Estoque</a
+              >
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="container">
+        <h2 class="page-title">
+          <i class="fas fa-box-open"></i> Cadastro de Equipamentos
+        </h2>
+
+        <!-- Formulário de Cadastro -->
+        <section class="form-section">
+          <div class="form-card">
+            <h3>Novo Equipamento</h3>
+            <form id="equipamentoForm">
+              <div class="form-grid">
+                <!-- Dados Básicos -->
+                <div class="form-group">
+                  <label for="nomeEquipamento"
+                    ><i class="fas fa-tag"></i> Nome do Equipamento *</label
+                  >
+                  <input
+                    type="text"
+                    id="nomeEquipamento"
+                    required
+                    placeholder="Ex: Andaime tubular"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="categoria"
+                    ><i class="fas fa-list"></i> Categoria *</label
+                  >
+                  <select id="categoria" required>
+                    <option value="">Selecione uma categoria</option>
+                    <option value="andaime">Andaime</option>
+                    <option value="escada">Escada</option>
+                    <option value="betoneira">Betoneira</option>
+                    <option value="compactador">Compactador</option>
+                    <option value="ferramentas">Ferramentas</option>
+                    <option value="outros">Outros</option>
+                  </select>
+                </div>
+
+                <!-- Quantidade -->
+                <div class="form-group">
+                  <label for="quantidadeTotal"
+                    ><i class="fas fa-layer-group"></i> Quantidade Total
+                    *</label
+                  >
+                  <input
+                    type="number"
+                    id="quantidadeTotal"
+                    required
+                    min="0"
+                    placeholder="Quantidade em estoque"
+                  />
+                </div>
+
+                <!-- Valores -->
+                <div class="form-group">
+                  <label for="valorHora"
+                    ><i class="fas fa-clock"></i> Valor por Hora (R$) *</label
+                  >
+                  <input
+                    type="number"
+                    id="valorHora"
+                    required
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="valorDia"
+                    ><i class="fas fa-calendar-day"></i> Valor por Dia (R$)
+                    *</label
+                  >
+                  <input
+                    type="number"
+                    id="valorDia"
+                    required
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="valorMes"
+                    ><i class="fas fa-calendar-alt"></i> Valor por Mês (R$)
+                    *</label
+                  >
+                  <input
+                    type="number"
+                    id="valorMes"
+                    required
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <!-- Status -->
+                <div class="form-group">
+                  <label for="status"
+                    ><i class="fas fa-check-circle"></i> Status *</label
+                  >
+                  <select id="status" required>
+                    <option value="disponivel">Disponível</option>
+                    <option value="indisponivel">Indisponível</option>
+                    <option value="manutencao">Em Manutenção</option>
+                  </select>
+                </div>
+
+                <!-- Observações -->
+                <div class="form-group full-width">
+                  <label for="observacoes"
+                    ><i class="fas fa-sticky-note"></i> Observações</label
+                  >
+                  <textarea
+                    id="observacoes"
+                    rows="3"
+                    placeholder="Detalhes do equipamento, condições especiais, etc."
+                  ></textarea>
+                </div>
+              </div>
+
+              <div class="form-buttons">
+                <button type="submit" class="btn btn-primary">
+                  <i class="fas fa-save"></i> Salvar Equipamento
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  onclick="limparFormularioEquipamento()"
+                >
+                  <i class="fas fa-eraser"></i> Limpar
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- Lista de Equipamentos Cadastrados -->
+        <section class="list-section">
+          <div class="list-card">
+            <h3>Equipamentos Cadastrados</h3>
+            <div class="search-box">
+              <input
+                type="text"
+                id="searchEquipamentos"
+                placeholder="Buscar equipamento por nome..."
+                onkeyup="buscarEquipamentos()"
+              />
+              <i class="fas fa-search"></i>
+            </div>
+            <div class="table-container">
+              <table id="equipamentosTable">
+                <thead>
+                  <tr>
+                    <th>Equipamento</th>
+                    <th>Categoria</th>
+                    <th>Quantidade</th>
+                    <th>Valor/Dia</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="equipamentosList">
+                  <!-- Lista de equipamentos será carregada aqui -->
+                  <tr>
+                    <td colspan="6" class="empty-message">
+                      <i class="fas fa-box"></i>
+                      <p>Nenhum equipamento cadastrado ainda</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Estatísticas Rápidas -->
+        <section class="info-section">
+          <div class="features-grid">
+            <div class="feature-card">
+              <i class="fas fa-check-circle"></i>
+              <h3 id="totalDisponivel">0</h3>
+              <p>Equipamentos Disponíveis</p>
+            </div>
+            <div class="feature-card">
+              <i class="fas fa-times-circle"></i>
+              <h3 id="totalIndisponivel">0</h3>
+              <p>Equipamentos Indisponíveis</p>
+            </div>
+            <div class="feature-card">
+              <i class="fas fa-wrench"></i>
+              <h3 id="totalManutencao">0</h3>
+              <p>Em Manutenção</p>
+            </div>
+            <div class="feature-card">
+              <i class="fas fa-boxes"></i>
+              <h3 id="totalEquipamentos">0</h3>
+              <p>Total de Equipamentos</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <p>Sistema desenvolvido para Ouroguel LTDA - TCC em IHC</p>
+        <p class="footer-small">Foco em usabilidade para pessoas idosas</p>
+      </div>
+    </footer>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="js/equipamentos.js"></script>
+  </body>
+</html>

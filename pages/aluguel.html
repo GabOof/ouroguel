@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registro de Aluguéis - Sistema Ouroguel</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="container">
+        <div class="logo">
+          <i class="fas fa-tools"></i>
+          <h1>Sistema Ouroguel</h1>
+        </div>
+        <nav class="nav">
+          <ul>
+            <li>
+              <a href="index.html"><i class="fas fa-home"></i> Início</a>
+            </li>
+            <li>
+              <a href="clientes.html"><i class="fas fa-users"></i> Clientes</a>
+            </li>
+            <li>
+              <a href="equipamentos.html"
+                ><i class="fas fa-box"></i> Equipamentos</a
+              >
+            </li>
+            <li>
+              <a href="aluguel.html" class="active"
+                ><i class="fas fa-handshake"></i> Aluguel</a
+              >
+            </li>
+            <li>
+              <a href="estoque.html"
+                ><i class="fas fa-clipboard-list"></i> Estoque</a
+              >
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="container">
+        <h2 class="page-title">
+          <i class="fas fa-file-contract"></i> Registro de Aluguéis
+        </h2>
+
+        <!-- Informações importantes -->
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle"></i>
+          <div>
+            <strong>Instruções:</strong>
+            <p>1. Selecione um cliente cadastrado</p>
+            <p>2. Escolha os equipamentos para alugar</p>
+            <p>3. Defina quantidades e período</p>
+            <p>4. Sistema calcula automaticamente o valor total</p>
+          </div>
+        </div>
+
+        <!-- Formulário de Aluguel -->
+        <section class="form-section">
+          <div class="form-card">
+            <h3>Novo Aluguel</h3>
+            <form id="aluguelForm">
+              <!-- Seleção de Cliente -->
+              <div class="form-group">
+                <label for="clienteSelect"
+                  ><i class="fas fa-user"></i> Cliente *</label
+                >
+                <select
+                  id="clienteSelect"
+                  required
+                  onchange="atualizarInfoCliente()"
+                >
+                  <option value="">Selecione um cliente</option>
+                  <!-- Clientes serão carregados aqui -->
+                </select>
+              </div>
+
+              <!-- Informações do Cliente Selecionado -->
+              <div id="infoCliente" style="display: none">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Telefone</label>
+                    <input type="text" id="clienteTelefone" readonly />
+                  </div>
+                  <div class="form-group">
+                    <label>Celular</label>
+                    <input type="text" id="clienteCelular" readonly />
+                  </div>
+                  <div class="form-group">
+                    <label>CPF/CNPJ</label>
+                    <input type="text" id="clienteCPF" readonly />
+                  </div>
+                  <div class="form-group">
+                    <label>Cidade</label>
+                    <input type="text" id="clienteCidade" readonly />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Data do Aluguel -->
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="dataInicio"
+                    ><i class="fas fa-calendar-plus"></i> Data de Início
+                    *</label
+                  >
+                  <input type="date" id="dataInicio" required />
+                </div>
+
+                <div class="form-group">
+                  <label for="periodo"
+                    ><i class="fas fa-clock"></i> Período *</label
+                  >
+                  <select id="periodo" required onchange="calcularValor()">
+                    <option value="">Selecione</option>
+                    <option value="hora">Por Hora</option>
+                    <option value="dia">Por Dia</option>
+                    <option value="mes">Por Mês</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="duracao"
+                    ><i class="fas fa-hourglass-half"></i> Duração *</label
+                  >
+                  <input
+                    type="number"
+                    id="duracao"
+                    min="1"
+                    required
+                    placeholder="Ex: 2 (dias/horas)"
+                    onchange="calcularValor()"
+                  />
+                </div>
+              </div>
+
+              <!-- Seleção de Equipamentos -->
+              <div class="form-group">
+                <label for="equipamentoSelect"
+                  ><i class="fas fa-box"></i> Equipamento *</label
+                >
+                <div class="equipamento-selecao">
+                  <select
+                    id="equipamentoSelect"
+                    onchange="atualizarInfoEquipamento()"
+                  >
+                    <option value="">Selecione um equipamento</option>
+                    <!-- Equipamentos serão carregados aqui -->
+                  </select>
+                  <button
+                    type="button"
+                    class="btn btn-small btn-primary"
+                    onclick="adicionarEquipamento()"
+                  >
+                    <i class="fas fa-plus"></i> Adicionar
+                  </button>
+                </div>
+              </div>
+
+              <!-- Informações do Equipamento Selecionado -->
+              <div id="infoEquipamento" style="display: none">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Disponível</label>
+                    <input type="text" id="equipamentoDisponivel" readonly />
+                  </div>
+                  <div class="form-group">
+                    <label>Valor/Hora</label>
+                    <input type="text" id="equipamentoValorHora" readonly />
+                  </div>
+                  <div class="form-group">
+                    <label>Valor/Dia</label>
+                    <input type="text" id="equipamentoValorDia" readonly />
+                  </div>
+                  <div class="form-group">
+                    <label>Valor/Mês</label>
+                    <input type="text" id="equipamentoValorMes" readonly />
+                  </div>
+                  <div class="form-group">
+                    <label>Quantidade</label>
+                    <input
+                      type="number"
+                      id="quantidadeAlugar"
+                      min="1"
+                      value="1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Lista de Equipamentos Selecionados -->
+              <div
+                class="list-section"
+                id="listaEquipamentosContainer"
+                style="display: none"
+              >
+                <h4><i class="fas fa-list"></i> Equipamentos Selecionados</h4>
+                <div class="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Equipamento</th>
+                        <th>Quantidade</th>
+                        <th>Valor Unit.</th>
+                        <th>Subtotal</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="listaEquipamentos">
+                      <!-- Itens serão adicionados aqui -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Resumo do Aluguel -->
+              <div class="form-card" id="resumoAluguel" style="display: none">
+                <h4><i class="fas fa-calculator"></i> Resumo do Aluguel</h4>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Subtotal</label>
+                    <input type="text" id="subtotal" readonly value="R$ 0,00" />
+                  </div>
+                  <div class="form-group">
+                    <label>Período</label>
+                    <input type="text" id="periodoTexto" readonly />
+                  </div>
+                  <div class="form-group">
+                    <label>Duração</label>
+                    <input type="text" id="duracaoTexto" readonly />
+                  </div>
+                  <div class="form-group">
+                    <label><strong>Valor Total</strong></label>
+                    <input
+                      type="text"
+                      id="valorTotal"
+                      readonly
+                      style="font-size: 1.5rem; font-weight: bold"
+                      value="R$ 0,00"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Observações -->
+              <div class="form-group full-width">
+                <label for="observacoesAluguel"
+                  ><i class="fas fa-sticky-note"></i> Observações</label
+                >
+                <textarea
+                  id="observacoesAluguel"
+                  rows="3"
+                  placeholder="Observações sobre o aluguel..."
+                ></textarea>
+              </div>
+
+              <!-- Botões -->
+              <div class="form-buttons">
+                <button type="submit" class="btn btn-primary btn-lg">
+                  <i class="fas fa-check-circle"></i> Registrar Aluguel
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  onclick="limparFormularioAluguel()"
+                >
+                  <i class="fas fa-eraser"></i> Limpar Tudo
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-success"
+                  id="btnImprimir"
+                  style="display: none"
+                >
+                  <i class="fas fa-print"></i> Imprimir Contrato
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- Histórico de Aluguéis -->
+        <section class="list-section">
+          <div class="list-card">
+            <h3>Histórico de Aluguéis</h3>
+            <div class="search-box">
+              <input
+                type="text"
+                id="searchAlugueis"
+                placeholder="Buscar por cliente ou equipamento..."
+                onkeyup="buscarAlugueis()"
+              />
+              <i class="fas fa-search"></i>
+            </div>
+            <div class="table-container">
+              <table id="alugueisTable">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Equipamentos</th>
+                    <th>Data Início</th>
+                    <th>Período</th>
+                    <th>Valor Total</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="alugueisList">
+                  <!-- Histórico será carregado aqui -->
+                  <tr>
+                    <td colspan="7" class="empty-message">
+                      <i class="fas fa-file-contract"></i>
+                      <p>Nenhum aluguel registrado ainda</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <p>Sistema desenvolvido para Ouroguel LTDA - TCC em IHC</p>
+        <p class="footer-small">Foco em usabilidade para pessoas idosas</p>
+      </div>
+    </footer>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="js/aluguel.js"></script>
+  </body>
+</html>
