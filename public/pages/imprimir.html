@@ -1,0 +1,887 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Imprimir Contrato - Sistema Ouroguel</title>
+
+    <!-- CSS para impressão -->
+    <style>
+      /* RESET E CONFIGURAÇÕES GERAIS */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Arial", sans-serif;
+      }
+
+      body {
+        background-color: #f5f5f5;
+        padding: 20px;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+
+      /* CONTAINER PRINCIPAL (tamanho A4) */
+      .container {
+        max-width: 210mm; /* A4 width */
+        min-height: 297mm; /* A4 height */
+        margin: 0 auto;
+        background: white;
+        padding: 15mm;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      /* CABEÇALHO DA EMPRESA */
+      .header {
+        text-align: center;
+        margin-bottom: 20px;
+        border-bottom: 3px solid #000;
+        padding-bottom: 15px;
+      }
+
+      .header h1 {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #000;
+      }
+
+      .header .subtitle {
+        font-size: 16px;
+        color: #333;
+      }
+
+      .header .info-empresa {
+        margin-top: 10px;
+        font-size: 12px;
+        color: #666;
+      }
+
+      /* TÍTULO DO DOCUMENTO */
+      .document-title {
+        text-align: center;
+        margin: 25px 0;
+        padding: 10px;
+        background-color: #f0f0f0;
+        border: 2px solid #000;
+        font-size: 18px;
+        font-weight: bold;
+      }
+
+      /* SEÇÕES DO CONTRATO */
+      .section {
+        margin-bottom: 20px;
+        page-break-inside: avoid;
+      }
+
+      .section-title {
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #000;
+        color: #000;
+      }
+
+      /* TABELAS */
+      .info-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+      }
+
+      .info-table td {
+        padding: 8px;
+        border: 1px solid #ddd;
+        vertical-align: top;
+      }
+
+      .info-table .label {
+        font-weight: bold;
+        background-color: #f9f9f9;
+        width: 30%;
+      }
+
+      .equipment-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+      }
+
+      .equipment-table th {
+        background-color: #333;
+        color: white;
+        padding: 10px;
+        text-align: left;
+        font-weight: bold;
+        border: 1px solid #000;
+      }
+
+      .equipment-table td {
+        padding: 10px;
+        border: 1px solid #ddd;
+      }
+
+      .equipment-table .total-row {
+        background-color: #f0f0f0;
+        font-weight: bold;
+      }
+
+      /* TERMOS E CONDIÇÕES */
+      .terms {
+        margin-top: 30px;
+        padding: 15px;
+        border: 2px solid #000;
+        background-color: #f9f9f9;
+      }
+
+      .terms h3 {
+        text-align: center;
+        margin-bottom: 15px;
+        font-size: 16px;
+      }
+
+      .terms ul {
+        padding-left: 20px;
+        margin-bottom: 15px;
+      }
+
+      .terms li {
+        margin-bottom: 8px;
+      }
+
+      /* ASSINATURAS */
+      .signatures {
+        margin-top: 40px;
+        display: flex;
+        justify-content: space-between;
+        page-break-inside: avoid;
+      }
+
+      .signature-box {
+        width: 45%;
+        text-align: center;
+        padding-top: 60px;
+        border-top: 1px solid #000;
+      }
+
+      .signature-box p {
+        margin-top: 5px;
+        font-size: 12px;
+        color: #666;
+      }
+
+      /* RODAPÉ */
+      .footer {
+        margin-top: 40px;
+        text-align: center;
+        font-size: 11px;
+        color: #666;
+        border-top: 1px solid #ddd;
+        padding-top: 10px;
+      }
+
+      /* CONTROLES DE IMPRESSÃO */
+      .print-controls {
+        text-align: center;
+        margin: 20px 0;
+        padding: 20px;
+        background: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .btn {
+        padding: 12px 24px;
+        font-size: 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 0 10px;
+        font-weight: bold;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-print {
+        background-color: #2c3e50;
+        color: white;
+      }
+
+      .btn-back {
+        background-color: #7f8c8d;
+        color: white;
+      }
+
+      .btn:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+        transition: all 0.3s;
+      }
+
+      /* MENSAGEM DE CARREGAMENTO */
+      .loading {
+        text-align: center;
+        padding: 50px;
+        font-size: 18px;
+      }
+
+      .loading i {
+        font-size: 36px;
+        color: #3498db;
+        margin-bottom: 20px;
+      }
+
+      /* MENSAGEM DE ERRO */
+      .error {
+        text-align: center;
+        padding: 50px;
+        color: #e74c3c;
+      }
+
+      .error i {
+        font-size: 48px;
+        margin-bottom: 20px;
+      }
+
+      /* MEDIA QUERY PARA IMPRESSÃO */
+      @media print {
+        body {
+          background: white;
+          padding: 0;
+        }
+
+        .container {
+          max-width: 100%;
+          min-height: auto;
+          box-shadow: none;
+          padding: 10mm;
+          margin: 0;
+        }
+
+        .print-controls {
+          display: none;
+        }
+
+        .section {
+          page-break-inside: avoid;
+        }
+
+        .signatures {
+          page-break-inside: avoid;
+        }
+
+        /* Garantir que tabelas não quebrem */
+        table {
+          page-break-inside: avoid;
+        }
+
+        thead {
+          display: table-header-group;
+        }
+
+        tfoot {
+          display: table-footer-group;
+        }
+      }
+
+      /* ESTILOS ADICIONAIS PARA MELHOR LEGIBILIDADE */
+      .highlight {
+        background-color: #fffacd;
+        padding: 2px 5px;
+        font-weight: bold;
+      }
+
+      .warning {
+        color: #e74c3c;
+        font-weight: bold;
+      }
+
+      .important {
+        border: 2px solid #000;
+        padding: 10px;
+        background-color: #fff;
+        margin: 10px 0;
+      }
+
+      /* NÚMEROS E VALORES */
+      .value {
+        font-weight: bold;
+        color: #000;
+      }
+
+      .total-value {
+        font-size: 18px;
+        color: #000;
+        font-weight: bold;
+      }
+
+      /* DATA E HORA */
+      .timestamp {
+        text-align: right;
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 10px;
+      }
+
+      /* CÓDIGO DO CONTRATO */
+      .contract-code {
+        text-align: center;
+        font-family: "Courier New", monospace;
+        font-size: 16px;
+        letter-spacing: 2px;
+        background: #f0f0f0;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px dashed #000;
+      }
+    </style>
+
+    <!-- Font Awesome para ícones -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  </head>
+  <body>
+    <!-- Controles de impressão (não aparecem na impressão) -->
+    <div class="print-controls">
+      <button onclick="window.print()" class="btn btn-print">
+        <i class="fas fa-print"></i> Imprimir Contrato
+      </button>
+      <button onclick="window.close()" class="btn btn-back">
+        <i class="fas fa-times"></i> Fechar Janela
+      </button>
+      <button onclick="window.history.back()" class="btn btn-back">
+        <i class="fas fa-arrow-left"></i> Voltar
+      </button>
+    </div>
+
+    <!-- Container principal (A4) -->
+    <div class="container" id="contractContainer">
+      <!-- Conteúdo será carregado aqui -->
+      <div class="loading" id="loading">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Carregando dados do contrato...</p>
+      </div>
+    </div>
+
+    <!-- Firebase Configuration -->
+    <script src="../js/firebase-config.js"></script>
+
+    <!-- Script para carregar e exibir o contrato -->
+    <script>
+      // Função principal quando o DOM estiver carregado
+      document.addEventListener("DOMContentLoaded", async function () {
+        const loadingElement = document.getElementById("loading");
+        const container = document.getElementById("contractContainer");
+
+        try {
+          // Obter ID do aluguel da URL ou localStorage
+          const urlParams = new URLSearchParams(window.location.search);
+          let aluguelId =
+            urlParams.get("id") || localStorage.getItem("aluguelParaImprimir");
+
+          if (!aluguelId) {
+            throw new Error("ID do aluguel não especificado");
+          }
+
+          // Limpar localStorage
+          localStorage.removeItem("aluguelParaImprimir");
+
+          // Carregar dados do aluguel
+          const aluguel = await carregarAluguel(aluguelId);
+
+          // Carregar dados do cliente
+          const cliente = await carregarCliente(aluguel.clienteId);
+
+          // Carregar dados dos equipamentos
+          const equipamentosDetalhados = await carregarEquipamentosDetalhados(
+            aluguel.equipamentos,
+          );
+
+          // Gerar HTML do contrato
+          const contractHTML = gerarContratoHTML(
+            aluguel,
+            cliente,
+            equipamentosDetalhados,
+          );
+
+          // Remover loading e exibir contrato
+          loadingElement.remove();
+          container.innerHTML = contractHTML;
+
+          // Adicionar timestamp
+          container.innerHTML += `
+                    <div class="timestamp">
+                        Documento gerado em: ${new Date().toLocaleString("pt-BR")}
+                    </div>
+                `;
+
+          // Auto-impressão (opcional - descomente se quiser)
+          // setTimeout(() => window.print(), 1000);
+        } catch (error) {
+          console.error("Erro ao carregar contrato:", error);
+          loadingElement.remove();
+          container.innerHTML = `
+                    <div class="error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h2>Erro ao carregar contrato</h2>
+                        <p>${error.message}</p>
+                        <p style="margin-top: 20px;">
+                            <button onclick="window.history.back()" class="btn btn-back">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </button>
+                        </p>
+                    </div>
+                `;
+        }
+      });
+
+      // Função para carregar dados do aluguel
+      async function carregarAluguel(aluguelId) {
+        const doc = await db.collection("alugueis").doc(aluguelId).get();
+
+        if (!doc.exists) {
+          throw new Error("Aluguel não encontrado");
+        }
+
+        return {
+          id: doc.id,
+          ...doc.data(),
+        };
+      }
+
+      // Função para carregar dados do cliente
+      async function carregarCliente(clienteId) {
+        const doc = await db.collection("clientes").doc(clienteId).get();
+
+        if (!doc.exists) {
+          return {
+            nome: "Cliente não encontrado",
+            cpf: "",
+            telefone: "",
+            endereco: "",
+          };
+        }
+
+        return doc.data();
+      }
+
+      // Função para carregar dados detalhados dos equipamentos
+      async function carregarEquipamentosDetalhados(equipamentos) {
+        const equipamentosDetalhados = [];
+
+        for (const item of equipamentos) {
+          try {
+            const doc = await db
+              .collection("equipamentos")
+              .doc(item.equipamentoId)
+              .get();
+
+            if (doc.exists) {
+              equipamentosDetalhados.push({
+                ...item,
+                detalhes: doc.data(),
+              });
+            } else {
+              equipamentosDetalhados.push({
+                ...item,
+                detalhes: { nomeEquipamento: "Equipamento não encontrado" },
+              });
+            }
+          } catch (error) {
+            console.error("Erro ao carregar equipamento:", error);
+            equipamentosDetalhados.push({
+              ...item,
+              detalhes: { nomeEquipamento: "Erro ao carregar" },
+            });
+          }
+        }
+
+        return equipamentosDetalhados;
+      }
+
+      // Função para formatar data
+      function formatarData(dataString) {
+        if (!dataString) return "Não informada";
+        const data = new Date(dataString);
+        return data.toLocaleDateString("pt-BR");
+      }
+
+      // Função para formatar moeda
+      function formatarMoeda(valor) {
+        return new Intl.NumberFormat("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+        }).format(valor || 0);
+      }
+
+      // Função para gerar código do contrato
+      function gerarCodigoContrato(aluguelId) {
+        const data = new Date();
+        const ano = data.getFullYear();
+        const mes = (data.getMonth() + 1).toString().padStart(2, "0");
+        const codigo = aluguelId.substring(0, 8).toUpperCase();
+        return `CT-${ano}${mes}-${codigo}`;
+      }
+
+      // Função principal para gerar HTML do contrato
+      function gerarContratoHTML(aluguel, cliente, equipamentos) {
+        const codigoContrato = gerarCodigoContrato(aluguel.id);
+        const dataAtual = new Date().toLocaleDateString("pt-BR");
+
+        // Calcular totais
+        const subtotal = aluguel.subtotal || 0;
+        const valorTotal = aluguel.valorTotal || 0;
+        const duracaoTexto = `${aluguel.duracao} ${aluguel.periodo}${aluguel.duracao > 1 ? "s" : ""}`;
+
+        return `
+                <!-- Cabeçalho da empresa -->
+                <div class="header">
+                    <h1>OUROGUEL LTDA</h1>
+                    <div class="subtitle">LOCAÇÃO DE EQUIPAMENTOS</div>
+                    <div class="info-empresa">
+                        CNPJ: 00.000.000/0001-00 | Telefone: (11) 9999-9999<br>
+                        Endereço: Rua Exemplo, 123 - Centro - Cidade/SP
+                    </div>
+                </div>
+                
+                <!-- Código do contrato -->
+                <div class="contract-code">
+                    CONTRATO Nº: ${codigoContrato}
+                </div>
+                
+                <!-- Título do documento -->
+                <div class="document-title">
+                    CONTRATO DE LOCAÇÃO DE EQUIPAMENTOS
+                </div>
+                
+                <!-- Seção: Dados do Contrato -->
+                <div class="section">
+                    <div class="section-title">INFORMAÇÕES DO CONTRATO</div>
+                    <table class="info-table">
+                        <tr>
+                            <td class="label">Código do Contrato:</td>
+                            <td class="value">${codigoContrato}</td>
+                            <td class="label">Data de Emissão:</td>
+                            <td>${dataAtual}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Data de Início:</td>
+                            <td>${formatarData(aluguel.dataInicio)}</td>
+                            <td class="label">Data de Devolução:</td>
+                            <td>${formatarData(aluguel.dataDevolucao)}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Período de Locação:</td>
+                            <td colspan="3">
+                                ${duracaoTexto} 
+                                (${
+                                  aluguel.periodo === "hora"
+                                    ? "Por Hora"
+                                    : aluguel.periodo === "dia"
+                                      ? "Por Dia"
+                                      : "Por Mês"
+                                })
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <!-- Seção: Dados do Cliente -->
+                <div class="section">
+                    <div class="section-title">DADOS DO LOCATÁRIO (CLIENTE)</div>
+                    <table class="info-table">
+                        <tr>
+                            <td class="label">Nome Completo:</td>
+                            <td colspan="3"><strong>${cliente.nome || "Não informado"}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="label">CPF/CNPJ:</td>
+                            <td>${cliente.cpf || "Não informado"}</td>
+                            <td class="label">RG/Identidade:</td>
+                            <td>${cliente.identidade || "Não informado"}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Data de Nascimento:</td>
+                            <td>${formatarData(cliente.dataNascimento)}</td>
+                            <td class="label">Telefone:</td>
+                            <td>${cliente.telefone || "Não informado"}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Celular:</td>
+                            <td>${cliente.celular || "Não informado"}</td>
+                            <td class="label">E-mail:</td>
+                            <td>${cliente.email || "Não informado"}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Endereço:</td>
+                            <td colspan="3">
+                                ${cliente.endereco || ""} 
+                                ${cliente.bairro ? ", " + cliente.bairro : ""}
+                                ${cliente.cidade ? " - " + cliente.cidade : ""}
+                                ${cliente.estado ? "/" + cliente.estado : ""}
+                                ${cliente.cep ? " - CEP: " + cliente.cep : ""}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <!-- Seção: Equipamentos Alugados -->
+                <div class="section">
+                    <div class="section-title">EQUIPAMENTOS LOCADOS</div>
+                    
+                    <table class="equipment-table">
+                        <thead>
+                            <tr>
+                                <th width="40%">Descrição do Equipamento</th>
+                                <th width="15%">Quantidade</th>
+                                <th width="15%">Valor Unitário</th>
+                                <th width="15%">Período</th>
+                                <th width="15%">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${equipamentos
+                              .map(
+                                (item) => `
+                                <tr>
+                                    <td>
+                                        <strong>${item.detalhes.nomeEquipamento || item.nome}</strong><br>
+                                        <small>Categoria: ${item.detalhes.categoria || "Não informada"}</small>
+                                    </td>
+                                    <td>${item.quantidade}</td>
+                                    <td>${formatarMoeda(item.valorUnitario)}</td>
+                                    <td>${
+                                      aluguel.periodo === "hora"
+                                        ? "Hora"
+                                        : aluguel.periodo === "dia"
+                                          ? "Dia"
+                                          : "Mês"
+                                    }</td>
+                                    <td>${formatarMoeda(item.valorUnitario * item.quantidade)}</td>
+                                </tr>
+                            `,
+                              )
+                              .join("")}
+                            
+                            <!-- Linhas de totais -->
+                            <tr class="total-row">
+                                <td colspan="3"></td>
+                                <td><strong>Subtotal:</strong></td>
+                                <td><strong>${formatarMoeda(subtotal)}</strong></td>
+                            </tr>
+                            <tr class="total-row">
+                                <td colspan="3"></td>
+                                <td><strong>Duração:</strong></td>
+                                <td><strong>${duracaoTexto}</strong></td>
+                            </tr>
+                            <tr class="total-row">
+                                <td colspan="3"></td>
+                                <td><strong>VALOR TOTAL:</strong></td>
+                                <td class="total-value">${formatarMoeda(valorTotal)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="important">
+                        <strong>Valor Total por Extenso:</strong> 
+                        ${numeroPorExtenso(valorTotal)}
+                    </div>
+                </div>
+                
+                <!-- Seção: Observações -->
+                ${
+                  aluguel.observacoes
+                    ? `
+                <div class="section">
+                    <div class="section-title">OBSERVAÇÕES</div>
+                    <div class="important">
+                        ${aluguel.observacoes}
+                    </div>
+                </div>
+                `
+                    : ""
+                }
+                
+                <!-- Seção: Termos e Condições -->
+                <div class="section">
+                    <div class="section-title">TERMOS E CONDIÇÕES</div>
+                    <div class="terms">
+                        <h3>CONDIÇÕES GERAIS DA LOCAÇÃO</h3>
+                        
+                        <ul>
+                            <li>O equipamento deverá ser devolvido na data combinada, em perfeitas condições de uso.</li>
+                            <li>Atrasos na devolução serão cobrados proporcionalmente ao valor da diária.</li>
+                            <li>Danos ao equipamento serão de responsabilidade do locatário.</li>
+                            <li>É proibida a sublocação do equipamento sem autorização prévia.</li>
+                            <li>O não cumprimento das condições pode resultar em ação judicial.</li>
+                            <li>Em caso de perda ou dano total, o locatário pagará o valor de reposição do equipamento.</li>
+                            <li>O contrato poderá ser rescindido a qualquer momento pela locadora em caso de descumprimento.</li>
+                            <li>Lei aplicável: Código Civil Brasileiro, artigos 565 a 578.</li>
+                        </ul>
+                        
+                        <div class="warning">
+                            <strong>ATENÇÃO:</strong> Verifique os equipamentos no ato da retirada. 
+                            Após a assinatura, qualquer avaria será considerada de responsabilidade do locatário.
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Seção: Assinaturas -->
+                <div class="section">
+                    <div class="section-title">ASSINATURAS</div>
+                    <div class="signatures">
+                        <div class="signature-box">
+                            ______________________________
+                            <p>LOCADOR (OUROGUEL LTDA)<br>Responsável</p>
+                        </div>
+                        
+                        <div class="signature-box">
+                            ______________________________
+                            <p>LOCATÁRIO (CLIENTE)<br>${cliente.nome || "Nome do Cliente"}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Rodapé -->
+                <div class="footer">
+                    <p>
+                        <strong>OUROGUEL LTDA</strong> | 
+                        CNPJ: 00.000.000/0001-00 | 
+                        Telefone: (11) 9999-9999<br>
+                        Este documento foi gerado automaticamente pelo Sistema Ouroguel - TCC em IHC
+                    </p>
+                </div>
+            `;
+      }
+
+      // Função para converter número por extenso
+      function numeroPorExtenso(valor) {
+        const unidades = [
+          "",
+          "um",
+          "dois",
+          "três",
+          "quatro",
+          "cinco",
+          "seis",
+          "sete",
+          "oito",
+          "nove",
+          "dez",
+          "onze",
+          "doze",
+          "treze",
+          "quatorze",
+          "quinze",
+          "dezesseis",
+          "dezessete",
+          "dezoito",
+          "dezenove",
+        ];
+
+        const dezenas = [
+          "",
+          "",
+          "vinte",
+          "trinta",
+          "quarenta",
+          "cinquenta",
+          "sessenta",
+          "setenta",
+          "oitenta",
+          "noventa",
+        ];
+
+        const centenas = [
+          "",
+          "cento",
+          "duzentos",
+          "trezentos",
+          "quatrocentos",
+          "quinhentos",
+          "seiscentos",
+          "setecentos",
+          "oitocentos",
+          "novecentos",
+        ];
+
+        if (valor === 0) return "zero reais";
+
+        let reais = Math.floor(valor);
+        let centavos = Math.round((valor - reais) * 100);
+
+        // Converter reais
+        let extensoReais = "";
+
+        if (reais >= 100) {
+          const centena = Math.floor(reais / 100);
+          extensoReais += centenas[centena];
+          reais %= 100;
+
+          if (reais > 0) {
+            extensoReais += " e ";
+          }
+        }
+
+        if (reais >= 20) {
+          const dezena = Math.floor(reais / 10);
+          extensoReais += dezenas[dezena];
+          reais %= 10;
+
+          if (reais > 0) {
+            extensoReais += " e ";
+          }
+        }
+
+        if (reais > 0) {
+          extensoReais += unidades[reais];
+        }
+
+        if (extensoReais === "") {
+          extensoReais = "zero";
+        }
+
+        // Converter centavos
+        let extensoCentavos = "";
+
+        if (centavos >= 20) {
+          const dezena = Math.floor(centavos / 10);
+          extensoCentavos += dezenas[dezena];
+          centavos %= 10;
+
+          if (centavos > 0) {
+            extensoCentavos += " e ";
+          }
+        }
+
+        if (centavos > 0) {
+          extensoCentavos += unidades[centavos];
+        }
+
+        if (extensoCentavos === "") {
+          extensoCentavos = "zero";
+        }
+
+        // Montar resultado final
+        let resultado =
+          extensoReais + " real" + (Math.floor(valor) !== 1 ? "es" : "");
+
+        if (centavos > 0) {
+          resultado +=
+            " e " + extensoCentavos + " centavo" + (centavos !== 1 ? "s" : "");
+        }
+
+        return resultado;
+      }
+    </script>
+  </body>
+</html>
