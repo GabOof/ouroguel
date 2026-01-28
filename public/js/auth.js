@@ -1,5 +1,3 @@
-// auth.js - Gerenciamento de autenticação
-
 // Verificar se usuário está logado
 function verificarLogin() {
   const user = auth.currentUser;
