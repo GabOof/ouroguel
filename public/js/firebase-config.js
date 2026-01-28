@@ -1,3 +1,5 @@
+console.log("⚙️ Configurando Firebase...");
+
 // Configuração do Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyA85IJjdoyweYtK4QrPYuIY1SgylH1pGZg",
@@ -8,64 +10,43 @@ const firebaseConfig = {
   appId: "1:831984928283:web:e1381b716ae26bbf4f1abe",
   measurementId: "G-6LVN3Y4MV9",
 };
-// Inicializar Firebase APENAS UMA VEZ
+
 try {
-  // Verificar se Firebase já foi inicializado
+  // Inicializar Firebase apenas uma vez
   if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
-    console.log("✅ Firebase inicializado com sucesso!");
-  } else {
-    console.log("ℹ️ Firebase já estava inicializado");
+    console.log("✅ Firebase App inicializado");
   }
-} catch (error) {
-  console.error("❌ Erro ao inicializar Firebase:", error);
-}
 
-// Inicializar serviços APÓS o Firebase estar pronto
-let db, auth;
+  // Inicializar serviços
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
-try {
-  // Aguardar Firebase estar pronto
-  if (firebase.apps.length) {
-    db = firebase.firestore();
-    auth = firebase.auth();
-
-    // Configurar persistência (opcional)
-    auth
-      .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-      .then(() => console.log("✅ Persistência configurada"))
-      .catch((error) => console.error("❌ Erro na persistência:", error));
-
-    console.log("✅ Serviços Firebase configurados!");
-
-    // Verificar se há usuário logado
-    auth.onAuthStateChanged((user) => {
-      if (user) {
-        console.log("👤 Usuário logado:", user.email);
-        localStorage.setItem("userLoggedIn", "true");
-        localStorage.setItem("userEmail", user.email);
-        localStorage.setItem("userId", user.uid);
-      } else {
-        console.log("👤 Nenhum usuário logado");
-        localStorage.removeItem("userLoggedIn");
-        localStorage.removeItem("userEmail");
-        localStorage.removeItem("userId");
-      }
+  // Configurar persistência LOCAL (mantém login)
+  auth
+    .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+    .then(() => {
+      console.log("✅ Persistência LOCAL configurada");
+    })
+    .catch((error) => {
+      console.error("❌ Erro na persistência:", error);
     });
-  } else {
-    console.error("❌ Firebase não inicializado!");
-  }
+
+  // Exportar para uso global
+  window.db = db;
+  window.auth = auth;
+
+  console.log("🎯 Firebase configurado com sucesso!");
+
+  // Verificar estado atual
+  auth.onAuthStateChanged((user) => {
+    if (user) {
+      console.log(`👤 Usuário atual: ${user.email}`);
+    } else {
+      console.log("👤 Nenhum usuário autenticado");
+    }
+  });
 } catch (error) {
-  console.error("❌ Erro ao configurar serviços Firebase:", error);
+  console.error("❌ Erro crítico no Firebase:", error);
+  alert("Erro ao conectar com o banco de dados. Recarregue a página.");
 }
-
-// Exportar para uso global (com fallback)
-window.db = db || null;
-window.auth = auth || null;
-
-// Função para verificar se Firebase está pronto
-function isFirebaseReady() {
-  return db && auth;
-}
-
-console.log("🎯 Firebase configurado!");
