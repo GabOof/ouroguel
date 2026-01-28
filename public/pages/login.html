@@ -14,10 +14,11 @@
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com;
-               script-src 'self' https://*.gstatic.com https://cdnjs.cloudflare.com;
-               style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline';
-               img-src 'self' data:;
-               connect-src 'self' https://*.firebaseio.com https://*.googleapis.com;"
+           script-src 'self' https://*.gstatic.com https://cdnjs.cloudflare.com 'nonce-${nonce}';
+           style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline';
+           img-src 'self' data:;
+           connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com;
+           font-src 'self' https://cdnjs.cloudflare.com data:;"
     />
 
     <link rel="stylesheet" href="../css/style.css" />
