@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Sistema Ouroguel</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  </head>
+  <body>
+    <div class="login-container">
+      <div class="login-card">
+        <!-- Logo -->
+        <div class="logo">
+          <i class="fas fa-tools"></i>
+          <h1>Sistema Ouroguel</h1>
+          <p class="subtitle">Locação de Equipamentos</p>
+        </div>
+
+        <!-- Mensagem de boas-vindas -->
+        <div class="welcome-message">
+          <h2>Bem-vindo de volta!</h2>
+          <p>Faça login para acessar o sistema</p>
+        </div>
+
+        <!-- Formulário de Login -->
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="email"><i class="fas fa-envelope"></i> E-mail</label>
+            <input
+              type="email"
+              id="email"
+              required
+              placeholder="seu@email.com"
+              autocomplete="email"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password"><i class="fas fa-lock"></i> Senha</label>
+            <div class="password-input">
+              <input
+                type="password"
+                id="password"
+                required
+                placeholder="Digite sua senha"
+                autocomplete="current-password"
+              />
+              <button
+                type="button"
+                class="show-password"
+                onclick="togglePassword()"
+              >
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Lembrar de mim -->
+          <div class="remember-me">
+            <input type="checkbox" id="remember" />
+            <label for="remember">Lembrar de mim</label>
+          </div>
+
+          <!-- Botão de Login -->
+          <button type="submit" class="btn btn-primary btn-block">
+            <i class="fas fa-sign-in-alt"></i> Entrar no Sistema
+          </button>
+
+          <!-- Link para recuperar senha -->
+          <div class="forgot-password">
+            <a href="#" onclick="forgotPassword()">Esqueceu sua senha?</a>
+          </div>
+        </form>
+
+        <!-- Primeiro acesso -->
+        <div class="first-access">
+          <p>
+            Primeiro acesso?
+            <a href="#" onclick="showRegister()">Criar uma conta</a>
+          </p>
+        </div>
+
+        <!-- Informações do sistema -->
+        <div class="system-info">
+          <p>
+            <i class="fas fa-info-circle"></i> Sistema desenvolvido para
+            Ouroguel LTDA
+          </p>
+          <p class="small">
+            TCC em IHC - Foco em usabilidade para pessoas idosas
+          </p>
+        </div>
+      </div>
+
+      <!-- Card de Registro (inicialmente oculto) -->
+      <div class="login-card" id="registerCard" style="display: none">
+        <div class="logo">
+          <i class="fas fa-user-plus"></i>
+          <h1>Criar Conta</h1>
+          <p class="subtitle">Registre-se no sistema</p>
+        </div>
+
+        <form id="registerForm">
+          <div class="form-group">
+            <label for="registerName"
+              ><i class="fas fa-user"></i> Nome Completo</label
+            >
+            <input
+              type="text"
+              id="registerName"
+              required
+              placeholder="Seu nome completo"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="registerEmail"
+              ><i class="fas fa-envelope"></i> E-mail</label
+            >
+            <input
+              type="email"
+              id="registerEmail"
+              required
+              placeholder="seu@email.com"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="registerPassword"
+              ><i class="fas fa-lock"></i> Senha</label
+            >
+            <div class="password-input">
+              <input
+                type="password"
+                id="registerPassword"
+                required
+                placeholder="Mínimo 6 caracteres"
+              />
+              <button
+                type="button"
+                class="show-password"
+                onclick="toggleRegisterPassword()"
+              >
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+            <small class="password-hint"
+              >A senha deve ter pelo menos 6 caracteres</small
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="registerConfirmPassword"
+              ><i class="fas fa-lock"></i> Confirmar Senha</label
+            >
+            <input
+              type="password"
+              id="registerConfirmPassword"
+              required
+              placeholder="Digite a senha novamente"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="registerRole"
+              ><i class="fas fa-user-tag"></i> Tipo de Usuário</label
+            >
+            <select id="registerRole" required>
+              <option value="">Selecione...</option>
+              <option value="admin">Administrador</option>
+              <option value="user">Usuário Normal</option>
+            </select>
+          </div>
+
+          <div class="form-buttons">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-user-plus"></i> Criar Conta
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              onclick="showLogin()"
+            >
+              <i class="fas fa-arrow-left"></i> Voltar para Login
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Firebase Configuration -->
+    <script src="js/firebase-config.js"></script>
+
+    <!-- Script de Login -->
+    <script>
+      // Função para alternar visibilidade da senha
+      function togglePassword() {
+        const passwordInput = document.getElementById("password");
+        const eyeIcon = document.querySelector("#loginForm .show-password i");
+
+        if (passwordInput.type === "password") {
+          passwordInput.type = "text";
+          eyeIcon.className = "fas fa-eye-slash";
+        } else {
+          passwordInput.type = "password";
+          eyeIcon.className = "fas fa-eye";
+        }
+      }
+
+      // Função para alternar visibilidade da senha no registro
+      function toggleRegisterPassword() {
+        const passwordInput = document.getElementById("registerPassword");
+        const eyeIcon = document.querySelector(
+          "#registerForm .show-password i",
+        );
+
+        if (passwordInput.type === "password") {
+          passwordInput.type = "text";
+          eyeIcon.className = "fas fa-eye-slash";
+        } else {
+          passwordInput.type = "password";
+          eyeIcon.className = "fas fa-eye";
+        }
+      }
+
+      // Função para mostrar tela de registro
+      function showRegister() {
+        document.querySelector(".login-card").style.display = "none";
+        document.getElementById("registerCard").style.display = "block";
+      }
+
+      // Função para mostrar tela de login
+      function showLogin() {
+        document.querySelector(".login-card").style.display = "block";
+        document.getElementById("registerCard").style.display = "none";
+      }
+
+      // Função para recuperar senha
+      function forgotPassword() {
+        const email = prompt("Digite seu e-mail para redefinir a senha:");
+
+        if (email) {
+          auth
+            .sendPasswordResetEmail(email)
+            .then(() => {
+              alert(
+                "E-mail de redefinição enviado! Verifique sua caixa de entrada.",
+              );
+            })
+            .catch((error) => {
+              alert("Erro ao enviar e-mail: " + error.message);
+            });
+        }
+      }
+
+      // Verificar se usuário já está logado
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          // Usuário já logado, redirecionar para sistema
+          window.location.href = "index.html";
+        }
+      });
+
+      // Login Form Submission
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const email = document.getElementById("email").value;
+          const password = document.getElementById("password").value;
+          const remember = document.getElementById("remember").checked;
+
+          try {
+            // Configurar persistência
+            const persistence = remember
+              ? firebase.auth.Auth.Persistence.LOCAL
+              : firebase.auth.Auth.Persistence.SESSION;
+
+            await auth.setPersistence(persistence);
+
+            // Fazer login
+            const userCredential = await auth.signInWithEmailAndPassword(
+              email,
+              password,
+            );
+            const user = userCredential.user;
+
+            // Salvar informações do usuário no localStorage
+            localStorage.setItem("userEmail", user.email);
+            localStorage.setItem("userLoggedIn", "true");
+
+            // Redirecionar para sistema
+            window.location.href = "index.html";
+          } catch (error) {
+            let errorMessage = "Erro ao fazer login: ";
+
+            switch (error.code) {
+              case "auth/user-not-found":
+                errorMessage += "Usuário não encontrado";
+                break;
+              case "auth/wrong-password":
+                errorMessage += "Senha incorreta";
+                break;
+              case "auth/invalid-email":
+                errorMessage += "E-mail inválido";
+                break;
+              default:
+                errorMessage += error.message;
+            }
+
+            alert(errorMessage);
+          }
+        });
+
+      // Register Form Submission
+      document
+        .getElementById("registerForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const name = document.getElementById("registerName").value;
+          const email = document.getElementById("registerEmail").value;
+          const password = document.getElementById("registerPassword").value;
+          const confirmPassword = document.getElementById(
+            "registerConfirmPassword",
+          ).value;
+          const role = document.getElementById("registerRole").value;
+
+          // Validações
+          if (password !== confirmPassword) {
+            alert("As senhas não coincidem!");
+            return;
+          }
+
+          if (password.length < 6) {
+            alert("A senha deve ter pelo menos 6 caracteres!");
+            return;
+          }
+
+          if (!role) {
+            alert("Selecione um tipo de usuário!");
+            return;
+          }
+
+          try {
+            // Criar usuário no Authentication
+            const userCredential = await auth.createUserWithEmailAndPassword(
+              email,
+              password,
+            );
+            const user = userCredential.user;
+
+            // Salvar informações adicionais no Firestore
+            await db.collection("usuarios").doc(user.uid).set({
+              nome: name,
+              email: email,
+              role: role,
+              dataCriacao: new Date().toISOString(),
+              ativo: true,
+            });
+
+            // Enviar e-mail de verificação (opcional)
+            await user.sendEmailVerification();
+
+            alert(
+              "Conta criada com sucesso! Verifique seu e-mail para confirmar a conta.",
+            );
+            showLogin();
+          } catch (error) {
+            let errorMessage = "Erro ao criar conta: ";
+
+            switch (error.code) {
+              case "auth/email-already-in-use":
+                errorMessage += "Este e-mail já está em uso";
+                break;
+              case "auth/weak-password":
+                errorMessage += "Senha muito fraca";
+                break;
+              case "auth/invalid-email":
+                errorMessage += "E-mail inválido";
+                break;
+              default:
+                errorMessage += error.message;
+            }
+
+            alert(errorMessage);
+          }
+        });
+    </script>
+
+    <!-- Estilos específicos para login -->
+    <style>
+      .login-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        padding: 20px;
+      }
+
+      .login-card {
+        background: white;
+        border-radius: 12px;
+        padding: 40px;
+        width: 100%;
+        max-width: 450px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        animation: fadeIn 0.5s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .logo {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .logo i {
+        font-size: 3.5rem;
+        color: #3498db;
+        margin-bottom: 15px;
+      }
+
+      .logo h1 {
+        font-size: 1.8rem;
+        color: #2c3e50;
+        margin-bottom: 5px;
+      }
+
+      .logo .subtitle {
+        color: #7f8c8d;
+        font-size: 1rem;
+      }
+
+      .welcome-message {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .welcome-message h2 {
+        color: #2c3e50;
+        margin-bottom: 10px;
+        font-size: 1.5rem;
+      }
+
+      .welcome-message p {
+        color: #7f8c8d;
+      }
+
+      .password-input {
+        position: relative;
+      }
+
+      .show-password {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #7f8c8d;
+        cursor: pointer;
+        padding: 5px;
+      }
+
+      .remember-me {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .remember-me input {
+        margin-right: 10px;
+        width: 18px;
+        height: 18px;
+      }
+
+      .btn-block {
+        width: 100%;
+        display: block;
+      }
+
+      .forgot-password {
+        text-align: center;
+        margin: 20px 0;
+      }
+
+      .forgot-password a {
+        color: #3498db;
+        text-decoration: none;
+      }
+
+      .forgot-password a:hover {
+        text-decoration: underline;
+      }
+
+      .first-access {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+      }
+
+      .first-access a {
+        color: #3498db;
+        font-weight: bold;
+        text-decoration: none;
+      }
+
+      .first-access a:hover {
+        text-decoration: underline;
+      }
+
+      .system-info {
+        margin-top: 30px;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #7f8c8d;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+      }
+
+      .system-info i {
+        margin-right: 5px;
+      }
+
+      .system-info .small {
+        font-size: 0.8rem;
+        margin-top: 5px;
+      }
+
+      .password-hint {
+        display: block;
+        margin-top: 5px;
+        color: #7f8c8d;
+        font-size: 0.8rem;
+      }
+
+      @media (max-width: 480px) {
+        .login-card {
+          padding: 30px 20px;
+        }
+
+        .logo i {
+          font-size: 2.5rem;
+        }
+
+        .logo h1 {
+          font-size: 1.5rem;
+        }
+      }
+    </style>
+  </body>
+</html>
