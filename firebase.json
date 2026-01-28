@@ -2,6 +2,40 @@
   "hosting": {
     "public": "public",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "/",
+        "destination": "/entry.html"
+      },
+      {
+        "source": "/index.html",
+        "destination": "/entry.html"
+      },
+      {
+        "source": "/clientes.html",
+        "destination": "/entry.html"
+      },
+      {
+        "source": "/equipamentos.html",
+        "destination": "/entry.html"
+      },
+      {
+        "source": "/aluguel.html",
+        "destination": "/entry.html"
+      },
+      {
+        "source": "/estoque.html",
+        "destination": "/entry.html"
+      },
+      {
+        "source": "/relatorios.html",
+        "destination": "/entry.html"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
     "headers": [
       {
         "source": "**",
@@ -13,55 +47,13 @@
         ]
       },
       {
-        "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|ico)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "max-age=86400"
-          }
-        ]
-      },
-      {
-        "source": "**/*.@(eot|otf|ttf|ttc|woff|woff2|font.css)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "max-age=86400"
-          }
-        ]
-      },
-      {
-        "source": "**/*.@(js|css)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "max-age=0, must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "**/*.html",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "max-age=0, must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "sw.js",
+        "source": "**.html",
         "headers": [
           {
             "key": "Cache-Control",
             "value": "no-cache, no-store, must-revalidate"
           }
         ]
-      }
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
       }
     ]
   }
