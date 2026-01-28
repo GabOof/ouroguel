@@ -26,7 +26,7 @@ async function initializeAuth() {
         localStorage.setItem("userId", user.uid);
 
         // Se estiver na página de login, redirecionar para index
-        if (window.location.pathname.includes("login.html")) {
+        if (window.location.pathname.includes("/pages/login.html")) {
           console.log("↪️ Redirecionando para sistema...");
           window.location.href = "index.html";
         }
@@ -42,14 +42,14 @@ async function initializeAuth() {
 
         // Se NÃO estiver na página de login, redirecionar para login
         if (
-          !window.location.pathname.includes("login.html") &&
-          !window.location.pathname.includes("imprimir.html")
+          !window.location.pathname.includes("/pages/login.html") &&
+          !window.location.pathname.includes("/pages/imprimir.html")
         ) {
           console.log("🔒 Acesso negado. Redirecionando para login...");
           // Pequeno delay para evitar loop
           setTimeout(() => {
             if (!auth.currentUser) {
-              window.location.href = "login.html";
+              window.location.href = "/pages/login.html";
             }
           }, 100);
         }
@@ -70,8 +70,8 @@ function isUserLoggedIn() {
 // Função para verificar login e proteger páginas
 function protectPage() {
   const currentPath = window.location.pathname;
-  const isLoginPage = currentPath.includes("login.html");
-  const isPrintPage = currentPath.includes("imprimir.html");
+  const isLoginPage = currentPath.includes("/pages/login.html");
+  const isPrintPage = currentPath.includes("/pages/imprimir.html");
 
   console.log(`📍 Página atual: ${currentPath}`);
   console.log(`🔐 Usuário logado: ${isUserLoggedIn()}`);
@@ -79,7 +79,7 @@ function protectPage() {
   // Se não é página de login/imprimir e não tem usuário logado
   if (!isLoginPage && !isPrintPage && !isUserLoggedIn()) {
     console.log("🚫 Acesso negado! Redirecionando para login...");
-    window.location.href = "login.html";
+    window.location.href = "/pages/login.html";
     return false;
   }
 
@@ -106,7 +106,7 @@ function logout() {
       .then(() => {
         console.log("👋 Logout realizado");
         localStorage.clear();
-        window.location.href = "login.html";
+        window.location.href = "/pages/login.html";
       })
       .catch((error) => {
         console.error("Erro ao fazer logout:", error);
