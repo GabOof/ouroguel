@@ -3,7 +3,7 @@
    ============================================ */
 :root {
   /* Cores principais - ALTO CONTRASTE */
-  --primary-color: #004589; /* Azul escuro */
+  --primary-color: #1588fb; /* Azul escuro */
   --secondary-color: #c72424; /* Azul claro */
   --accent-color: #c72424; /* Vermelho para destaque */
   --success-color: #27ae60; /* Verde */
@@ -566,5 +566,224 @@ td {
   .form-card,
   .list-card {
     padding: var(--spacing-md);
+  }
+}
+
+/* ============================================
+   ESTILOS ESPECÍFICOS PARA LOGIN
+   ============================================ */
+
+/* Página de login */
+.login-page {
+  background: linear-gradient(
+    135deg,
+    var(--primary-color) 0%,
+    var(--secondary-color) 100%
+  );
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-container {
+  max-width: 450px;
+  width: 100%;
+  padding: var(--spacing-md);
+}
+
+.login-card {
+  background: var(--light-color);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Logo do login */
+.login-logo {
+  font-size: 3.5rem;
+  color: var(--secondary-color);
+  margin-bottom: var(--spacing-md);
+}
+
+/* Ajustes para formulário de login */
+.welcome-message {
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.welcome-message h2 {
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-lg);
+}
+
+.welcome-message p {
+  color: var(--gray-color);
+}
+
+/* Campo de senha com botão de mostrar/ocultar */
+.password-input {
+  position: relative;
+}
+
+.show-password {
+  position: absolute;
+  right: var(--spacing-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--gray-color);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+}
+
+.show-password:hover {
+  color: var(--primary-color);
+}
+
+/* Lembrar de mim */
+.remember-me {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  gap: var(--spacing-xs);
+}
+
+.remember-me input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.remember-me label {
+  font-weight: normal;
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+/* Botão em bloco */
+.btn-block {
+  width: 100%;
+  display: block;
+}
+
+/* Link para recuperar senha */
+.forgot-password {
+  text-align: center;
+  margin: var(--spacing-lg) 0;
+}
+
+.forgot-password a {
+  color: var(--secondary-color);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+}
+
+.forgot-password a:hover {
+  text-decoration: underline;
+}
+
+/* Primeiro acesso */
+.first-access {
+  text-align: center;
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 2px solid #eee;
+}
+
+.first-access p {
+  margin-bottom: 0;
+  color: var(--gray-color);
+}
+
+.first-access a {
+  color: var(--secondary-color);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.first-access a:hover {
+  text-decoration: underline;
+}
+
+/* Informações do sistema */
+.system-info {
+  margin-top: var(--spacing-xl);
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--gray-color);
+  padding-top: var(--spacing-lg);
+  border-top: 2px solid #eee;
+}
+
+.system-info i {
+  margin-right: var(--spacing-xs);
+}
+
+.system-info p {
+  margin-bottom: var(--spacing-xs);
+}
+
+/* Dica de senha */
+.password-hint {
+  display: block;
+  margin-top: var(--spacing-xs);
+  color: var(--gray-color);
+  font-size: var(--font-size-xs);
+}
+
+/* Classes utilitárias */
+.text-center {
+  text-align: center;
+}
+
+/* Responsividade para login */
+@media (max-width: 768px) {
+  .login-card {
+    padding: var(--spacing-lg);
+  }
+
+  .login-logo {
+    font-size: 2.5rem;
+  }
+
+  .welcome-message h2 {
+    font-size: var(--font-size-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: var(--spacing-md);
+  }
+
+  .login-container {
+    padding: var(--spacing-sm);
+  }
+
+  .first-access,
+  .system-info {
+    padding-top: var(--spacing-md);
   }
 }

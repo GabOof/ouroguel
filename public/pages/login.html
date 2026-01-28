@@ -38,12 +38,12 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   </head>
-  <body>
-    <div class="login-container">
+  <body class="login-page">
+    <div class="container login-container">
       <div class="login-card">
         <!-- Logo -->
-        <div class="logo">
-          <i class="fas fa-tools"></i>
+        <div class="logo text-center">
+          <i class="fas fa-tools login-logo"></i>
           <h1>Sistema Ouroguel</h1>
           <p class="subtitle">Locação de Equipamentos</p>
         </div>
@@ -55,7 +55,7 @@
         </div>
 
         <!-- Formulário de Login -->
-        <form id="loginForm">
+        <form id="loginForm" class="form-section">
           <div class="form-group">
             <label for="email"><i class="fas fa-envelope"></i> E-mail</label>
             <input
@@ -81,6 +81,7 @@
                 type="button"
                 class="show-password"
                 onclick="togglePassword()"
+                aria-label="Mostrar/ocultar senha"
               >
                 <i class="fas fa-eye"></i>
               </button>
@@ -99,13 +100,13 @@
           </button>
 
           <!-- Link para recuperar senha -->
-          <div class="forgot-password">
+          <div class="forgot-password text-center">
             <a href="#" onclick="forgotPassword()">Esqueceu sua senha?</a>
           </div>
         </form>
 
         <!-- Primeiro acesso -->
-        <div class="first-access">
+        <div class="first-access text-center">
           <p>
             Primeiro acesso?
             <a href="#" onclick="showRegister()">Criar uma conta</a>
@@ -113,12 +114,12 @@
         </div>
 
         <!-- Informações do sistema -->
-        <div class="system-info">
+        <div class="system-info text-center">
           <p>
             <i class="fas fa-info-circle"></i> Sistema desenvolvido para
             Ouroguel LTDA
           </p>
-          <p class="small">
+          <p class="footer-small">
             TCC em IHC - Foco em usabilidade para pessoas idosas
           </p>
         </div>
@@ -126,13 +127,13 @@
 
       <!-- Card de Registro (inicialmente oculto) -->
       <div class="login-card" id="registerCard" style="display: none">
-        <div class="logo">
-          <i class="fas fa-user-plus"></i>
+        <div class="logo text-center">
+          <i class="fas fa-user-plus login-logo"></i>
           <h1>Criar Conta</h1>
           <p class="subtitle">Registre-se no sistema</p>
         </div>
 
-        <form id="registerForm">
+        <form id="registerForm" class="form-section">
           <div class="form-group">
             <label for="registerName"
               ><i class="fas fa-user"></i> Nome Completo</label
@@ -172,6 +173,7 @@
                 type="button"
                 class="show-password"
                 onclick="toggleRegisterPassword()"
+                aria-label="Mostrar/ocultar senha"
               >
                 <i class="fas fa-eye"></i>
               </button>
@@ -224,6 +226,62 @@
     <script src="js/firebase-config.js"></script>
 
     <script>
+      // Funções para mostrar/ocultar senha
+      function togglePassword() {
+        const passwordInput = document.getElementById("password");
+        const eyeIcon = document.querySelector("#password + .show-password i");
+
+        if (passwordInput.type === "password") {
+          passwordInput.type = "text";
+          eyeIcon.classList.replace("fa-eye", "fa-eye-slash");
+        } else {
+          passwordInput.type = "password";
+          eyeIcon.classList.replace("fa-eye-slash", "fa-eye");
+        }
+      }
+
+      function toggleRegisterPassword() {
+        const passwordInput = document.getElementById("registerPassword");
+        const eyeIcon = document.querySelector(
+          "#registerPassword + .show-password i",
+        );
+
+        if (passwordInput.type === "password") {
+          passwordInput.type = "text";
+          eyeIcon.classList.replace("fa-eye", "fa-eye-slash");
+        } else {
+          passwordInput.type = "password";
+          eyeIcon.classList.replace("fa-eye-slash", "fa-eye");
+        }
+      }
+
+      // Funções para alternar entre login e registro
+      function showRegister() {
+        document.getElementById("loginForm").parentElement.style.display =
+          "none";
+        document.getElementById("registerCard").style.display = "block";
+        return false;
+      }
+
+      function showLogin() {
+        document.getElementById("loginForm").parentElement.style.display =
+          "block";
+        document.getElementById("registerCard").style.display = "none";
+        return false;
+      }
+
+      function forgotPassword() {
+        const email = document.getElementById("email").value;
+        if (!email) {
+          alert("Por favor, insira seu e-mail para recuperar a senha.");
+          return false;
+        }
+
+        // Aqui você implementaria a recuperação de senha
+        alert("Funcionalidade de recuperação de senha em desenvolvimento.");
+        return false;
+      }
+
       // Verificar se já está logado
       document.addEventListener("DOMContentLoaded", function () {
         console.log("🔐 Página de login carregada");
@@ -323,178 +381,5 @@
         }
       });
     </script>
-
-    <!-- Estilos específicos para login -->
-    <style>
-      .login-container {
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-        padding: 20px;
-      }
-
-      .login-card {
-        background: white;
-        border-radius: 12px;
-        padding: 40px;
-        width: 100%;
-        max-width: 450px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        animation: fadeIn 0.5s ease;
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      .logo {
-        text-align: center;
-        margin-bottom: 30px;
-      }
-
-      .logo i {
-        font-size: 3.5rem;
-        color: #3498db;
-        margin-bottom: 15px;
-      }
-
-      .logo h1 {
-        font-size: 1.8rem;
-        color: #2c3e50;
-        margin-bottom: 5px;
-      }
-
-      .logo .subtitle {
-        color: #7f8c8d;
-        font-size: 1rem;
-      }
-
-      .welcome-message {
-        text-align: center;
-        margin-bottom: 30px;
-      }
-
-      .welcome-message h2 {
-        color: #2c3e50;
-        margin-bottom: 10px;
-        font-size: 1.5rem;
-      }
-
-      .welcome-message p {
-        color: #7f8c8d;
-      }
-
-      .password-input {
-        position: relative;
-      }
-
-      .show-password {
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        background: none;
-        border: none;
-        color: #7f8c8d;
-        cursor: pointer;
-        padding: 5px;
-      }
-
-      .remember-me {
-        display: flex;
-        align-items: center;
-        margin-bottom: 20px;
-      }
-
-      .remember-me input {
-        margin-right: 10px;
-        width: 18px;
-        height: 18px;
-      }
-
-      .btn-block {
-        width: 100%;
-        display: block;
-      }
-
-      .forgot-password {
-        text-align: center;
-        margin: 20px 0;
-      }
-
-      .forgot-password a {
-        color: #3498db;
-        text-decoration: none;
-      }
-
-      .forgot-password a:hover {
-        text-decoration: underline;
-      }
-
-      .first-access {
-        text-align: center;
-        margin-top: 20px;
-        padding-top: 20px;
-        border-top: 1px solid #eee;
-      }
-
-      .first-access a {
-        color: #3498db;
-        font-weight: bold;
-        text-decoration: none;
-      }
-
-      .first-access a:hover {
-        text-decoration: underline;
-      }
-
-      .system-info {
-        margin-top: 30px;
-        text-align: center;
-        font-size: 0.9rem;
-        color: #7f8c8d;
-        padding-top: 20px;
-        border-top: 1px solid #eee;
-      }
-
-      .system-info i {
-        margin-right: 5px;
-      }
-
-      .system-info .small {
-        font-size: 0.8rem;
-        margin-top: 5px;
-      }
-
-      .password-hint {
-        display: block;
-        margin-top: 5px;
-        color: #7f8c8d;
-        font-size: 0.8rem;
-      }
-
-      @media (max-width: 480px) {
-        .login-card {
-          padding: 30px 20px;
-        }
-
-        .logo i {
-          font-size: 2.5rem;
-        }
-
-        .logo h1 {
-          font-size: 1.5rem;
-        }
-      }
-    </style>
   </body>
 </html>
