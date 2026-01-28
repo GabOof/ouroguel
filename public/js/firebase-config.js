@@ -14,6 +14,20 @@ firebase.initializeApp(firebaseConfig);
 
 // Referências ao banco de dados
 const db = firebase.firestore();
-// const auth = firebase.auth();
+const auth = firebase.auth();
+
+// Verificar estado de autenticação
+auth.onAuthStateChanged((user) => {
+  // Salvar estado no localStorage para fácil acesso
+  if (user) {
+    localStorage.setItem("userLoggedIn", "true");
+    localStorage.setItem("userEmail", user.email);
+    localStorage.setItem("userId", user.uid);
+  } else {
+    localStorage.removeItem("userLoggedIn");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userId");
+  }
+});
 
 console.log("Firebase configurado com sucesso!");
