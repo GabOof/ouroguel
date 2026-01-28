@@ -198,202 +198,107 @@
     <!-- Firebase Configuration -->
     <script src="js/firebase-config.js"></script>
 
-    <!-- Script de Login -->
     <script>
-      // Função para alternar visibilidade da senha
-      function togglePassword() {
-        const passwordInput = document.getElementById("password");
-        const eyeIcon = document.querySelector("#loginForm .show-password i");
+      // Script específico para login.html
 
-        if (passwordInput.type === "password") {
-          passwordInput.type = "text";
-          eyeIcon.className = "fas fa-eye-slash";
-        } else {
-          passwordInput.type = "password";
-          eyeIcon.className = "fas fa-eye";
-        }
-      }
+      // Verificar se já está logado
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("🔐 Página de login carregada");
 
-      // Função para alternar visibilidade da senha no registro
-      function toggleRegisterPassword() {
-        const passwordInput = document.getElementById("registerPassword");
-        const eyeIcon = document.querySelector(
-          "#registerForm .show-password i",
-        );
+        // Aguardar Firebase estar pronto
+        const checkAuth = setInterval(() => {
+          if (window.auth) {
+            clearInterval(checkAuth);
 
-        if (passwordInput.type === "password") {
-          passwordInput.type = "text";
-          eyeIcon.className = "fas fa-eye-slash";
-        } else {
-          passwordInput.type = "password";
-          eyeIcon.className = "fas fa-eye";
-        }
-      }
-
-      // Função para mostrar tela de registro
-      function showRegister() {
-        document.querySelector(".login-card").style.display = "none";
-        document.getElementById("registerCard").style.display = "block";
-      }
-
-      // Função para mostrar tela de login
-      function showLogin() {
-        document.querySelector(".login-card").style.display = "block";
-        document.getElementById("registerCard").style.display = "none";
-      }
-
-      // Função para recuperar senha
-      function forgotPassword() {
-        const email = prompt("Digite seu e-mail para redefinir a senha:");
-
-        if (email) {
-          auth
-            .sendPasswordResetEmail(email)
-            .then(() => {
-              alert(
-                "E-mail de redefinição enviado! Verifique sua caixa de entrada.",
-              );
-            })
-            .catch((error) => {
-              alert("Erro ao enviar e-mail: " + error.message);
+            // Verificar se já tem usuário logado
+            auth.onAuthStateChanged((user) => {
+              if (user) {
+                console.log("✅ Já está logado como:", user.email);
+                console.log("↪️ Redirecionando para sistema...");
+                window.location.href = "index.html";
+              } else {
+                console.log("⚠️ Nenhum usuário logado. Mostrando formulário.");
+                // Formulário já está visível
+              }
             });
-        }
-      }
+          }
+        }, 100);
 
-      // Verificar se usuário já está logado
-      auth.onAuthStateChanged((user) => {
-        if (user) {
-          // Usuário já logado, redirecionar para sistema
-          window.location.href = "index.html";
+        // Configurar formulário de login
+        const loginForm = document.getElementById("loginForm");
+        if (loginForm) {
+          loginForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            const remember = document.getElementById("remember").checked;
+
+            // Validar
+            if (!email || !password) {
+              alert("Preencha todos os campos");
+              return;
+            }
+
+            try {
+              // Configurar persistência
+              const persistence = remember
+                ? firebase.auth.Auth.Persistence.LOCAL
+                : firebase.auth.Auth.Persistence.SESSION;
+
+              await auth.setPersistence(persistence);
+
+              // Fazer login
+              const userCredential = await auth.signInWithEmailAndPassword(
+                email,
+                password,
+              );
+              const user = userCredential.user;
+
+              console.log("✅ Login bem-sucedido:", user.email);
+
+              // Criar registro do usuário se não existir
+              const userRef = db.collection("usuarios").doc(user.uid);
+              const userDoc = await userRef.get();
+
+              if (!userDoc.exists) {
+                await userRef.set({
+                  nome: email.split("@")[0],
+                  email: email,
+                  role: "user",
+                  dataCriacao: new Date().toISOString(),
+                });
+                console.log("📝 Novo usuário registrado no sistema");
+              }
+
+              // Redirecionar
+              window.location.href = "index.html";
+            } catch (error) {
+              console.error("❌ Erro no login:", error);
+
+              let mensagem = "Erro no login: ";
+              switch (error.code) {
+                case "auth/user-not-found":
+                  mensagem += "Usuário não encontrado";
+                  break;
+                case "auth/wrong-password":
+                  mensagem += "Senha incorreta";
+                  break;
+                case "auth/invalid-email":
+                  mensagem += "E-mail inválido";
+                  break;
+                case "auth/too-many-requests":
+                  mensagem += "Muitas tentativas. Tente mais tarde";
+                  break;
+                default:
+                  mensagem += error.message;
+              }
+
+              alert(mensagem);
+            }
+          });
         }
       });
-
-      // Login Form Submission
-      document
-        .getElementById("loginForm")
-        .addEventListener("submit", async function (e) {
-          e.preventDefault();
-
-          const email = document.getElementById("email").value;
-          const password = document.getElementById("password").value;
-          const remember = document.getElementById("remember").checked;
-
-          try {
-            // Configurar persistência
-            const persistence = remember
-              ? firebase.auth.Auth.Persistence.LOCAL
-              : firebase.auth.Auth.Persistence.SESSION;
-
-            await auth.setPersistence(persistence);
-
-            // Fazer login
-            const userCredential = await auth.signInWithEmailAndPassword(
-              email,
-              password,
-            );
-            const user = userCredential.user;
-
-            // Salvar informações do usuário no localStorage
-            localStorage.setItem("userEmail", user.email);
-            localStorage.setItem("userLoggedIn", "true");
-
-            // Redirecionar para sistema
-            window.location.href = "index.html";
-          } catch (error) {
-            let errorMessage = "Erro ao fazer login: ";
-
-            switch (error.code) {
-              case "auth/user-not-found":
-                errorMessage += "Usuário não encontrado";
-                break;
-              case "auth/wrong-password":
-                errorMessage += "Senha incorreta";
-                break;
-              case "auth/invalid-email":
-                errorMessage += "E-mail inválido";
-                break;
-              default:
-                errorMessage += error.message;
-            }
-
-            alert(errorMessage);
-          }
-        });
-
-      // Register Form Submission
-      document
-        .getElementById("registerForm")
-        .addEventListener("submit", async function (e) {
-          e.preventDefault();
-
-          const name = document.getElementById("registerName").value;
-          const email = document.getElementById("registerEmail").value;
-          const password = document.getElementById("registerPassword").value;
-          const confirmPassword = document.getElementById(
-            "registerConfirmPassword",
-          ).value;
-          const role = document.getElementById("registerRole").value;
-
-          // Validações
-          if (password !== confirmPassword) {
-            alert("As senhas não coincidem!");
-            return;
-          }
-
-          if (password.length < 6) {
-            alert("A senha deve ter pelo menos 6 caracteres!");
-            return;
-          }
-
-          if (!role) {
-            alert("Selecione um tipo de usuário!");
-            return;
-          }
-
-          try {
-            // Criar usuário no Authentication
-            const userCredential = await auth.createUserWithEmailAndPassword(
-              email,
-              password,
-            );
-            const user = userCredential.user;
-
-            // Salvar informações adicionais no Firestore
-            await db.collection("usuarios").doc(user.uid).set({
-              nome: name,
-              email: email,
-              role: role,
-              dataCriacao: new Date().toISOString(),
-              ativo: true,
-            });
-
-            // Enviar e-mail de verificação (opcional)
-            await user.sendEmailVerification();
-
-            alert(
-              "Conta criada com sucesso! Verifique seu e-mail para confirmar a conta.",
-            );
-            showLogin();
-          } catch (error) {
-            let errorMessage = "Erro ao criar conta: ";
-
-            switch (error.code) {
-              case "auth/email-already-in-use":
-                errorMessage += "Este e-mail já está em uso";
-                break;
-              case "auth/weak-password":
-                errorMessage += "Senha muito fraca";
-                break;
-              case "auth/invalid-email":
-                errorMessage += "E-mail inválido";
-                break;
-              default:
-                errorMessage += error.message;
-            }
-
-            alert(errorMessage);
-          }
-        });
     </script>
 
     <!-- Estilos específicos para login -->
