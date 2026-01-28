@@ -4,34 +4,6 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
-        "source": "/",
-        "destination": "/entry.html"
-      },
-      {
-        "source": "/index.html",
-        "destination": "/entry.html"
-      },
-      {
-        "source": "/clientes.html",
-        "destination": "/entry.html"
-      },
-      {
-        "source": "/equipamentos.html",
-        "destination": "/entry.html"
-      },
-      {
-        "source": "/aluguel.html",
-        "destination": "/entry.html"
-      },
-      {
-        "source": "/estoque.html",
-        "destination": "/entry.html"
-      },
-      {
-        "source": "/relatorios.html",
-        "destination": "/entry.html"
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }
