@@ -11,6 +11,14 @@
     />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com;
+               script-src 'self' https://*.gstatic.com https://cdnjs.cloudflare.com;
+               style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline';
+               img-src 'self' data:;
+               connect-src 'self' https://*.firebaseio.com https://*.googleapis.com;"
+    />
 
     <link rel="stylesheet" href="../css/style.css" />
     <link
