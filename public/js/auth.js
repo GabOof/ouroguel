@@ -26,7 +26,7 @@ async function initializeAuth() {
         localStorage.setItem("userId", user.uid);
 
         // Se estiver na página de login, redirecionar para index
-        if (window.location.pathname.includes("/pages/login.html")) {
+        if (window.location.pathname.includes("../index.html")) {
           console.log("↪️ Redirecionando para sistema...");
           window.location.href = "index.html";
         }
