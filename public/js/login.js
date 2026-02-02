@@ -4,7 +4,6 @@
 let isProcessingLogin = false;
 
 // Limpar estado anterior
-console.log("🧹 Limpando estado de login anterior...");
 localStorage.removeItem("userLoggedIn");
 localStorage.removeItem("userEmail");
 localStorage.removeItem("userId");
@@ -74,7 +73,6 @@ async function handleLogin(e) {
 
   // Prevenir múltiplos envios
   if (isProcessingLogin) {
-    console.log("⏳ Login já em processamento...");
     return;
   }
 
@@ -91,8 +89,6 @@ async function handleLogin(e) {
   }
 
   try {
-    console.log("🔐 Tentando login para:", email);
-
     // Desativar botão durante o processo
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
@@ -101,7 +97,7 @@ async function handleLogin(e) {
 
     // Verificar se Firebase está pronto
     if (!window.auth) {
-      console.error("❌ Firebase auth não está disponível");
+      console.error("Firebase auth não está disponível");
       throw new Error(
         "Sistema de autenticação não está disponível. Recarregue a página.",
       );
@@ -112,26 +108,21 @@ async function handleLogin(e) {
       ? firebase.auth.Auth.Persistence.LOCAL
       : firebase.auth.Auth.Persistence.SESSION;
 
-    console.log("🔄 Configurando persistência:", persistence);
     await auth.setPersistence(persistence);
 
     // Fazer login
-    console.log("📤 Enviando credenciais para Firebase...");
     const userCredential = await auth.signInWithEmailAndPassword(
       email,
       password,
     );
 
     const user = userCredential.user;
-    console.log("✅ Login bem-sucedido:", user.email);
-    console.log("👤 User ID:", user.uid);
 
     // Verificar se o usuário já existe no Firestore
     const userRef = db.collection("usuarios").doc(user.uid);
     const userDoc = await userRef.get();
 
     if (!userDoc.exists) {
-      console.log("📝 Criando registro do usuário no Firestore...");
       await userRef.set({
         nome: email.split("@")[0],
         email: email,
@@ -139,13 +130,11 @@ async function handleLogin(e) {
         dataCriacao: new Date().toISOString(),
         ultimoLogin: new Date().toISOString(),
       });
-      console.log("✅ Usuário registrado no sistema");
     } else {
       // Atualizar último login
       await userRef.update({
         ultimoLogin: new Date().toISOString(),
       });
-      console.log("📝 Último login atualizado");
     }
 
     // Salvar informações no localStorage
@@ -153,18 +142,14 @@ async function handleLogin(e) {
     localStorage.setItem("userEmail", user.email);
     localStorage.setItem("userId", user.uid);
 
-    console.log("💾 Dados salvos no localStorage");
-    console.log("🔄 Preparando redirecionamento...");
-
     // Adicionar um pequeno delay para garantir que tudo está salvo
     setTimeout(() => {
-      console.log("↪️ Redirecionando para index.html...");
       window.location.href = "../index.html";
     }, 1000);
   } catch (error) {
-    console.error("❌ Erro no login:", error);
-    console.error("🔍 Código do erro:", error.code);
-    console.error("📝 Mensagem do erro:", error.message);
+    console.error("Erro no login:", error);
+    console.error("Código do erro:", error.code);
+    console.error("Mensagem do erro:", error.message);
 
     // Reativar botão
     const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -202,23 +187,18 @@ async function handleLogin(e) {
     }
 
     // Mostrar alerta com mais detalhes para debugging
-    console.log("🚨 Exibindo alerta:", mensagem);
     alert("❌ " + mensagem + "\n\nE-mail tentado: " + email);
   }
 }
 
 // Verificar status de autenticação (APENAS para mostrar/ocultar formulário)
 function checkAuthStatus() {
-  console.log("🔐 Página de login carregada");
-
   const checkAuth = setInterval(() => {
     if (window.auth) {
       clearInterval(checkAuth);
 
       auth.onAuthStateChanged((user) => {
         if (user) {
-          console.log("✅ Já está logado como:", user.email);
-
           // Mostrar mensagem e redirecionar após 2 segundos
           const loginCard = document.querySelector(".login-card");
           if (loginCard) {
@@ -235,12 +215,10 @@ function checkAuthStatus() {
             `;
           }
 
-          console.log("↪️ Redirecionando para sistema...");
           setTimeout(() => {
             window.location.href = "../index.html";
           }, 2000);
         } else {
-          console.log("⚠️ Nenhum usuário logado. Mostrando formulário.");
           // Formulário já está visível
         }
       });
@@ -250,8 +228,6 @@ function checkAuthStatus() {
 
 // Inicializar quando o DOM carregar
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("📄 DOM login carregado");
-
   // DESATIVAR verificação automática de auth na página de login
   // A verificação será feita apenas quando o usuário tentar fazer login
 
