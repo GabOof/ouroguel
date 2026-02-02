@@ -38,8 +38,6 @@ async function realizarBackupAutomatico() {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const backupName = `backup_auto_${timestamp}`;
 
-    console.log(`Iniciando backup automático: ${backupName}`);
-
     // Realizar backup
     const backupData = await criarBackupCompleto();
 
@@ -48,8 +46,6 @@ async function realizarBackupAutomatico() {
 
     // Limitar número de backups
     gerenciarBackupsLocais();
-
-    console.log("Backup automático concluído com sucesso!");
   } catch (error) {
     console.error("Erro no backup automático:", error);
   }
@@ -57,8 +53,6 @@ async function realizarBackupAutomatico() {
 
 // Função para criar backup completo
 async function criarBackupCompleto() {
-  console.log("Coletando dados para backup...");
-
   const backup = {
     metadata: {
       sistema: "Ouroguel Locação de Equipamentos",
@@ -92,8 +86,6 @@ async function criarBackupCompleto() {
 
       backup.dados[collectionName] = data;
       backup.metadata.totalRegistros += data.length;
-
-      console.log(`✓ ${collectionName}: ${data.length} registros`);
     } catch (error) {
       console.error(`Erro ao fazer backup de ${collectionName}:`, error);
       backup.dados[collectionName] = [];
@@ -124,10 +116,6 @@ function salvarBackupLocal(backupName, backupData) {
     // Manter apenas os últimos BACKUP_CONFIG.maxBackups
     backups.splice(BACKUP_CONFIG.maxBackups);
     localStorage.setItem("backup_list", JSON.stringify(backups));
-
-    console.log(
-      `Backup salvo localmente: ${backupName} (${backupString.length} bytes)`,
-    );
   } catch (error) {
     console.error("Erro ao salvar backup local:", error);
   }
@@ -144,7 +132,6 @@ function gerenciarBackupsLocais() {
 
       backupsParaRemover.forEach((backup) => {
         localStorage.removeItem(`backup_${backup.nome}`);
-        console.log(`Backup antigo removido: ${backup.nome}`);
       });
 
       // Atualizar lista
@@ -234,16 +221,12 @@ async function importarDeJSON(event) {
 
 // Função para restaurar backup
 async function restaurarBackup(backupData) {
-  console.log("Iniciando restauração de backup...");
-
   const collections = Object.keys(backupData.dados);
 
   for (const collectionName of collections) {
     const data = backupData.dados[collectionName];
 
     if (!data || !Array.isArray(data)) continue;
-
-    console.log(`Restaurando ${collectionName}: ${data.length} registros`);
 
     // Para cada documento na coleção
     for (const docData of data) {
@@ -265,8 +248,6 @@ async function restaurarBackup(backupData) {
       }
     }
   }
-
-  console.log("Restauração de backup concluída!");
 }
 
 // Função para mostrar carregamento de backup
@@ -311,21 +292,21 @@ function mostrarGerenciadorBackups() {
   let html = `
         <div class="backup-manager">
             <h3><i class="fas fa-database"></i> Gerenciador de Backups</h3>
-            
+
             <div class="backup-actions">
                 <button class="btn btn-primary" onclick="exportarParaJSON()">
                     <i class="fas fa-download"></i> Exportar Backup Atual
                 </button>
                 <label class="btn btn-secondary">
                     <i class="fas fa-upload"></i> Importar Backup
-                    <input type="file" accept=".json" style="display: none;" 
+                    <input type="file" accept=".json" style="display: none;"
                            onchange="importarDeJSON(event)">
                 </label>
                 <button class="btn btn-success" onclick="criarBackupManual()">
                     <i class="fas fa-plus"></i> Criar Backup Manual
                 </button>
             </div>
-            
+
             <div class="backup-list">
                 <h4>Backups Locais (${backups.length})</h4>
     `;
@@ -375,7 +356,7 @@ function mostrarGerenciadorBackups() {
   html += `
             </div>
             <div class="backup-info">
-                <p><i class="fas fa-info-circle"></i> 
+                <p><i class="fas fa-info-circle"></i>
                 Backups são salvos localmente no navegador. Para backup permanente, exporte para um arquivo.</p>
             </div>
         </div>
@@ -413,30 +394,30 @@ function mostrarGerenciadorBackups() {
                 max-height: 80vh;
                 overflow-y: auto;
             }
-            
+
             .backup-actions {
                 display: flex;
                 gap: 10px;
                 flex-wrap: wrap;
                 margin: 20px 0;
             }
-            
+
             .backup-list table {
                 width: 100%;
                 margin: 20px 0;
             }
-            
+
             .backup-list th {
                 background: #2c3e50;
                 color: white;
                 padding: 10px;
             }
-            
+
             .backup-list td {
                 padding: 10px;
                 border-bottom: 1px solid #eee;
             }
-            
+
             .backup-info {
                 margin-top: 20px;
                 padding: 15px;
@@ -444,22 +425,22 @@ function mostrarGerenciadorBackups() {
                 border-radius: 5px;
                 font-size: 14px;
             }
-            
+
             .empty {
                 text-align: center;
                 padding: 40px;
                 color: #7f8c8d;
             }
-            
+
             .backup-loading-content {
                 text-align: center;
             }
-            
+
             .backup-loading-content i {
                 font-size: 48px;
                 margin-bottom: 20px;
             }
-            
+
             .backup-loading-content .small {
                 font-size: 14px;
                 opacity: 0.8;

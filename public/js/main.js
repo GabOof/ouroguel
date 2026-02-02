@@ -66,7 +66,7 @@ if (!document.querySelector("#alert-styles")) {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
-        
+
         .alert-flutuante {
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
@@ -89,7 +89,6 @@ async function carregarClientesParaSelect(selectId) {
     const snapshot = await db.collection("clientes").get();
 
     if (snapshot.empty) {
-      console.log("Nenhum cliente encontrado");
       return;
     }
 
@@ -130,7 +129,6 @@ async function carregarEquipamentosParaSelect(
     const snapshot = await query.get();
 
     if (snapshot.empty) {
-      console.log("Nenhum equipamento encontrado");
       return;
     }
 
@@ -302,8 +300,6 @@ function formatarTelefone(valor) {
 
 // Inicialização quando o DOM estiver carregado
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("Sistema Ouroguel - Carregado");
-
   // Configura data atual nos campos de data
   const dataAtual = new Date().toISOString().split("T")[0];
   const camposData = document.querySelectorAll('input[type="date"]');

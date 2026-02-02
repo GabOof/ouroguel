@@ -1,5 +1,4 @@
 // js/auth.js
-console.log("🔐 Auth.js iniciando...");
 
 // Variáveis globais para estado
 let isInitialized = false;
@@ -60,11 +59,8 @@ async function initializeAuth() {
   try {
     // Evitar inicialização duplicada
     if (isInitialized) {
-      console.log("⚠️ Auth já inicializado");
       return;
     }
-
-    console.log("🔄 Inicializando autenticação...");
 
     // Aguardar Firebase estar pronto
     if (!window.db || !window.auth) {
@@ -80,14 +76,12 @@ async function initializeAuth() {
       authCheckComplete = true;
 
       if (user) {
-        console.log("✅ Usuário autenticado:", user.email);
         localStorage.setItem("userLoggedIn", "true");
         localStorage.setItem("userEmail", user.email);
         localStorage.setItem("userId", user.uid);
 
         // Se estiver na página de login E o redirecionamento não está bloqueado
         if (isLoginPage() && !window.blockLoginRedirect) {
-          console.log("↪️ Usuário já logado. Redirecionando para index...");
           setTimeout(() => {
             window.location.href = "../index.html";
           }, 1000);
@@ -100,24 +94,20 @@ async function initializeAuth() {
           addUserMenu();
         }
       } else {
-        console.log("❌ Nenhum usuário autenticado");
         localStorage.removeItem("userLoggedIn");
         localStorage.removeItem("userEmail");
         localStorage.removeItem("userId");
 
         // Se NÃO for página de login nem impressão, redirecionar
         if (!isLoginPage() && !isPrintPage()) {
-          console.log("🔒 Acesso negado. Redirecionando para login...");
           setTimeout(() => {
             window.location.href = "pages/login.html";
           }, 1000);
         }
       }
     });
-
-    console.log("✅ Auth inicializado com sucesso!");
   } catch (error) {
-    console.error("❌ Erro ao inicializar auth:", error);
+    console.error("Erro ao inicializar auth:", error);
   }
 }
 
@@ -130,16 +120,12 @@ function isUserLoggedIn() {
 function protectPage() {
   // Não proteger páginas de login e impressão
   if (isLoginPage() || isPrintPage()) {
-    console.log("🔓 Página livre (login/impressão)");
     return true;
   }
 
   const userLoggedIn = isUserLoggedIn();
-  console.log(`📍 Página atual: ${window.location.pathname}`);
-  console.log(`🔐 Usuário logado: ${userLoggedIn}`);
 
   if (!userLoggedIn) {
-    console.log("🚫 Acesso negado! Redirecionando para login...");
     window.location.href = "pages/login.html";
     return false;
   }
@@ -158,7 +144,6 @@ function logout() {
     auth
       .signOut()
       .then(() => {
-        console.log("👋 Logout realizado");
         localStorage.clear();
         window.location.href = "pages/login.html";
       })
@@ -227,8 +212,6 @@ async function loadUserProfile() {
 
     // Salvar no localStorage
     localStorage.setItem("userRole", userInfo.role);
-
-    console.log("👤 Perfil carregado:", userInfo.email);
   }
 }
 
@@ -324,21 +307,17 @@ function addLogoutButton() {
 
 // Inicialização quando a página carrega
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("📄 DOM carregado - Iniciando verificação de autenticação");
-
   // Verificar se estamos na página de login
   const isLogin = isLoginPage();
-  console.log(`📍 É página de login? ${isLogin}`);
 
   // Se for página de login, desativar redirecionamento automático
   if (isLogin) {
     window.blockLoginRedirect = true;
-    console.log("🚫 Redirecionamento automático desativado na página de login");
   }
 
   // Verificar se Firebase está carregado
   if (typeof firebase === "undefined") {
-    console.error("❌ Firebase não está carregado!");
+    console.error("Firebase não está carregado!");
     // Tentar carregar novamente
     setTimeout(() => {
       if (typeof firebase !== "undefined") {

@@ -5,16 +5,12 @@
     <script>
       // Verificação IMEDIATA de autenticação
       (function () {
-        console.log("🔒 Verificação imediata de autenticação");
-
         // Verificar localStorage
         const userLoggedIn = localStorage.getItem("userLoggedIn");
         const userEmail = localStorage.getItem("userEmail");
 
         // Se não está logado, REDIRECIONAR AGORA
         if (userLoggedIn !== "true" || !userEmail) {
-          console.log("⛔ Acesso não autorizado - Redirecionando para login");
-
           // Parar qualquer carregamento adicional
           document.write = function () {};
 
@@ -24,8 +20,6 @@
           // Lançar erro para parar execução
           throw new Error("Redirecionando para login");
         }
-
-        console.log("✅ Acesso autorizado");
       })();
     </script>
 
