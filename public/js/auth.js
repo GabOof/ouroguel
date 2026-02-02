@@ -6,6 +6,37 @@ let isInitialized = false;
 let currentUser = null;
 let authCheckComplete = false;
 
+// SUPRIMIR ERROS DE EXTENSÕES DO CHROME (APENAS PARA DESENVOLVIMENTO)
+(function () {
+  const originalError = console.error;
+  const originalWarn = console.warn;
+
+  console.error = function (...args) {
+    const errorString = args.join(" ").toLowerCase();
+    // Ignorar erros de extensões do Chrome
+    if (
+      errorString.includes("chrome-extension://") ||
+      errorString.includes("disconnected port") ||
+      errorString.includes("called encrypt() without a session key")
+    ) {
+      return;
+    }
+    originalError.apply(console, args);
+  };
+
+  console.warn = function (...args) {
+    const warnString = args.join(" ").toLowerCase();
+    // Ignorar warnings de extensões do Chrome
+    if (
+      warnString.includes("chrome-extension://") ||
+      warnString.includes("disconnected port")
+    ) {
+      return;
+    }
+    originalWarn.apply(console, args);
+  };
+})();
+
 // Função para verificar se estamos na página de login
 function isLoginPage() {
   const currentPath = window.location.pathname;
