@@ -1,40 +1,6 @@
-// js/auth.js
-
 // Variáveis globais para estado
 let isInitialized = false;
 let currentUser = null;
-let authCheckComplete = false;
-
-// SUPRIMIR ERROS DE EXTENSÕES DO CHROME (APENAS PARA DESENVOLVIMENTO)
-(function () {
-  const originalError = console.error;
-  const originalWarn = console.warn;
-
-  console.error = function (...args) {
-    const errorString = args.join(" ").toLowerCase();
-    // Ignorar erros de extensões do Chrome
-    if (
-      errorString.includes("chrome-extension://") ||
-      errorString.includes("disconnected port") ||
-      errorString.includes("called encrypt() without a session key")
-    ) {
-      return;
-    }
-    originalError.apply(console, args);
-  };
-
-  console.warn = function (...args) {
-    const warnString = args.join(" ").toLowerCase();
-    // Ignorar warnings de extensões do Chrome
-    if (
-      warnString.includes("chrome-extension://") ||
-      warnString.includes("disconnected port")
-    ) {
-      return;
-    }
-    originalWarn.apply(console, args);
-  };
-})();
 
 // Função para verificar se estamos na página de login
 function isLoginPage() {
@@ -64,7 +30,6 @@ async function initializeAuth() {
 
     // Aguardar Firebase estar pronto
     if (!window.db || !window.auth) {
-      console.warn("⚠️ Firebase não está pronto. Tentando novamente...");
       setTimeout(initializeAuth, 500);
       return;
     }
@@ -73,7 +38,6 @@ async function initializeAuth() {
     auth.onAuthStateChanged((user) => {
       currentUser = user;
       isInitialized = true;
-      authCheckComplete = true;
 
       if (user) {
         localStorage.setItem("userLoggedIn", "true");
@@ -111,21 +75,19 @@ async function initializeAuth() {
   }
 }
 
-// Função para verificar se usuário está logado (síncrona)
+// Função para verificar se usuário está logado
 function isUserLoggedIn() {
   return !!currentUser || !!auth?.currentUser;
 }
 
-// Função para verificar login e proteger páginas (APENAS para páginas não-login)
+// Função para verificar login e proteger páginas
 function protectPage() {
   // Não proteger páginas de login e impressão
   if (isLoginPage() || isPrintPage()) {
     return true;
   }
 
-  const userLoggedIn = isUserLoggedIn();
-
-  if (!userLoggedIn) {
+  if (!isUserLoggedIn()) {
     window.location.href = "pages/login.html";
     return false;
   }
@@ -135,10 +97,7 @@ function protectPage() {
 
 // Função para logout
 function logout() {
-  if (!auth) {
-    console.error("Auth não disponível");
-    return;
-  }
+  if (!auth) return;
 
   if (confirm("Deseja sair do sistema?")) {
     auth
@@ -148,7 +107,6 @@ function logout() {
         window.location.href = "pages/login.html";
       })
       .catch((error) => {
-        console.error("Erro ao fazer logout:", error);
         alert("Erro ao sair do sistema: " + error.message);
       });
   }
@@ -191,7 +149,6 @@ async function getUserInfo() {
       role: "user",
     };
   } catch (error) {
-    console.error("Erro ao obter informações do usuário:", error);
     return null;
   }
 }
@@ -221,32 +178,29 @@ function addUserMenu() {
   if (document.querySelector(".user-menu")) return;
 
   const header = document.querySelector(".header .container");
-  if (!header) {
-    console.warn("Header não encontrado para adicionar menu");
-    return;
-  }
+  if (!header) return;
 
   // Criar menu do usuário
   const userMenuHTML = `
-        <div class="user-menu">
-            <div class="user-info" id="userInfoBtn">
-                <i class="fas fa-user-circle"></i>
-                <span class="user-name">Usuário</span>
-            </div>
-            <div class="user-dropdown" id="userDropdown">
-                <div class="user-dropdown-content">
-                    <div class="user-details">
-                        <strong class="user-name">Usuário</strong>
-                        <small class="user-email">email@exemplo.com</small>
-                    </div>
-                    <hr>
-                    <a href="#" id="logoutLink">
-                        <i class="fas fa-sign-out-alt"></i> Sair
-                    </a>
-                </div>
-            </div>
+    <div class="user-menu">
+      <div class="user-info" id="userInfoBtn">
+        <i class="fas fa-user-circle"></i>
+        <span class="user-name">Usuário</span>
+      </div>
+      <div class="user-dropdown" id="userDropdown">
+        <div class="user-dropdown-content">
+          <div class="user-details">
+            <strong class="user-name">Usuário</strong>
+            <small class="user-email">email@exemplo.com</small>
+          </div>
+          <hr>
+          <a href="#" id="logoutLink">
+            <i class="fas fa-sign-out-alt"></i> Sair
+          </a>
         </div>
-    `;
+      </div>
+    </div>
+  `;
 
   header.insertAdjacentHTML("beforeend", userMenuHTML);
 
@@ -272,9 +226,7 @@ function addUserMenu() {
 // Função para mostrar/esconder menu
 function toggleUserMenu() {
   const dropdown = document.getElementById("userDropdown");
-  if (dropdown) {
-    dropdown.classList.toggle("show");
-  }
+  if (dropdown) dropdown.classList.toggle("show");
 }
 
 // Fechar menu ao clicar fora
@@ -292,37 +244,18 @@ document.addEventListener("click", function (event) {
   }
 });
 
-// Adicionar botão de logout no rodapé (alternativo)
-function addLogoutButton() {
-  const footer = document.querySelector(".footer .container");
-  if (footer && !footer.querySelector(".logout-btn")) {
-    const logoutBtn = document.createElement("button");
-    logoutBtn.className = "btn btn-small btn-secondary logout-btn";
-    logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sair';
-    logoutBtn.addEventListener("click", logout);
-    logoutBtn.style.marginTop = "10px";
-    footer.appendChild(logoutBtn);
-  }
-}
-
 // Inicialização quando a página carrega
 document.addEventListener("DOMContentLoaded", function () {
   // Verificar se estamos na página de login
   const isLogin = isLoginPage();
 
   // Se for página de login, desativar redirecionamento automático
-  if (isLogin) {
-    window.blockLoginRedirect = true;
-  }
+  if (isLogin) window.blockLoginRedirect = true;
 
   // Verificar se Firebase está carregado
   if (typeof firebase === "undefined") {
-    console.error("Firebase não está carregado!");
-    // Tentar carregar novamente
     setTimeout(() => {
-      if (typeof firebase !== "undefined") {
-        initializeAuth();
-      }
+      if (typeof firebase !== "undefined") initializeAuth();
     }, 1000);
     return;
   }
@@ -330,16 +263,11 @@ document.addEventListener("DOMContentLoaded", function () {
   // Inicializar sistema de autenticação
   initializeAuth();
 
-  // Adicionar botão de logout simples (apenas se não for página de login)
-  if (!isLogin) {
-    addLogoutButton();
-  }
+  // Adicionar botão de logout simples
+  if (!isLogin) addLogoutButton();
 
-  // Proteger página após inicialização (apenas se não for página de login)
   if (!isLogin && !isPrintPage()) {
-    setTimeout(() => {
-      protectPage();
-    }, 1000);
+    setTimeout(() => protectPage(), 1000);
   }
 });
 
