@@ -9,7 +9,7 @@ const firebaseConfig = {
   measurementId: "G-6LVN3Y4MV9",
 };
 
-// Evitar inicialização duplicada
+// Inicialização única do Firebase
 if (!firebase.apps.length) {
   try {
     // Inicializar Firebase
@@ -19,13 +19,8 @@ if (!firebase.apps.length) {
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // Configurar persistência LOCAL (mantém login)
-    auth
-      .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-      .then(() => {})
-      .catch((error) => {
-        console.error("Erro na persistência:", error);
-      });
+    // Configurar persistência LOCAL
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
     // Tornar globalmente disponível
     window.auth = auth;
