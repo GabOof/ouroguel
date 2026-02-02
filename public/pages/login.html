@@ -11,14 +11,16 @@
     />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
+
+    <!-- CSP CORRETA - REMOVA O NONCE POR ENQUANTO -->
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com;
-           script-src 'self' https://*.gstatic.com https://cdnjs.cloudflare.com 'nonce-${nonce}';
-           style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline';
-           img-src 'self' data:;
-           connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com;
-           font-src 'self' https://cdnjs.cloudflare.com data:;"
+               script-src 'self' https://*.gstatic.com https://cdnjs.cloudflare.com;
+               style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline';
+               img-src 'self' data:;
+               connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com;
+               font-src 'self' https://cdnjs.cloudflare.com data:;"
     />
 
     <link rel="stylesheet" href="../css/style.css" />
@@ -27,23 +29,8 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
 
-    <!-- Script para limpar estado anterior -->
-    <script>
-      // Limpar qualquer estado de login anterior
-      console.log("🧹 Limpando estado de login anterior...");
-      localStorage.removeItem("userLoggedIn");
-      localStorage.removeItem("userEmail");
-      localStorage.removeItem("userId");
-      localStorage.removeItem("userRole");
-
-      // Evitar que o navegador volte para página anterior
-      history.pushState(null, null, location.href);
-      window.onpopstate = function () {
-        history.go(1);
-      };
-    </script>
-
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <!-- Firebase SDKs -->
+     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   </head>
@@ -89,7 +76,7 @@
               <button
                 type="button"
                 class="show-password"
-                onclick="togglePassword()"
+                id="togglePasswordBtn"
                 aria-label="Mostrar/ocultar senha"
               >
                 <i class="fas fa-eye"></i>
@@ -110,7 +97,7 @@
 
           <!-- Link para recuperar senha -->
           <div class="forgot-password text-center">
-            <a href="#" onclick="forgotPassword()">Esqueceu sua senha?</a>
+            <a href="#" id="forgotPasswordLink">Esqueceu sua senha?</a>
           </div>
         </form>
 
@@ -118,7 +105,7 @@
         <div class="first-access text-center">
           <p>
             Primeiro acesso?
-            <a href="#" onclick="showRegister()">Criar uma conta</a>
+            <a href="#" id="showRegisterLink">Criar uma conta</a>
           </p>
         </div>
 
@@ -181,7 +168,7 @@
               <button
                 type="button"
                 class="show-password"
-                onclick="toggleRegisterPassword()"
+                id="toggleRegisterPasswordBtn"
                 aria-label="Mostrar/ocultar senha"
               >
                 <i class="fas fa-eye"></i>
@@ -219,11 +206,7 @@
             <button type="submit" class="btn btn-primary">
               <i class="fas fa-user-plus"></i> Criar Conta
             </button>
-            <button
-              type="button"
-              class="btn btn-secondary"
-              onclick="showLogin()"
-            >
+            <button type="button" class="btn btn-secondary" id="showLoginBtn">
               <i class="fas fa-arrow-left"></i> Voltar para Login
             </button>
           </div>
@@ -231,164 +214,9 @@
       </div>
     </div>
 
-    <!-- Firebase Configuration -->
+    <!-- Scripts como arquivos externos -->
     <script src="../js/firebase-config.js"></script>
-
-    <script>
-      // Funções para mostrar/ocultar senha
-      function togglePassword() {
-        const passwordInput = document.getElementById("password");
-        const eyeIcon = document.querySelector("#password + .show-password i");
-
-        if (passwordInput.type === "password") {
-          passwordInput.type = "text";
-          eyeIcon.classList.replace("fa-eye", "fa-eye-slash");
-        } else {
-          passwordInput.type = "password";
-          eyeIcon.classList.replace("fa-eye-slash", "fa-eye");
-        }
-      }
-
-      function toggleRegisterPassword() {
-        const passwordInput = document.getElementById("registerPassword");
-        const eyeIcon = document.querySelector(
-          "#registerPassword + .show-password i",
-        );
-
-        if (passwordInput.type === "password") {
-          passwordInput.type = "text";
-          eyeIcon.classList.replace("fa-eye", "fa-eye-slash");
-        } else {
-          passwordInput.type = "password";
-          eyeIcon.classList.replace("fa-eye-slash", "fa-eye");
-        }
-      }
-
-      // Funções para alternar entre login e registro
-      function showRegister() {
-        document.getElementById("loginForm").parentElement.style.display =
-          "none";
-        document.getElementById("registerCard").style.display = "block";
-        return false;
-      }
-
-      function showLogin() {
-        document.getElementById("loginForm").parentElement.style.display =
-          "block";
-        document.getElementById("registerCard").style.display = "none";
-        return false;
-      }
-
-      function forgotPassword() {
-        const email = document.getElementById("email").value;
-        if (!email) {
-          alert("Por favor, insira seu e-mail para recuperar a senha.");
-          return false;
-        }
-
-        // Aqui você implementaria a recuperação de senha
-        alert("Funcionalidade de recuperação de senha em desenvolvimento.");
-        return false;
-      }
-
-      // Verificar se já está logado
-      document.addEventListener("DOMContentLoaded", function () {
-        console.log("🔐 Página de login carregada");
-
-        // Aguardar Firebase estar pronto
-        const checkAuth = setInterval(() => {
-          if (window.auth) {
-            clearInterval(checkAuth);
-
-            // Verificar se já tem usuário logado
-            auth.onAuthStateChanged((user) => {
-              if (user) {
-                console.log("✅ Já está logado como:", user.email);
-                console.log("↪️ Redirecionando para sistema...");
-                window.location.href = "index.html";
-              } else {
-                console.log("⚠️ Nenhum usuário logado. Mostrando formulário.");
-                // Formulário já está visível
-              }
-            });
-          }
-        }, 100);
-
-        // Configurar formulário de login
-        const loginForm = document.getElementById("loginForm");
-        if (loginForm) {
-          loginForm.addEventListener("submit", async function (e) {
-            e.preventDefault();
-
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
-            const remember = document.getElementById("remember").checked;
-
-            // Validar
-            if (!email || !password) {
-              alert("Preencha todos os campos");
-              return;
-            }
-
-            try {
-              // Configurar persistência
-              const persistence = remember
-                ? firebase.auth.Auth.Persistence.LOCAL
-                : firebase.auth.Auth.Persistence.SESSION;
-
-              await auth.setPersistence(persistence);
-
-              // Fazer login
-              const userCredential = await auth.signInWithEmailAndPassword(
-                email,
-                password,
-              );
-              const user = userCredential.user;
-
-              console.log("✅ Login bem-sucedido:", user.email);
-
-              // Criar registro do usuário se não existir
-              const userRef = db.collection("usuarios").doc(user.uid);
-              const userDoc = await userRef.get();
-
-              if (!userDoc.exists) {
-                await userRef.set({
-                  nome: email.split("@")[0],
-                  email: email,
-                  role: "user",
-                  dataCriacao: new Date().toISOString(),
-                });
-                console.log("📝 Novo usuário registrado no sistema");
-              }
-
-              // Redirecionar
-              window.location.href = "index.html";
-            } catch (error) {
-              console.error("❌ Erro no login:", error);
-
-              let mensagem = "Erro no login: ";
-              switch (error.code) {
-                case "auth/user-not-found":
-                  mensagem += "Usuário não encontrado";
-                  break;
-                case "auth/wrong-password":
-                  mensagem += "Senha incorreta";
-                  break;
-                case "auth/invalid-email":
-                  mensagem += "E-mail inválido";
-                  break;
-                case "auth/too-many-requests":
-                  mensagem += "Muitas tentativas. Tente mais tarde";
-                  break;
-                default:
-                  mensagem += error.message;
-              }
-
-              alert(mensagem);
-            }
-          });
-        }
-      });
-    </script>
+    <script src="../js/login.js"></script>
+    <script src="../js/auth.js"></script>
   </body>
 </html>
