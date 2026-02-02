@@ -1,5 +1,3 @@
-// js/login-scripts.js
-
 // VARIÁVEL GLOBAL para controlar se estamos processando login
 let isProcessingLogin = false;
 
@@ -62,7 +60,6 @@ function forgotPassword() {
     alert("Por favor, insira seu e-mail para recuperar a senha.");
     return false;
   }
-
   alert("Funcionalidade de recuperação de senha em desenvolvimento.");
   return false;
 }
@@ -72,9 +69,7 @@ async function handleLogin(e) {
   e.preventDefault();
 
   // Prevenir múltiplos envios
-  if (isProcessingLogin) {
-    return;
-  }
+  if (isProcessingLogin) return;
 
   isProcessingLogin = true;
 
@@ -91,13 +86,11 @@ async function handleLogin(e) {
   try {
     // Desativar botão durante o processo
     const submitBtn = e.target.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
     submitBtn.disabled = true;
 
     // Verificar se Firebase está pronto
     if (!window.auth) {
-      console.error("Firebase auth não está disponível");
       throw new Error(
         "Sistema de autenticação não está disponível. Recarregue a página.",
       );
@@ -115,7 +108,6 @@ async function handleLogin(e) {
       email,
       password,
     );
-
     const user = userCredential.user;
 
     // Verificar se o usuário já existe no Firestore
@@ -147,16 +139,11 @@ async function handleLogin(e) {
       window.location.href = "../index.html";
     }, 1000);
   } catch (error) {
-    console.error("Erro no login:", error);
-    console.error("Código do erro:", error.code);
-    console.error("Mensagem do erro:", error.message);
-
     // Reativar botão
     const submitBtn = e.target.querySelector('button[type="submit"]');
     submitBtn.innerHTML =
       '<i class="fas fa-sign-in-alt"></i> Entrar no Sistema';
     submitBtn.disabled = false;
-
     isProcessingLogin = false;
 
     let mensagem = "";
@@ -185,70 +172,25 @@ async function handleLogin(e) {
       default:
         mensagem = "Erro ao fazer login: " + error.message;
     }
-
-    // Mostrar alerta com mais detalhes para debugging
-    alert("❌ " + mensagem + "\n\nE-mail tentado: " + email);
   }
-}
-
-// Verificar status de autenticação (APENAS para mostrar/ocultar formulário)
-function checkAuthStatus() {
-  const checkAuth = setInterval(() => {
-    if (window.auth) {
-      clearInterval(checkAuth);
-
-      auth.onAuthStateChanged((user) => {
-        if (user) {
-          // Mostrar mensagem e redirecionar após 2 segundos
-          const loginCard = document.querySelector(".login-card");
-          if (loginCard) {
-            const originalHTML = loginCard.innerHTML;
-            loginCard.innerHTML = `
-              <div class="text-center">
-                <i class="fas fa-check-circle success-icon" style="font-size: 48px; color: #28a745; margin-bottom: 20px;"></i>
-                <h2>Você já está logado!</h2>
-                <p>Redirecionando para o sistema...</p>
-                <div class="spinner-border text-primary mt-3" role="status">
-                  <span class="sr-only">Carregando...</span>
-                </div>
-              </div>
-            `;
-          }
-
-          setTimeout(() => {
-            window.location.href = "../index.html";
-          }, 2000);
-        } else {
-          // Formulário já está visível
-        }
-      });
-    }
-  }, 100);
 }
 
 // Inicializar quando o DOM carregar
 document.addEventListener("DOMContentLoaded", function () {
-  // DESATIVAR verificação automática de auth na página de login
-  // A verificação será feita apenas quando o usuário tentar fazer login
-
   // Configurar listeners de eventos
   const loginForm = document.getElementById("loginForm");
-  if (loginForm) {
-    loginForm.addEventListener("submit", handleLogin);
-  }
+  if (loginForm) loginForm.addEventListener("submit", handleLogin);
 
   // Configurar botões
   const togglePasswordBtn = document.getElementById("togglePasswordBtn");
-  if (togglePasswordBtn) {
+  if (togglePasswordBtn)
     togglePasswordBtn.addEventListener("click", togglePassword);
-  }
 
   const toggleRegisterPasswordBtn = document.getElementById(
     "toggleRegisterPasswordBtn",
   );
-  if (toggleRegisterPasswordBtn) {
+  if (toggleRegisterPasswordBtn)
     toggleRegisterPasswordBtn.addEventListener("click", toggleRegisterPassword);
-  }
 
   const showRegisterLink = document.getElementById("showRegisterLink");
   if (showRegisterLink) {
@@ -276,14 +218,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Focar no campo de email automaticamente
   const emailInput = document.getElementById("email");
-  if (emailInput) {
-    setTimeout(() => {
-      emailInput.focus();
-    }, 100);
-  }
+  if (emailInput) setTimeout(() => emailInput.focus(), 100);
 });
 
-// Exportar funções para uso global
+// Exportar funções
 window.togglePassword = togglePassword;
 window.toggleRegisterPassword = toggleRegisterPassword;
 window.showRegister = showRegister;
