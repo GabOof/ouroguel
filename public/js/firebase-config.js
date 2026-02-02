@@ -11,42 +11,49 @@ const firebaseConfig = {
   measurementId: "G-6LVN3Y4MV9",
 };
 
-try {
-  // Inicializar Firebase apenas uma vez
-  if (!firebase.apps.length) {
+// Evitar inicialização duplicada
+if (!firebase.apps.length) {
+  try {
+    // Inicializar Firebase
     firebase.initializeApp(firebaseConfig);
     console.log("✅ Firebase App inicializado");
-  }
 
-  // Inicializar serviços
-  const auth = firebase.auth();
-  const db = firebase.firestore();
+    // Inicializar serviços
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-  // Configurar persistência LOCAL (mantém login)
-  auth
-    .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-    .then(() => {
-      console.log("✅ Persistência LOCAL configurada");
-    })
-    .catch((error) => {
-      console.error("❌ Erro na persistência:", error);
+    // Configurar persistência LOCAL (mantém login)
+    auth
+      .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+      .then(() => {
+        console.log("✅ Persistência LOCAL configurada");
+      })
+      .catch((error) => {
+        console.error("❌ Erro na persistência:", error);
+      });
+
+    // Tornar globalmente disponível
+    window.auth = auth;
+    window.db = db;
+    window.firebase = firebase;
+
+    console.log("🎯 Firebase configurado com sucesso!");
+
+    // Verificar usuário atual (sem redirecionar)
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        console.log("👤 Usuário atual:", user.email);
+      } else {
+        console.log("👤 Nenhum usuário logado");
+      }
     });
-
-  // Exportar para uso global
-  window.db = db;
-  window.auth = auth;
-
-  console.log("🎯 Firebase configurado com sucesso!");
-
-  // Verificar estado atual
-  auth.onAuthStateChanged((user) => {
-    if (user) {
-      console.log(`👤 Usuário atual: ${user.email}`);
-    } else {
-      console.log("👤 Nenhum usuário autenticado");
-    }
-  });
-} catch (error) {
-  console.error("❌ Erro crítico no Firebase:", error);
-  alert("Erro ao conectar com o banco de dados. Recarregue a página.");
+  } catch (error) {
+    console.error("❌ Erro ao configurar Firebase:", error);
+  }
+} else {
+  console.log("⚠️ Firebase já inicializado");
+  // Reutilizar instância existente
+  window.auth = firebase.auth();
+  window.db = firebase.firestore();
+  window.firebase = firebase;
 }

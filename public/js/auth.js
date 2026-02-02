@@ -1,16 +1,44 @@
+// js/auth.js
 console.log("🔐 Auth.js iniciando...");
 
 // Variáveis globais para estado
 let isInitialized = false;
 let currentUser = null;
+let authCheckComplete = false;
+
+// Função para verificar se estamos na página de login
+function isLoginPage() {
+  const currentPath = window.location.pathname;
+  return (
+    currentPath.includes("login.html") ||
+    currentPath.includes("pages/login.html")
+  );
+}
+
+// Função para verificar se estamos na página de impressão
+function isPrintPage() {
+  const currentPath = window.location.pathname;
+  return (
+    currentPath.includes("imprimir.html") ||
+    currentPath.includes("pages/imprimir.html")
+  );
+}
 
 // Função para inicializar autenticação
 async function initializeAuth() {
   try {
+    // Evitar inicialização duplicada
+    if (isInitialized) {
+      console.log("⚠️ Auth já inicializado");
+      return;
+    }
+
+    console.log("🔄 Inicializando autenticação...");
+
     // Aguardar Firebase estar pronto
     if (!window.db || !window.auth) {
       console.warn("⚠️ Firebase não está pronto. Tentando novamente...");
-      setTimeout(initializeAuth, 100);
+      setTimeout(initializeAuth, 500);
       return;
     }
 
@@ -18,6 +46,7 @@ async function initializeAuth() {
     auth.onAuthStateChanged((user) => {
       currentUser = user;
       isInitialized = true;
+      authCheckComplete = true;
 
       if (user) {
         console.log("✅ Usuário autenticado:", user.email);
@@ -25,33 +54,32 @@ async function initializeAuth() {
         localStorage.setItem("userEmail", user.email);
         localStorage.setItem("userId", user.uid);
 
-        // Se estiver na página de login, redirecionar para index
-        if (window.location.pathname.includes("../index.html")) {
-          console.log("↪️ Redirecionando para sistema...");
-          window.location.href = "index.html";
+        // Se estiver na página de login E o redirecionamento não está bloqueado
+        if (isLoginPage() && !window.blockLoginRedirect) {
+          console.log("↪️ Usuário já logado. Redirecionando para index...");
+          setTimeout(() => {
+            window.location.href = "../index.html";
+          }, 1000);
+          return;
         }
 
-        // Carregar informações do usuário
-        loadUserProfile();
-        addUserMenu();
+        // Se não for página de login, carregar perfil
+        if (!isLoginPage()) {
+          loadUserProfile();
+          addUserMenu();
+        }
       } else {
         console.log("❌ Nenhum usuário autenticado");
         localStorage.removeItem("userLoggedIn");
         localStorage.removeItem("userEmail");
         localStorage.removeItem("userId");
 
-        // Se NÃO estiver na página de login, redirecionar para login
-        if (
-          !window.location.pathname.includes("/pages/login.html") &&
-          !window.location.pathname.includes("/pages/imprimir.html")
-        ) {
+        // Se NÃO for página de login nem impressão, redirecionar
+        if (!isLoginPage() && !isPrintPage()) {
           console.log("🔒 Acesso negado. Redirecionando para login...");
-          // Pequeno delay para evitar loop
           setTimeout(() => {
-            if (!auth.currentUser) {
-              window.location.href = "/pages/login.html";
-            }
-          }, 100);
+            window.location.href = "pages/login.html";
+          }, 1000);
         }
       }
     });
@@ -67,26 +95,21 @@ function isUserLoggedIn() {
   return !!currentUser || !!auth?.currentUser;
 }
 
-// Função para verificar login e proteger páginas
+// Função para verificar login e proteger páginas (APENAS para páginas não-login)
 function protectPage() {
-  const currentPath = window.location.pathname;
-  const isLoginPage = currentPath.includes("/pages/login.html");
-  const isPrintPage = currentPath.includes("/pages/imprimir.html");
-
-  console.log(`📍 Página atual: ${currentPath}`);
-  console.log(`🔐 Usuário logado: ${isUserLoggedIn()}`);
-
-  // Se não é página de login/imprimir e não tem usuário logado
-  if (!isLoginPage && !isPrintPage && !isUserLoggedIn()) {
-    console.log("🚫 Acesso negado! Redirecionando para login...");
-    window.location.href = "/pages/login.html";
-    return false;
+  // Não proteger páginas de login e impressão
+  if (isLoginPage() || isPrintPage()) {
+    console.log("🔓 Página livre (login/impressão)");
+    return true;
   }
 
-  // Se é página de login e já está logado
-  if (isLoginPage && isUserLoggedIn()) {
-    console.log("✅ Já logado! Redirecionando para sistema...");
-    window.location.href = "index.html";
+  const userLoggedIn = isUserLoggedIn();
+  console.log(`📍 Página atual: ${window.location.pathname}`);
+  console.log(`🔐 Usuário logado: ${userLoggedIn}`);
+
+  if (!userLoggedIn) {
+    console.log("🚫 Acesso negado! Redirecionando para login...");
+    window.location.href = "pages/login.html";
     return false;
   }
 
@@ -106,7 +129,7 @@ function logout() {
       .then(() => {
         console.log("👋 Logout realizado");
         localStorage.clear();
-        window.location.href = "/pages/login.html";
+        window.location.href = "pages/login.html";
       })
       .catch((error) => {
         console.error("Erro ao fazer logout:", error);
@@ -192,7 +215,7 @@ function addUserMenu() {
   // Criar menu do usuário
   const userMenuHTML = `
         <div class="user-menu">
-            <div class="user-info" onclick="toggleUserMenu()">
+            <div class="user-info" id="userInfoBtn">
                 <i class="fas fa-user-circle"></i>
                 <span class="user-name">Usuário</span>
             </div>
@@ -203,7 +226,7 @@ function addUserMenu() {
                         <small class="user-email">email@exemplo.com</small>
                     </div>
                     <hr>
-                    <a href="#" onclick="logout()">
+                    <a href="#" id="logoutLink">
                         <i class="fas fa-sign-out-alt"></i> Sair
                     </a>
                 </div>
@@ -212,6 +235,21 @@ function addUserMenu() {
     `;
 
   header.insertAdjacentHTML("beforeend", userMenuHTML);
+
+  // Configurar eventos
+  const userInfoBtn = document.getElementById("userInfoBtn");
+  const logoutLink = document.getElementById("logoutLink");
+
+  if (userInfoBtn) {
+    userInfoBtn.addEventListener("click", toggleUserMenu);
+  }
+
+  if (logoutLink) {
+    logoutLink.addEventListener("click", function (e) {
+      e.preventDefault();
+      logout();
+    });
+  }
 
   // Carregar informações
   loadUserProfile();
@@ -247,7 +285,7 @@ function addLogoutButton() {
     const logoutBtn = document.createElement("button");
     logoutBtn.className = "btn btn-small btn-secondary logout-btn";
     logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sair';
-    logoutBtn.onclick = logout;
+    logoutBtn.addEventListener("click", logout);
     logoutBtn.style.marginTop = "10px";
     footer.appendChild(logoutBtn);
   }
@@ -257,22 +295,42 @@ function addLogoutButton() {
 document.addEventListener("DOMContentLoaded", function () {
   console.log("📄 DOM carregado - Iniciando verificação de autenticação");
 
+  // Verificar se estamos na página de login
+  const isLogin = isLoginPage();
+  console.log(`📍 É página de login? ${isLogin}`);
+
+  // Se for página de login, desativar redirecionamento automático
+  if (isLogin) {
+    window.blockLoginRedirect = true;
+    console.log("🚫 Redirecionamento automático desativado na página de login");
+  }
+
   // Verificar se Firebase está carregado
   if (typeof firebase === "undefined") {
     console.error("❌ Firebase não está carregado!");
+    // Tentar carregar novamente
+    setTimeout(() => {
+      if (typeof firebase !== "undefined") {
+        initializeAuth();
+      }
+    }, 1000);
     return;
   }
 
   // Inicializar sistema de autenticação
   initializeAuth();
 
-  // Adicionar botão de logout simples
-  addLogoutButton();
+  // Adicionar botão de logout simples (apenas se não for página de login)
+  if (!isLogin) {
+    addLogoutButton();
+  }
 
-  // Proteger página após inicialização
-  setTimeout(() => {
-    protectPage();
-  }, 500);
+  // Proteger página após inicialização (apenas se não for página de login)
+  if (!isLogin && !isPrintPage()) {
+    setTimeout(() => {
+      protectPage();
+    }, 1000);
+  }
 });
 
 // Exportar funções para uso global
@@ -281,3 +339,4 @@ window.toggleUserMenu = toggleUserMenu;
 window.isUserLoggedIn = isUserLoggedIn;
 window.getUserInfo = getUserInfo;
 window.loadUserProfile = loadUserProfile;
+window.isLoginPage = isLoginPage;
