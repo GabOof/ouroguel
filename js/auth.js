@@ -263,9 +263,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // Inicializar sistema de autenticação
   initializeAuth();
 
-  // Adicionar botão de logout simples
-  if (!isLogin) addLogoutButton();
-
   if (!isLogin && !isPrintPage()) {
     setTimeout(() => protectPage(), 1000);
   }
