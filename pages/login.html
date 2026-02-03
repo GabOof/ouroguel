@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login - Sistema Ouroguel</title>
+    <title>Ouroguel LTDA</title>
 
     <meta
       http-equiv="Cache-Control"
@@ -16,11 +16,11 @@
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com;
-               script-src 'self' https://*.gstatic.com https://cdnjs.cloudflare.com;
-               style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline';
-               img-src 'self' data:;
-               connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com;
-               font-src 'self' https://cdnjs.cloudflare.com data:;"
+              script-src 'self' https://*.gstatic.com https://cdnjs.cloudflare.com;
+              style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline';
+              img-src 'self' data:;
+              connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com;
+              font-src 'self' https://cdnjs.cloudflare.com data:;"
     />
 
     <link rel="stylesheet" href="../css/style.css" />
@@ -39,15 +39,16 @@
       <div class="login-card">
         <!-- Logo -->
         <div class="logo text-center">
-          <i class="fas fa-tools login-logo"></i>
-          <h1>Sistema Ouroguel</h1>
-          <p class="subtitle">Locação de Equipamentos</p>
+          <img
+            src="../images/logo.png"
+            alt="Logo Ouroguel"
+            style="width: 300px"
+          />
         </div>
 
         <!-- Mensagem de boas-vindas -->
         <div class="welcome-message">
-          <h2>Bem-vindo de volta!</h2>
-          <p>Faça login para acessar o sistema</p>
+          <h3>Faça login para acessar o sistema</h3>
         </div>
 
         <!-- Formulário de Login -->
@@ -58,10 +59,12 @@
               type="email"
               id="email"
               required
-              placeholder="seu@email.com"
+              placeholder="Digite seu email"
               autocomplete="email"
             />
           </div>
+
+          <br />
 
           <div class="form-group">
             <label for="password"><i class="fas fa-lock"></i> Senha</label>
@@ -72,6 +75,7 @@
                 required
                 placeholder="Digite sua senha"
                 autocomplete="current-password"
+                style="width: 100%; height: 50px"
               />
               <button
                 type="button"
@@ -108,18 +112,6 @@
             <a href="#" id="showRegisterLink">Criar uma conta</a>
           </p>
         </div>
-
-        <!-- Informações do sistema -->
-        <div class="system-info text-center">
-          <p>
-            <i class="fas fa-info-circle"></i> Sistema desenvolvido para
-            Ouroguel LTDA
-          </p>
-          <p class="footer-small">
-            TCC em IHC - Foco em usabilidade para pessoas idosas
-          </p>
-        </div>
-      </div>
 
       <!-- Card de Registro (inicialmente oculto) -->
       <div class="login-card" id="registerCard" style="display: none">
