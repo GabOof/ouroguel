@@ -1,4 +1,3 @@
-// VARIÁVEL GLOBAL para controlar se estamos processando login
 let isProcessingLogin = false;
 
 // Limpar estado anterior
@@ -172,6 +171,8 @@ async function handleLogin(e) {
       default:
         mensagem = "Erro ao fazer login: " + error.message;
     }
+
+    alert(mensagem);
   }
 }
 
