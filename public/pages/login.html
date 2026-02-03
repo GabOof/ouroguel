@@ -12,7 +12,6 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
 
-    <!-- CSP CORRETA - REMOVA O NONCE POR ENQUANTO -->
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com;
@@ -112,13 +111,18 @@
             <a href="#" id="showRegisterLink">Criar uma conta</a>
           </p>
         </div>
+      </div>
+      <!-- Fecha o primeiro login-card -->
 
       <!-- Card de Registro (inicialmente oculto) -->
       <div class="login-card" id="registerCard" style="display: none">
         <div class="logo text-center">
-          <i class="fas fa-user-plus login-logo"></i>
-          <h1>Criar Conta</h1>
-          <p class="subtitle">Registre-se no sistema</p>
+          <img
+            src="../images/logo.png"
+            alt="Logo Ouroguel"
+            style="width: 425px"
+          />
+          <h3 class="welcome-message">Crie sua conta no sistema</h3>
         </div>
 
         <form id="registerForm" class="form-section">
@@ -130,7 +134,7 @@
               type="text"
               id="registerName"
               required
-              placeholder="Seu nome completo"
+              placeholder="Digite seu nome completo"
             />
           </div>
 
@@ -142,7 +146,7 @@
               type="email"
               id="registerEmail"
               required
-              placeholder="seu@email.com"
+              placeholder="Digite seu email"
             />
           </div>
 
@@ -155,7 +159,8 @@
                 type="password"
                 id="registerPassword"
                 required
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Digite uma senha com ao menos 6 caracteres"
+                style="width: 100%; height: 50px"
               />
               <button
                 type="button"
@@ -166,9 +171,6 @@
                 <i class="fas fa-eye"></i>
               </button>
             </div>
-            <small class="password-hint"
-              >A senha deve ter pelo menos 6 caracteres</small
-            >
           </div>
 
           <div class="form-group">
@@ -179,19 +181,8 @@
               type="password"
               id="registerConfirmPassword"
               required
-              placeholder="Digite a senha novamente"
+              placeholder="Digite a senha novamente para confirmar"
             />
-          </div>
-
-          <div class="form-group">
-            <label for="registerRole"
-              ><i class="fas fa-user-tag"></i> Tipo de Usuário</label
-            >
-            <select id="registerRole" required>
-              <option value="">Selecione...</option>
-              <option value="admin">Administrador</option>
-              <option value="user">Usuário Normal</option>
-            </select>
           </div>
 
           <div class="form-buttons">
@@ -205,8 +196,9 @@
         </form>
       </div>
     </div>
+    <!-- Fecha o container -->
 
-    <!-- Scripts como arquivos externos -->
+    <!-- Scripts -->
     <script src="../js/firebase-config.js"></script>
     <script src="../js/login.js"></script>
     <script src="../js/auth.js"></script>
