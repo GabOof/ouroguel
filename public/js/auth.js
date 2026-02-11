@@ -23,18 +23,13 @@ function isPrintPage() {
 // Função para inicializar autenticação
 async function initializeAuth() {
   try {
-    // Evitar inicialização duplicada
-    if (isInitialized) {
-      return;
-    }
+    if (isInitialized) return;
 
-    // Aguardar Firebase estar pronto
     if (!window.db || !window.auth) {
       setTimeout(initializeAuth, 500);
       return;
     }
 
-    // Configurar observador de estado de autenticação
     auth.onAuthStateChanged((user) => {
       currentUser = user;
       isInitialized = true;
@@ -44,7 +39,6 @@ async function initializeAuth() {
         localStorage.setItem("userEmail", user.email);
         localStorage.setItem("userId", user.uid);
 
-        // Se estiver na página de login E o redirecionamento não está bloqueado
         if (isLoginPage() && !window.blockLoginRedirect) {
           setTimeout(() => {
             window.location.href = "../index.html";
@@ -52,7 +46,6 @@ async function initializeAuth() {
           return;
         }
 
-        // Se não for página de login, carregar perfil
         if (!isLoginPage()) {
           loadUserProfile();
           addUserMenu();
@@ -61,8 +54,8 @@ async function initializeAuth() {
         localStorage.removeItem("userLoggedIn");
         localStorage.removeItem("userEmail");
         localStorage.removeItem("userId");
+        localStorage.removeItem("userRole");
 
-        // Se NÃO for página de login nem impressão, redirecionar
         if (!isLoginPage() && !isPrintPage()) {
           setTimeout(() => {
             window.location.href = "pages/login.html";
@@ -82,7 +75,6 @@ function isUserLoggedIn() {
 
 // Função para verificar login e proteger páginas
 function protectPage() {
-  // Não proteger páginas de login e impressão
   if (isLoginPage() || isPrintPage()) {
     return true;
   }
@@ -127,14 +119,13 @@ async function getUserInfo() {
       return {
         id: user.uid,
         email: user.email,
-        nome: data.nome || user.email.split("@")[0],
+        nome: data.nome || user.displayName || user.email.split("@")[0],
         role: data.role || "user",
       };
     }
 
-    // Se não existe no Firestore, criar registro básico
     const userData = {
-      nome: user.email.split("@")[0],
+      nome: user.displayName || user.email.split("@")[0],
       email: user.email,
       role: "user",
       dataCriacao: new Date().toISOString(),
@@ -145,10 +136,11 @@ async function getUserInfo() {
     return {
       id: user.uid,
       email: user.email,
-      nome: user.email.split("@")[0],
+      nome: user.displayName || user.email.split("@")[0],
       role: "user",
     };
   } catch (error) {
+    console.error("Erro ao buscar usuário:", error);
     return null;
   }
 }
@@ -158,7 +150,6 @@ async function loadUserProfile() {
   const userInfo = await getUserInfo();
 
   if (userInfo) {
-    // Atualizar elementos na página
     document.querySelectorAll(".user-name").forEach((el) => {
       el.textContent = userInfo.nome;
     });
@@ -167,20 +158,17 @@ async function loadUserProfile() {
       el.textContent = userInfo.email;
     });
 
-    // Salvar no localStorage
     localStorage.setItem("userRole", userInfo.role);
   }
 }
 
 // Função para adicionar menu do usuário
 function addUserMenu() {
-  // Verificar se já existe
   if (document.querySelector(".user-menu")) return;
 
   const header = document.querySelector(".header .container");
   if (!header) return;
 
-  // Criar menu do usuário
   const userMenuHTML = `
     <div class="user-menu">
       <div class="user-info" id="userInfoBtn">
@@ -204,7 +192,6 @@ function addUserMenu() {
 
   header.insertAdjacentHTML("beforeend", userMenuHTML);
 
-  // Configurar eventos
   const userInfoBtn = document.getElementById("userInfoBtn");
   const logoutLink = document.getElementById("logoutLink");
 
@@ -219,7 +206,6 @@ function addUserMenu() {
     });
   }
 
-  // Carregar informações
   loadUserProfile();
 }
 
@@ -246,13 +232,10 @@ document.addEventListener("click", function (event) {
 
 // Inicialização quando a página carrega
 document.addEventListener("DOMContentLoaded", function () {
-  // Verificar se estamos na página de login
   const isLogin = isLoginPage();
 
-  // Se for página de login, desativar redirecionamento automático
   if (isLogin) window.blockLoginRedirect = true;
 
-  // Verificar se Firebase está carregado
   if (typeof firebase === "undefined") {
     setTimeout(() => {
       if (typeof firebase !== "undefined") initializeAuth();
@@ -260,7 +243,6 @@ document.addEventListener("DOMContentLoaded", function () {
     return;
   }
 
-  // Inicializar sistema de autenticação
   initializeAuth();
 
   if (!isLogin && !isPrintPage()) {

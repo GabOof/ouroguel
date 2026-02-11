@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ouroguel LTDA</title>
+    <title>Ouroguel LTDA - Login</title>
 
     <meta
       http-equiv="Cache-Control"
@@ -35,8 +35,8 @@
   </head>
   <body class="login-page">
     <div class="container login-container">
+      <!-- Card de Login -->
       <div class="login-card">
-        <!-- Logo -->
         <div class="logo text-center">
           <img
             src="../images/logo.png"
@@ -45,12 +45,10 @@
           />
         </div>
 
-        <!-- Mensagem de boas-vindas -->
         <div class="welcome-message">
           <h3>Faça login para acessar o sistema</h3>
         </div>
 
-        <!-- Formulário de Login -->
         <form id="loginForm" class="form-section">
           <div class="form-group">
             <label for="email"><i class="fas fa-envelope"></i> E-mail</label>
@@ -87,24 +85,20 @@
             </div>
           </div>
 
-          <!-- Lembrar de mim -->
           <div class="remember-me">
             <input type="checkbox" id="remember" />
             <label for="remember">Lembrar de mim</label>
           </div>
 
-          <!-- Botão de Login -->
           <button type="submit" class="btn btn-primary btn-block">
             <i class="fas fa-sign-in-alt"></i> Entrar no Sistema
           </button>
 
-          <!-- Link para recuperar senha -->
           <div class="forgot-password text-center">
             <a href="#" id="forgotPasswordLink">Esqueceu sua senha?</a>
           </div>
         </form>
 
-        <!-- Primeiro acesso -->
         <div class="first-access text-center">
           <p>
             Primeiro acesso?
@@ -112,7 +106,6 @@
           </p>
         </div>
       </div>
-      <!-- Fecha o primeiro login-card -->
 
       <!-- Card de Registro (inicialmente oculto) -->
       <div class="login-card" id="registerCard" style="display: none">
@@ -196,9 +189,8 @@
         </form>
       </div>
     </div>
-    <!-- Fecha o container -->
 
-    <!-- Scripts -->
+    <!-- Scripts na ordem correta -->
     <script src="../js/firebase-config.js"></script>
     <script src="../js/login.js"></script>
     <script src="../js/auth.js"></script>
