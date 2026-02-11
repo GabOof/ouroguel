@@ -5,19 +5,12 @@
     <script>
       // Verificação IMEDIATA de autenticação
       (function () {
-        // Verificar localStorage
         const userLoggedIn = localStorage.getItem("userLoggedIn");
         const userEmail = localStorage.getItem("userEmail");
 
-        // Se não está logado, REDIRECIONAR AGORA
         if (userLoggedIn !== "true" || !userEmail) {
-          // Parar qualquer carregamento adicional
           document.write = function () {};
-
-          // Redirecionar IMEDIATAMENTE
           window.location.replace("/pages/login.html");
-
-          // Lançar erro para parar execução
           throw new Error("Redirecionando para login");
         }
       })();
@@ -25,7 +18,6 @@
 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com;
@@ -41,7 +33,7 @@
     <!-- CSS do Sistema -->
     <link rel="stylesheet" href="css/style.css" />
 
-    <!-- Fontes grandes e acessíveis -->
+    <!-- Fontes -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -64,10 +56,11 @@
     <!-- Cabeçalho com navegação -->
     <header class="header">
       <div class="container">
-        <div class="logo" style="margin-left: -170px">
+        <div class="logo">
           <img src="images/logo.png" alt="Logo Ouroguel" style="width: 425px" />
         </div>
-        <nav class="nav" style="margin-right: -170px">
+
+        <nav class="nav">
           <ul>
             <li>
               <a href="/index.html" class="active"
@@ -98,6 +91,31 @@
         </nav>
       </div>
     </header>
+
+    <!-- BARRA DO USUÁRIO - Abaixo do menu -->
+    <div class="user-bar" id="userBar">
+      <div class="container">
+        <div class="user-bar-welcome">
+          <i class="fas fa-user-circle"></i>
+          <div class="user-bar-info">
+            <span class="user-bar-name" id="userBarName">Carregando...</span>
+            <span class="user-bar-email" id="userBarEmail"
+              >carregando@email.com</span
+            >
+          </div>
+        </div>
+
+        <div class="user-bar-actions">
+          <div class="user-bar-role" id="userBarRole">
+            <i class="fas fa-shield-alt"></i>
+            <span id="userRoleText">Usuário</span>
+          </div>
+          <button class="btn-logout" id="logoutBtn">
+            <i class="fas fa-sign-out-alt"></i> Sair
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Conteúdo principal -->
     <main class="main-content">
@@ -149,7 +167,7 @@
       </div>
     </footer>
 
-    <!-- JavaScript do Sistema -->
+    <!-- JavaScript -->
     <script src="js/firebase-config.js"></script>
     <script src="js/main.js"></script>
     <script src="js/auth.js"></script>
