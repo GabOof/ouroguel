@@ -1,5 +1,5 @@
 /* ============================================
-   VARIÁVEIS E CONFIGURAÇÕES GERAIS
+  VARIÁVEIS E CONFIGURAÇÕES GERAIS
    ============================================ */
 :root {
   /* Cores principais - ALTO CONTRASTE */
@@ -43,7 +43,7 @@
 }
 
 /* ============================================
-   RESET E CONFIGURAÇÕES BASE
+  RESET E CONFIGURAÇÕES BASE
    ============================================ */
 * {
   margin: 0;
@@ -117,7 +117,7 @@ a:hover {
 }
 
 /* ============================================
-   CABEÇALHO
+  CABEÇALHO
    ============================================ */
 .header {
   background-color: var(--light-color);
@@ -167,7 +167,7 @@ a:hover {
 }
 
 /* ============================================
-   CONTEÚDO PRINCIPAL
+  CONTEÚDO PRINCIPAL
    ============================================ */
 .main-content {
   flex: 1;
@@ -185,7 +185,7 @@ a:hover {
 }
 
 /* ============================================
-   CARDS E SEÇÕES
+  CARDS E SEÇÕES
    ============================================ */
 .welcome-section {
   text-align: center;
@@ -204,7 +204,7 @@ a:hover {
 }
 
 /* ============================================
-   FORMULÁRIOS (ACESSÍVEIS)
+  FORMULÁRIOS (ACESSÍVEIS)
    ============================================ */
 .form-section {
   margin-bottom: var(--spacing-xl);
@@ -270,7 +270,7 @@ select {
 }
 
 /* ============================================
-   BOTÕES (GRANDES E VISÍVEIS)
+  BOTÕES (GRANDES E VISÍVEIS)
    ============================================ */
 .btn {
   display: inline-flex;
@@ -295,7 +295,7 @@ select {
 }
 
 .btn-primary:hover {
-  background-color: #2980b9;
+  background-color: var(--primary-color);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
@@ -341,7 +341,7 @@ select {
 }
 
 /* ============================================
-   TABELAS (LEGÍVEIS)
+  TABELAS (LEGÍVEIS)
    ============================================ */
 .table-container {
   overflow-x: auto;
@@ -390,7 +390,7 @@ td {
 }
 
 /* ============================================
-   GRID DE FUNCIONALIDADES
+  GRID DE FUNCIONALIDADES
    ============================================ */
 .features-grid {
   display: grid;
@@ -420,7 +420,7 @@ td {
 }
 
 /* ============================================
-   CAIXA DE BUSCA
+  CAIXA DE BUSCA
    ============================================ */
 .search-box {
   position: relative;
@@ -442,7 +442,7 @@ td {
 }
 
 /* ============================================
-   RODAPÉ
+  RODAPÉ
    ============================================ */
 .footer {
   background-color: var(--primary-color);
@@ -464,7 +464,7 @@ td {
 }
 
 /* ============================================
-   MENSAGENS DE STATUS
+  MENSAGENS DE STATUS
    ============================================ */
 .alert {
   padding: var(--spacing-md);
@@ -495,7 +495,7 @@ td {
 }
 
 /* ============================================
-   STATUS DE ESTOQUE
+  STATUS DE ESTOQUE
    ============================================ */
 .status-badge {
   display: inline-flex;
@@ -518,7 +518,7 @@ td {
 }
 
 /* ============================================
-   RESPONSIVIDADE
+  RESPONSIVIDADE
    ============================================ */
 @media (max-width: 768px) {
   html {
@@ -570,7 +570,7 @@ td {
 }
 
 /* ============================================
-   ESTILOS ESPECÍFICOS PARA LOGIN
+  ESTILOS ESPECÍFICOS PARA LOGIN
    ============================================ */
 
 /* Página de login */
@@ -698,12 +698,14 @@ td {
 .first-access p {
   margin-bottom: 0;
   color: var(--gray-color);
+  font-size: var(--font-size-md);
 }
 
 .first-access a {
   color: var(--secondary-color);
   font-weight: 600;
   text-decoration: none;
+  font-size: var(--font-size-md);
 }
 
 .first-access a:hover {
@@ -772,7 +774,7 @@ td {
 }
 
 /* ============================================
-   BARRA DO USUÁRIO - ABAIXO DO MENU
+  BARRA DO USUÁRIO - ABAIXO DO MENU
    ============================================ */
 .user-bar {
   background-color: rgba(21, 136, 251, 0.05); /* Azul claro com transparência */
