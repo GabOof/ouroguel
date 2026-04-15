@@ -10,7 +10,7 @@
 
         if (userLoggedIn !== "true" || !userEmail) {
           document.write = function () {};
-          window.location.replace("/pages/login.html");
+          window.location.replace("./pages/login.html");
           throw new Error("Redirecionando para login");
         }
       })();
