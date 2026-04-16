@@ -66,14 +66,14 @@ body {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 0 var(--spacing-md);
   width: 100%;
 }
 
 /* ============================================
-   TIPOGRAFIA ACESSÍVEL
+  TIPOGRAFIA ACESSÍVEL
    ============================================ */
 h1,
 h2,
@@ -199,7 +199,7 @@ a:hover {
 
 .subtitle {
   color: var(--gray-color);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-md);
   margin-bottom: var(--spacing-xl);
 }
 
