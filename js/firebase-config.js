@@ -1,3 +1,5 @@
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+
 // Configuração do Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDxpJE_2EYqfRlDcRGOayd1ZmJqjHOs67U",
@@ -37,3 +39,9 @@ if (!firebase.apps.length) {
   window.db = firebase.firestore();
   window.firebase = firebase;
 }
+
+// Inicializar App Check com reCAPTCHA v3
+const appCheck = initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider("COLE_AQUI_SUA_SITE_KEY_DO_RECAPTCHA"),
+  isTokenAutoRefreshEnabled: true, // Mantém o token sempre válido
+});
