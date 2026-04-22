@@ -1,6 +1,3 @@
-import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
-
-// Configuração do Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDxpJE_2EYqfRlDcRGOayd1ZmJqjHOs67U",
   authDomain: "ouroguel-1190.firebaseapp.com",
