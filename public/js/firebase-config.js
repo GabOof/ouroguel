@@ -17,6 +17,13 @@ if (!firebase.apps.length) {
     // Inicializar Firebase
     firebase.initializeApp(firebaseConfig);
 
+    // Inicializar App Check com reCAPTCHA v3
+    const appCheck = firebase.appCheck();
+    appCheck.activate(
+      "6LfMobksAAAAAIwHePM83kRWY1nHAzUyK-hNFI_r", // Site Key
+      true, // autoRefresh
+    );
+
     // Inicializar serviços
     const auth = firebase.auth();
     const db = firebase.firestore();
@@ -39,9 +46,3 @@ if (!firebase.apps.length) {
   window.db = firebase.firestore();
   window.firebase = firebase;
 }
-
-// Inicializar App Check com reCAPTCHA v3
-const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider("COLE_AQUI_SUA_SITE_KEY_DO_RECAPTCHA"),
-  isTokenAutoRefreshEnabled: true, // Mantém o token sempre válido
-});
