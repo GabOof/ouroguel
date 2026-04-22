@@ -19,18 +19,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="
-    default-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com https://apis.google.com;
-    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.gstatic.com https://*.googleapis.com https://apis.google.com https://cdnjs.cloudflare.com;
-    style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
-    img-src 'self' data: https:;
-    connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com https://apis.google.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com wss://*.firebaseio.com;
-    font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:;
-    frame-src 'self' https://*.firebaseapp.com https://*.firebase.com;
-    object-src 'none';
-    base-uri 'self';
-    form-action 'self';
-  "
+      content="default-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com;
+              script-src 'self' https://*.gstatic.com https://cdnjs.cloudflare.com;
+              style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline';
+              img-src 'self' data:;
+              connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com;
+              font-src 'self' https://cdnjs.cloudflare.com data:;"
     />
 
     <title>Sistema Ouroguel - Locação de Equipamentos</title>
