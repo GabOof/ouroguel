@@ -1,3 +1,5 @@
+// firebase-config.js - Versão corrigida
+
 const firebaseConfig = {
   apiKey: "AIzaSyDxpJE_2EYqfRlDcRGOayd1ZmJqjHOs67U",
   authDomain: "ouroguel-1190.firebaseapp.com",
@@ -8,38 +10,49 @@ const firebaseConfig = {
   measurementId: "G-6LVN3Y4MV9",
 };
 
-// Inicialização única do Firebase
-if (!firebase.apps.length) {
-  try {
-    // Inicializar Firebase
-    firebase.initializeApp(firebaseConfig);
+// Função para inicializar o Firebase
+function inicializarFirebase() {
+  if (!firebase.apps.length) {
+    try {
+      // Inicializar Firebase
+      firebase.initializeApp(firebaseConfig);
 
-    // Inicializar App Check com reCAPTCHA v3
-    const appCheck = firebase.appCheck();
-    appCheck.activate(
-      "6LfMobksAAAAAIwHePM83kRWY1nHAzUyK-hNFI_r", // Site Key
-      true, // autoRefresh
-    );
+      // Inicializar App Check se disponível
+      if (firebase.appCheck && typeof firebase.appCheck === "function") {
+        const appCheck = firebase.appCheck();
+        appCheck.activate("6LfMobksAAAAAIwHePM83kRWY1nHAzUyK-hNFI_r", true);
+        console.log("✅ App Check inicializado");
+      } else {
+        console.warn("⚠️ App Check não disponível - continuando sem ele");
+      }
 
-    // Inicializar serviços
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+      // Inicializar serviços
+      const auth = firebase.auth();
+      const db = firebase.firestore();
 
-    // Configurar persistência LOCAL
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      // Configurar persistência LOCAL
+      auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-    // Tornar globalmente disponível
-    window.auth = auth;
-    window.db = db;
+      // Tornar globalmente disponível
+      window.auth = auth;
+      window.db = db;
+      window.firebase = firebase;
+
+      console.log("✅ Firebase inicializado com sucesso");
+    } catch (error) {
+      console.error("❌ Erro ao configurar Firebase:", error);
+    }
+  } else {
+    // Reutilizar instância existente
+    window.auth = firebase.auth();
+    window.db = firebase.firestore();
     window.firebase = firebase;
-
-    console.log("Firebase inicializado com sucesso");
-  } catch (error) {
-    console.error("Erro ao configurar Firebase:", error);
   }
+}
+
+// Aguardar o DOM e scripts carregarem
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", inicializarFirebase);
 } else {
-  // Reutilizar instância existente
-  window.auth = firebase.auth();
-  window.db = firebase.firestore();
-  window.firebase = firebase;
+  inicializarFirebase();
 }
