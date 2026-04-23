@@ -23,7 +23,7 @@ function inicializarFirebase() {
 
         // Ativar App Check com reCAPTCHA v3
         appCheck.activate(
-          "6LfMobksAAAAAIwHePM83kRWY1nHAzUyK-hNFI_r",
+          "6LcAJcUsAAAAAL6lNeot__sZ8bibNGXlVxFIwXbH",
           true, // autoRefresh
         );
 
