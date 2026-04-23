@@ -1,4 +1,4 @@
-// firebase-config.js - Versão corrigida
+// firebase-config.js - Versão corrigida para produção
 
 const firebaseConfig = {
   apiKey: "AIzaSyDxpJE_2EYqfRlDcRGOayd1ZmJqjHOs67U",
@@ -17,13 +17,19 @@ function inicializarFirebase() {
       // Inicializar Firebase
       firebase.initializeApp(firebaseConfig);
 
-      // Inicializar App Check se disponível
+      // Inicializar App Check
       if (firebase.appCheck && typeof firebase.appCheck === "function") {
         const appCheck = firebase.appCheck();
-        appCheck.activate("6LfMobksAAAAAIwHePM83kRWY1nHAzUyK-hNFI_r", true);
+
+        // Ativar App Check com reCAPTCHA v3
+        appCheck.activate(
+          "6LfMobksAAAAAIwHePM83kRWY1nHAzUyK-hNFI_r",
+          true, // autoRefresh
+        );
+
         console.log("✅ App Check inicializado");
       } else {
-        console.warn("⚠️ App Check não disponível - continuando sem ele");
+        console.warn("⚠️ App Check não disponível");
       }
 
       // Inicializar serviços
@@ -50,7 +56,7 @@ function inicializarFirebase() {
   }
 }
 
-// Aguardar o DOM e scripts carregarem
+// Inicializar quando a página carregar
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", inicializarFirebase);
 } else {
