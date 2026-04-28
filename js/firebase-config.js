@@ -1,6 +1,6 @@
 // ============================================
 // CONFIGURAÇÃO DO FIREBASE - OUROGUEL
-// Versão com App Check (modo debug)
+// Versão Final (sem App Check)
 // ============================================
 
 const firebaseConfig = {
@@ -21,28 +21,6 @@ if (!firebase.apps.length) {
   try {
     // Inicializar Firebase
     firebase.initializeApp(firebaseConfig);
-
-    // ============================================
-    // APP CHECK (modo debug - não bloqueia)
-    // ============================================
-    if (typeof firebase.appCheck === "function") {
-      // Debug token para desenvolvimento local
-      if (
-        window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1"
-      ) {
-        self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-      }
-
-      const appCheck = firebase.appCheck();
-      appCheck.activate(
-        "6LfMobksAAAAAIwHePM83kRWY1nHAzUyK-hNFI_r",
-        true, // autoRefresh
-      );
-      console.log("✅ App Check inicializado (modo monitoramento)");
-    } else {
-      console.warn("⚠️ App Check SDK não carregado");
-    }
 
     // Inicializar serviços
     const auth = firebase.auth();
@@ -65,7 +43,6 @@ if (!firebase.apps.length) {
     console.error("❌ Erro ao configurar Firebase:", error);
   }
 } else {
-  // Reutilizar instância existente
   window.auth = firebase.auth();
   window.db = firebase.firestore();
   window.firebase = firebase;
