@@ -33,8 +33,6 @@ if (!firebase.apps.length) {
     window.db = db;
     window.firebase = firebase;
 
-    console.log("✅ Firebase inicializado com sucesso");
-
     // ============================================
     // APP CHECK - COMENTADO PARA DEBUG
     // Descomente quando tudo estiver funcionando
@@ -46,7 +44,6 @@ if (!firebase.apps.length) {
         "6LfMobksAAAAAIwHePM83kRWY1nHAzUyK-hNFI_r",
         true
       );
-      console.log("✅ App Check ativado");
     }
     */
   } catch (error) {
