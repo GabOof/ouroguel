@@ -3,6 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Meta tag CSP  -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+    default-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com https://apis.google.com https://*.firebaseapp.com https://firestore.googleapis.com;
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.gstatic.com https://*.googleapis.com https://apis.google.com https://cdnjs.cloudflare.com https://www.gstatic.com https://www.googleapis.com https://accounts.google.com;
+    style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
+    img-src 'self' data: https: blob:;
+    connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com https://apis.google.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseappcheck.googleapis.com https://firestore.googleapis.com wss://*.firebaseio.com ws://127.0.0.1:*;
+    font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:;
+    frame-src 'self' https://*.firebaseapp.com https://*.firebase.com https://accounts.google.com;
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+  "
+    />
+
     <title>Imprimir Contrato - Sistema Ouroguel</title>
 
     <!-- CSS para impressão -->
@@ -347,8 +365,8 @@
 
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   </head>
   <body>
     <!-- Controles de impressão (não aparecem na impressão) -->
@@ -553,17 +571,17 @@
                         Endereço: Rua Exemplo, 123 - Centro - Cidade/SP
                     </div>
                 </div>
-                
+
                 <!-- Código do contrato -->
                 <div class="contract-code">
                     CONTRATO Nº: ${codigoContrato}
                 </div>
-                
+
                 <!-- Título do documento -->
                 <div class="document-title">
                     CONTRATO DE LOCAÇÃO DE EQUIPAMENTOS
                 </div>
-                
+
                 <!-- Seção: Dados do Contrato -->
                 <div class="section">
                     <div class="section-title">INFORMAÇÕES DO CONTRATO</div>
@@ -583,7 +601,7 @@
                         <tr>
                             <td class="label">Período de Locação:</td>
                             <td colspan="3">
-                                ${duracaoTexto} 
+                                ${duracaoTexto}
                                 (${
                                   aluguel.periodo === "hora"
                                     ? "Por Hora"
@@ -595,7 +613,7 @@
                         </tr>
                     </table>
                 </div>
-                
+
                 <!-- Seção: Dados do Cliente -->
                 <div class="section">
                     <div class="section-title">DADOS DO LOCATÁRIO (CLIENTE)</div>
@@ -625,7 +643,7 @@
                         <tr>
                             <td class="label">Endereço:</td>
                             <td colspan="3">
-                                ${cliente.endereco || ""} 
+                                ${cliente.endereco || ""}
                                 ${cliente.bairro ? ", " + cliente.bairro : ""}
                                 ${cliente.cidade ? " - " + cliente.cidade : ""}
                                 ${cliente.estado ? "/" + cliente.estado : ""}
@@ -634,11 +652,11 @@
                         </tr>
                     </table>
                 </div>
-                
+
                 <!-- Seção: Equipamentos Alugados -->
                 <div class="section">
                     <div class="section-title">EQUIPAMENTOS LOCADOS</div>
-                    
+
                     <table class="equipment-table">
                         <thead>
                             <tr>
@@ -672,7 +690,7 @@
                             `,
                               )
                               .join("")}
-                            
+
                             <!-- Linhas de totais -->
                             <tr class="total-row">
                                 <td colspan="3"></td>
@@ -691,13 +709,13 @@
                             </tr>
                         </tbody>
                     </table>
-                    
+
                     <div class="important">
-                        <strong>Valor Total por Extenso:</strong> 
+                        <strong>Valor Total por Extenso:</strong>
                         ${numeroPorExtenso(valorTotal)}
                     </div>
                 </div>
-                
+
                 <!-- Seção: Observações -->
                 ${
                   aluguel.observacoes
@@ -711,13 +729,13 @@
                 `
                     : ""
                 }
-                
+
                 <!-- Seção: Termos e Condições -->
                 <div class="section">
                     <div class="section-title">TERMOS E CONDIÇÕES</div>
                     <div class="terms">
                         <h3>CONDIÇÕES GERAIS DA LOCAÇÃO</h3>
-                        
+
                         <ul>
                             <li>O equipamento deverá ser devolvido na data combinada, em perfeitas condições de uso.</li>
                             <li>Atrasos na devolução serão cobrados proporcionalmente ao valor da diária.</li>
@@ -728,14 +746,14 @@
                             <li>O contrato poderá ser rescindido a qualquer momento pela locadora em caso de descumprimento.</li>
                             <li>Lei aplicável: Código Civil Brasileiro, artigos 565 a 578.</li>
                         </ul>
-                        
+
                         <div class="warning">
-                            <strong>ATENÇÃO:</strong> Verifique os equipamentos no ato da retirada. 
+                            <strong>ATENÇÃO:</strong> Verifique os equipamentos no ato da retirada.
                             Após a assinatura, qualquer avaria será considerada de responsabilidade do locatário.
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Seção: Assinaturas -->
                 <div class="section">
                     <div class="section-title">ASSINATURAS</div>
@@ -744,19 +762,19 @@
                             ______________________________
                             <p>LOCADOR (OUROGUEL LTDA)<br>Responsável</p>
                         </div>
-                        
+
                         <div class="signature-box">
                             ______________________________
                             <p>LOCATÁRIO (CLIENTE)<br>${cliente.nome || "Nome do Cliente"}</p>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Rodapé -->
                 <div class="footer">
                     <p>
-                        <strong>OUROGUEL LTDA</strong> | 
-                        CNPJ: 00.000.000/0001-00 | 
+                        <strong>OUROGUEL LTDA</strong> |
+                        CNPJ: 00.000.000/0001-00 |
                         Telefone: (11) 9999-9999<br>
                         Este documento foi gerado automaticamente pelo Sistema Ouroguel - TCC em IHC
                     </p>

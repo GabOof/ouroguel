@@ -31,6 +31,24 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
+
+    <!-- Meta tag CSP  -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+    default-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com https://apis.google.com https://*.firebaseapp.com https://firestore.googleapis.com;
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.gstatic.com https://*.googleapis.com https://apis.google.com https://cdnjs.cloudflare.com https://www.gstatic.com https://www.googleapis.com https://accounts.google.com;
+    style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
+    img-src 'self' data: https: blob:;
+    connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.gstatic.com https://apis.google.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseappcheck.googleapis.com https://firestore.googleapis.com wss://*.firebaseio.com ws://127.0.0.1:*;
+    font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:;
+    frame-src 'self' https://*.firebaseapp.com https://*.firebase.com https://accounts.google.com;
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+  "
+    />
+
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
