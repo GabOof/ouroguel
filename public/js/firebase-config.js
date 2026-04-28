@@ -1,5 +1,6 @@
 // ============================================
-// CONFIGURAÇÃO DO FIREBASE - Versão Simplificada
+// CONFIGURAÇÃO DO FIREBASE - OUROGUEL
+// Versão com App Check (modo debug)
 // ============================================
 
 const firebaseConfig = {
@@ -13,13 +14,35 @@ const firebaseConfig = {
 };
 
 // ============================================
-// INICIALIZAÇÃO (SEM APP CHECK POR ENQUANTO)
+// INICIALIZAÇÃO
 // ============================================
 
 if (!firebase.apps.length) {
   try {
     // Inicializar Firebase
     firebase.initializeApp(firebaseConfig);
+
+    // ============================================
+    // APP CHECK (modo debug - não bloqueia)
+    // ============================================
+    if (typeof firebase.appCheck === "function") {
+      // Debug token para desenvolvimento local
+      if (
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1"
+      ) {
+        self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+      }
+
+      const appCheck = firebase.appCheck();
+      appCheck.activate(
+        "6LfMobksAAAAAIwHePM83kRWY1nHAzUyK-hNFI_r",
+        true, // autoRefresh
+      );
+      console.log("✅ App Check inicializado (modo monitoramento)");
+    } else {
+      console.warn("⚠️ App Check SDK não carregado");
+    }
 
     // Inicializar serviços
     const auth = firebase.auth();
@@ -33,19 +56,11 @@ if (!firebase.apps.length) {
     window.db = db;
     window.firebase = firebase;
 
-    // ============================================
-    // APP CHECK - COMENTADO PARA DEBUG
-    // Descomente quando tudo estiver funcionando
-    // ============================================
-    /*
-    if (typeof firebase.appCheck === 'function') {
-      const appCheck = firebase.appCheck();
-      appCheck.activate(
-        "6LfMobksAAAAAIwHePM83kRWY1nHAzUyK-hNFI_r",
-        true
-      );
-    }
-    */
+    console.log("✅ Firebase inicializado com sucesso");
+    console.log(
+      "📍 Ambiente:",
+      window.location.hostname === "localhost" ? "Desenvolvimento" : "Produção",
+    );
   } catch (error) {
     console.error("❌ Erro ao configurar Firebase:", error);
   }
