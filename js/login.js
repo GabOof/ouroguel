@@ -294,20 +294,16 @@ async function handleRegister(e) {
 
 // ========== INICIALIZAÇÃO ==========
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("Inicializando página de login...");
-
   // Configurar formulário de login
   const loginForm = document.getElementById("loginForm");
   if (loginForm) {
     loginForm.addEventListener("submit", handleLogin);
-    console.log("✓ Formulário de login configurado");
   }
 
   // Configurar formulário de registro
   const registerForm = document.getElementById("registerForm");
   if (registerForm) {
     registerForm.addEventListener("submit", handleRegister);
-    console.log("✓ Formulário de registro configurado");
   }
 
   // Botões de mostrar senha
