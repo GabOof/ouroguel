@@ -564,6 +564,12 @@ td {
   .form-buttons {
     flex-direction: column;
   }
+
+  .logo img {
+    max-width: 280px;
+    width: 100%;
+    height: auto;
+  }
 }
 
 @media (max-width: 480px) {
@@ -581,6 +587,10 @@ td {
   .form-card,
   .list-card {
     padding: var(--spacing-md);
+  }
+
+  .logo img {
+    max-width: 200px;
   }
 }
 
