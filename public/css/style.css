@@ -116,6 +116,15 @@ a:hover {
   text-decoration: underline;
 }
 
+a:focus,
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 5px solid var(--warning-color) !important; /* laranja chamativo */
+  outline-offset: 5px !important;
+}
+
 /* ============================================
   CABEÇALHO
    ============================================ */
@@ -164,6 +173,12 @@ a:hover {
   background-color: var(--primary-color) !important;
   font-weight: 700;
   color: #ffffff;
+}
+
+.nav a:focus {
+  outline: 5px solid var(--warning-color) !important;
+  outline-offset: 5px !important;
+  background-color: rgba(243, 156, 18, 0.2) !important;
 }
 
 /* ============================================
