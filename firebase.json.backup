@@ -1,7 +1,0 @@
-{
-  "hosting": {
-    "public": "public",
-    "site": "ouroguel-1190",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
-  }
-}
