@@ -4,7 +4,7 @@
 :root {
   /* Cores principais - ALTO CONTRASTE */
   --primary-color: #356aab; /* Azul escuro */
-  --secondary-color: #c72424; /* Azul claro */
+  --secondary-color: #c72424; /* Vermelho */
   --accent-color: #c72424; /* Vermelho para destaque */
   --success-color: #27ae60; /* Verde */
   --warning-color: #f39c12; /* Amarelo/Laranja */
@@ -161,9 +161,9 @@ a:hover {
 }
 
 .nav a.active {
-  background-color: var(--secondary-color);
-  font-weight: 600;
-  color: var(--light-color);
+  background-color: var(--primary-color) !important;
+  font-weight: 700;
+  color: #ffffff;
 }
 
 /* ============================================
