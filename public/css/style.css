@@ -227,14 +227,17 @@ textarea:focus {
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--spacing-md);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
   margin-bottom: var(--spacing-lg);
+  align-items: start;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
+  gap: 0;
+  width: 100%;
 }
 
 .form-group.full-width {
@@ -631,23 +634,42 @@ td {
     max-width: 200px;
   }
 
-  .form-card {
+  form-card {
     background: white;
-    border-radius: var(--border-radius);
-    padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
     box-shadow: var(--shadow-sm);
     border: 1px solid #e0e0e0;
+    max-width: 100%;
   }
 
-  .form-card h3,
-  .form-card h4 {
-    border-bottom: 2px solid #eee;
-    padding-bottom: var(--spacing-sm);
-    margin-bottom: var(--spacing-md);
+  .form-card h3 {
+    border-bottom: 3px solid #eee;
+    padding-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
+    color: var(--primary-color);
+    font-size: var(--font-size-md);
+  }
+
+  .form-card h3 i {
+    color: var(--secondary-color);
+    font-size: 24px;
+  }
+
+  .form-card h4 {
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    margin-top: var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: var(--primary-color);
+    font-size: var(--font-size-sm);
   }
 }
 
@@ -1120,4 +1142,161 @@ td {
   .fieldset-legend {
     font-size: var(--font-size-sm);
   }
+}
+
+/* ============================================
+   CAMPOS MONETÁRIOS AMIGÁVEIS
+   ============================================ */
+.input-money-wrapper {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+
+.money-prefix {
+  background-color: #e9ecef;
+  border: 2px solid #ddd;
+  border-right: none;
+  padding: 0 15px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--primary-color);
+  border-radius: var(--border-radius) 0 0 var(--border-radius);
+  flex-shrink: 0;
+}
+
+.money-input {
+  border-radius: 0 var(--border-radius) var(--border-radius) 0 !important;
+  text-align: left;
+  font-size: var(--font-size-sm);
+  flex: 1;
+  width: 100%;
+}
+
+/* Corrigir foco nos campos monetários */
+.input-money-wrapper:focus-within {
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+  border-radius: var(--border-radius);
+}
+
+.input-money-wrapper:focus-within .money-prefix {
+  border-color: var(--secondary-color);
+}
+
+.input-money-wrapper:focus-within .money-input {
+  border-color: var(--secondary-color);
+}
+
+/* ============================================
+   RADIO CARDS - SELEÇÃO VISUAL CLARA
+   ============================================ */
+.radio-group-vertical {
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
+  width: max-content;
+  justify-content: space-around;
+  text-align: center;
+}
+
+.radio-card {
+  display: block;
+  cursor: pointer;
+  width: 100%;
+}
+
+.radio-card input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.radio-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border: 2px solid #e0e0e0;
+  border-radius: var(--border-radius);
+  transition: all 0.3s ease;
+  background: white;
+  width: max-content;
+  flex-direction: column;
+}
+
+.radio-content i {
+  font-size: 24px;
+  color: #999;
+  transition: color 0.3s ease;
+  min-width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.radio-card input[type="radio"]:focus + .radio-content {
+  outline: 3px solid var(--warning-color);
+  outline-offset: 2px;
+}
+
+.radio-card input[type="radio"]:checked + .radio-content {
+  border-color: var(--secondary-color);
+  background-color: rgba(52, 152, 219, 0.05);
+  box-shadow: var(--shadow-sm);
+}
+
+.radio-card input[type="radio"]:checked + .radio-content i {
+  color: var(--secondary-color);
+}
+
+.radio-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.radio-text strong {
+  font-size: var(--font-size-sm);
+  color: var(--dark-color);
+  display: block;
+}
+
+.radio-text small {
+  font-size: var(--font-size-xs);
+  color: var(--gray-color);
+  display: block;
+}
+
+/* Cores específicas por status */
+.radio-available input:checked + .radio-content {
+  border-color: var(--success-color);
+  background-color: rgba(46, 204, 113, 0.05);
+}
+
+.radio-available input:checked + .radio-content i {
+  color: var(--success-color);
+}
+
+.radio-unavailable input:checked + .radio-content {
+  border-color: var(--accent-color);
+  background-color: rgba(231, 76, 60, 0.05);
+}
+
+.radio-unavailable input:checked + .radio-content i {
+  color: var(--accent-color);
+}
+
+.radio-maintenance input:checked + .radio-content {
+  border-color: var(--warning-color);
+  background-color: rgba(243, 156, 18, 0.05);
+}
+
+.radio-maintenance input:checked + .radio-content i {
+  color: var(--warning-color);
 }
