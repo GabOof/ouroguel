@@ -1,20 +1,11 @@
-// ========== VARIÁVEIS GLOBAIS ==========
 let isProcessingLogin = false;
 let isProcessingRegister = false;
 
-// ========== LIMPAR ESTADO ANTERIOR ==========
-localStorage.removeItem("userLoggedIn");
-localStorage.removeItem("userEmail");
-localStorage.removeItem("userId");
-localStorage.removeItem("userRole");
-
-// ========== PREVENIR NAVEGAÇÃO PARA TRÁS ==========
 history.pushState(null, null, location.href);
 window.onpopstate = function () {
   history.go(1);
 };
 
-// ========== FUNÇÕES AUXILIARES ==========
 function togglePassword() {
   const passwordInput = document.getElementById("password");
   const eyeIcon = document.querySelector("#togglePasswordBtn i");
@@ -84,31 +75,39 @@ function forgotPassword() {
     });
 }
 
-// ========== FUNÇÃO DE LOGIN ==========
 async function handleLogin(e) {
   e.preventDefault();
 
-  if (isProcessingLogin) return;
+  if (isProcessingLogin) {
+    return;
+  }
+
   isProcessingLogin = true;
 
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
   const remember = document.getElementById("remember").checked;
 
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const textoOriginal = submitBtn.innerHTML;
+
   if (!email || !password) {
-    alert("Preencha todos os campos");
+    alert("Preencha todos os campos.");
     isProcessingLogin = false;
     return;
   }
 
   try {
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
-    submitBtn.disabled = true;
+    if (window.firebaseReady) {
+      await window.firebaseReady;
+    }
 
-    if (!window.auth) {
+    if (!window.auth || !window.db) {
       throw new Error("Sistema de autenticação não está disponível.");
     }
+
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
+    submitBtn.disabled = true;
 
     const persistence = remember
       ? firebase.auth.Auth.Persistence.LOCAL
@@ -120,9 +119,9 @@ async function handleLogin(e) {
       email,
       password,
     );
+
     const user = userCredential.user;
 
-    // Verificar/Atualizar documento do usuário
     const userRef = db.collection("usuarios").doc(user.uid);
     const userDoc = await userRef.get();
 
@@ -131,6 +130,7 @@ async function handleLogin(e) {
         nome: user.displayName || email.split("@")[0],
         email: email,
         role: "user",
+        status: "ativo",
         dataCriacao: new Date().toISOString(),
         ultimoLogin: new Date().toISOString(),
       });
@@ -140,21 +140,16 @@ async function handleLogin(e) {
       });
     }
 
-    localStorage.setItem("userLoggedIn", "true");
-    localStorage.setItem("userEmail", user.email);
-    localStorage.setItem("userId", user.uid);
-
-    setTimeout(() => {
-      window.location.href = "../index.html";
-    }, 1000);
+    window.location.replace("/index.html");
   } catch (error) {
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    submitBtn.innerHTML =
-      '<i class="fas fa-sign-in-alt"></i> Entrar no Sistema';
+    console.error("Erro no login:", error);
+
+    submitBtn.innerHTML = textoOriginal;
     submitBtn.disabled = false;
     isProcessingLogin = false;
 
-    let mensagem = "";
+    let mensagem;
+
     switch (error.code) {
       case "auth/user-not-found":
         mensagem = "Usuário não encontrado. Verifique o e-mail.";
@@ -180,11 +175,11 @@ async function handleLogin(e) {
       default:
         mensagem = "Erro ao fazer login: " + error.message;
     }
+
     alert(mensagem);
   }
 }
 
-// ========== FUNÇÃO DE REGISTRO ==========
 async function handleRegister(e) {
   e.preventDefault();
 
@@ -198,7 +193,6 @@ async function handleRegister(e) {
     "registerConfirmPassword",
   ).value;
 
-  // Validações
   if (!name || !email || !password || !confirmPassword) {
     alert("Preencha todos os campos");
     isProcessingRegister = false;
@@ -224,23 +218,24 @@ async function handleRegister(e) {
   submitBtn.disabled = true;
 
   try {
-    if (!window.auth || !window.db) {
-      throw new Error("Sistema de autenticação não está disponível");
+    if (window.firebaseReady) {
+      await window.firebaseReady;
     }
 
-    // 1. Criar usuário no Firebase Auth
+    if (!window.auth || !window.db) {
+      throw new Error("Sistema de autenticação não está disponível.");
+    }
+
     const userCredential = await auth.createUserWithEmailAndPassword(
       email,
       password,
     );
     const user = userCredential.user;
 
-    // 2. Atualizar perfil com nome
     await user.updateProfile({
       displayName: name,
     });
 
-    // 3. Criar documento no Firestore
     await db.collection("usuarios").doc(user.uid).set({
       nome: name,
       email: email,
@@ -250,7 +245,6 @@ async function handleRegister(e) {
       status: "ativo",
     });
 
-    // 4. Salvar no localStorage
     localStorage.setItem("userLoggedIn", "true");
     localStorage.setItem("userEmail", user.email);
     localStorage.setItem("userId", user.uid);
@@ -262,7 +256,6 @@ async function handleRegister(e) {
       window.location.href = "../index.html";
     }, 1500);
   } catch (error) {
-    // Restaurar botão
     submitBtn.innerHTML = originalText;
     submitBtn.disabled = false;
     isProcessingRegister = false;
@@ -292,21 +285,17 @@ async function handleRegister(e) {
   }
 }
 
-// ========== INICIALIZAÇÃO ==========
 document.addEventListener("DOMContentLoaded", function () {
-  // Configurar formulário de login
   const loginForm = document.getElementById("loginForm");
   if (loginForm) {
     loginForm.addEventListener("submit", handleLogin);
   }
 
-  // Configurar formulário de registro
   const registerForm = document.getElementById("registerForm");
   if (registerForm) {
     registerForm.addEventListener("submit", handleRegister);
   }
 
-  // Botões de mostrar senha
   const togglePasswordBtn = document.getElementById("togglePasswordBtn");
   if (togglePasswordBtn) {
     togglePasswordBtn.addEventListener("click", togglePassword);
@@ -319,7 +308,6 @@ document.addEventListener("DOMContentLoaded", function () {
     toggleRegisterPasswordBtn.addEventListener("click", toggleRegisterPassword);
   }
 
-  // Links de navegação
   const showRegisterLink = document.getElementById("showRegisterLink");
   if (showRegisterLink) {
     showRegisterLink.addEventListener("click", function (e) {
@@ -336,7 +324,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Link de recuperar senha
   const forgotPasswordLink = document.getElementById("forgotPasswordLink");
   if (forgotPasswordLink) {
     forgotPasswordLink.addEventListener("click", function (e) {
@@ -345,14 +332,12 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Focar no campo de email automaticamente
   const emailInput = document.getElementById("email");
   if (emailInput) {
     setTimeout(() => emailInput.focus(), 100);
   }
 });
 
-// ========== EXPORTAR FUNÇÕES ==========
 window.togglePassword = togglePassword;
 window.toggleRegisterPassword = toggleRegisterPassword;
 window.showRegister = showRegister;
