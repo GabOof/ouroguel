@@ -2,20 +2,8 @@ let equipamentos = [];
 let equipamentoEditando = null;
 
 // ============================================
-// FUNÇÕES AUXILIARES
+// FUNÇÕES AUXILIARES DE INTERFACE
 // ============================================
-
-async function aguardarFirebaseEquipamentos() {
-  if (window.firebaseReady) {
-    await window.firebaseReady;
-  }
-
-  if (!window.db) {
-    throw new Error("Firestore não inicializado.");
-  }
-
-  return window.db;
-}
 
 function valorCampo(id) {
   const campo = document.getElementById(id);
@@ -89,7 +77,6 @@ function marcarStatus(status) {
 function coletarDadosEquipamento() {
   return {
     nomeEquipamento: valorCampo("nomeEquipamento"),
-    nomeBusca: valorCampo("nomeEquipamento").toLowerCase(),
     categoria: valorCampo("categoria"),
     quantidadeTotal: parseInt(valorCampo("quantidadeTotal"), 10) || 0,
     valorHora: parseMoedaBR(valorCampo("valorHora")),
@@ -133,6 +120,8 @@ function validarEquipamento(dados) {
 }
 
 function obterStatusVisual(equipamento) {
+  const quantidadeDisponivel = Number(equipamento.quantidadeDisponivel || 0);
+
   if (equipamento.status === "indisponivel") {
     return {
       classe: "status-unavailable",
@@ -149,7 +138,7 @@ function obterStatusVisual(equipamento) {
     };
   }
 
-  if ((equipamento.quantidadeDisponivel || 0) <= 0) {
+  if (quantidadeDisponivel <= 0) {
     return {
       classe: "status-unavailable",
       icone: "fa-times-circle",
@@ -163,6 +152,20 @@ function obterStatusVisual(equipamento) {
     texto: "Disponível",
   };
 }
+
+async function aguardarDependenciasEquipamentos() {
+  if (window.firebaseReady) {
+    await window.firebaseReady;
+  }
+
+  if (!window.EquipamentoService) {
+    throw new Error("EquipamentoService não foi carregado.");
+  }
+}
+
+// ============================================
+// CONFIGURAÇÃO DA TELA
+// ============================================
 
 function configurarFormularioEquipamento() {
   const form = document.getElementById("equipamentoForm");
@@ -192,13 +195,9 @@ function configurarFormularioEquipamento() {
   marcarStatus("disponivel");
 }
 
-// ============================================
-// INICIALIZAÇÃO
-// ============================================
-
 document.addEventListener("DOMContentLoaded", async function () {
   try {
-    await aguardarFirebaseEquipamentos();
+    await aguardarDependenciasEquipamentos();
 
     configurarFormularioEquipamento();
 
@@ -206,16 +205,17 @@ document.addEventListener("DOMContentLoaded", async function () {
     await atualizarEstatisticas();
   } catch (error) {
     console.error("Erro ao inicializar equipamentos:", error);
+
     mostrarMensagem(
       "Erro",
-      "Não foi possível inicializar a tela de equipamentos.",
+      "Não foi possível inicializar a tela de equipamentos: " + error.message,
       "error",
     );
   }
 });
 
 // ============================================
-// CRUD
+// CRUD DE INTERFACE
 // ============================================
 
 async function salvarEquipamento(event) {
@@ -230,53 +230,11 @@ async function salvarEquipamento(event) {
   }
 
   try {
-    const db = await aguardarFirebaseEquipamentos();
-
     if (equipamentoEditando) {
-      const equipamentoRef = db
-        .collection("equipamentos")
-        .doc(equipamentoEditando);
-
-      const equipamentoAtual = await equipamentoRef.get();
-
-      if (!equipamentoAtual.exists) {
-        mostrarMensagem("Erro", "Equipamento não encontrado.", "error");
-        return;
-      }
-
-      const dadosAtuais = equipamentoAtual.data();
-      const quantidadeAlugada = Number(dadosAtuais.quantidadeAlugada || 0);
-
-      if (dadosEquipamento.quantidadeTotal < quantidadeAlugada) {
-        mostrarMensagem(
-          "Erro",
-          `Não é possível definir quantidade total menor que a quantidade alugada atual (${quantidadeAlugada}).`,
-          "error",
-        );
-        return;
-      }
-
-      await equipamentoRef.update({
-        ...dadosEquipamento,
-        quantidadeAlugada,
-        quantidadeDisponivel:
-          dadosEquipamento.quantidadeTotal - quantidadeAlugada,
-        atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-      });
-
+      await EquipamentoService.atualizar(equipamentoEditando, dadosEquipamento);
       mostrarMensagem("Sucesso", "Equipamento atualizado com sucesso!");
     } else {
-      await db.collection("equipamentos").add({
-        ...dadosEquipamento,
-        quantidadeDisponivel: dadosEquipamento.quantidadeTotal,
-        quantidadeAlugada: 0,
-        quantidadeManutencao: 0,
-        ativo: true,
-        dataCadastro: new Date().toISOString(),
-        criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-        atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-      });
-
+      await EquipamentoService.criar(dadosEquipamento);
       mostrarMensagem("Sucesso", "Equipamento cadastrado com sucesso!");
     }
 
@@ -303,8 +261,6 @@ async function carregarEquipamentos() {
   }
 
   try {
-    const db = await aguardarFirebaseEquipamentos();
-
     equipamentosList.innerHTML = `
       <tr>
         <td colspan="6" style="text-align: center; padding: 40px;">
@@ -314,14 +270,9 @@ async function carregarEquipamentos() {
       </tr>
     `;
 
-    const snapshot = await db
-      .collection("equipamentos")
-      .orderBy("nomeEquipamento")
-      .get();
+    equipamentos = await EquipamentoService.listar();
 
-    equipamentos = [];
-
-    if (snapshot.empty) {
+    if (!equipamentos.length) {
       equipamentosList.innerHTML = `
         <tr>
           <td colspan="6" class="empty-message">
@@ -333,13 +284,6 @@ async function carregarEquipamentos() {
       return;
     }
 
-    snapshot.forEach((doc) => {
-      equipamentos.push({
-        id: doc.id,
-        ...doc.data(),
-      });
-    });
-
     equipamentosList.innerHTML = equipamentos
       .map((equipamento) => {
         const status = obterStatusVisual(equipamento);
@@ -347,6 +291,7 @@ async function carregarEquipamentos() {
         const nome = escaparHTMLLocal(equipamento.nomeEquipamento);
         const categoria = escaparHTMLLocal(equipamento.categoria);
         const observacoes = escaparHTMLLocal(equipamento.observacoes || "");
+
         const observacoesResumo =
           observacoes.length > 50
             ? observacoes.substring(0, 50) + "..."
@@ -428,16 +373,13 @@ function buscarEquipamentos() {
 
 async function editarEquipamento(equipamentoId) {
   try {
-    const db = await aguardarFirebaseEquipamentos();
+    const equipamento = await EquipamentoService.obterPorId(equipamentoId);
 
-    const doc = await db.collection("equipamentos").doc(equipamentoId).get();
-
-    if (!doc.exists) {
+    if (!equipamento) {
       mostrarMensagem("Erro", "Equipamento não encontrado.", "error");
       return;
     }
 
-    const equipamento = doc.data();
     equipamentoEditando = equipamentoId;
 
     preencherCampo("nomeEquipamento", equipamento.nomeEquipamento);
@@ -494,24 +436,7 @@ async function excluirEquipamento(equipamentoId) {
   }
 
   try {
-    const db = await aguardarFirebaseEquipamentos();
-
-    const alugueisSnapshot = await db
-      .collection("alugueis")
-      .where("equipamentosIds", "array-contains", equipamentoId)
-      .where("status", "==", "ativo")
-      .get();
-
-    if (!alugueisSnapshot.empty) {
-      mostrarMensagem(
-        "Atenção",
-        "Não é possível excluir este equipamento, pois existem aluguéis ativos relacionados a ele.",
-        "warning",
-      );
-      return;
-    }
-
-    await db.collection("equipamentos").doc(equipamentoId).delete();
+    await EquipamentoService.excluir(equipamentoId);
 
     mostrarMensagem("Sucesso", "Equipamento excluído com sucesso!");
 
@@ -533,39 +458,13 @@ function selecionarEquipamentoParaAluguel(equipamentoId) {
   window.location.href = "aluguel.html";
 }
 
+// ============================================
+// ESTATÍSTICAS
+// ============================================
+
 async function atualizarEstatisticas() {
   try {
-    const db = await aguardarFirebaseEquipamentos();
-
-    const snapshot = await db.collection("equipamentos").get();
-
-    let totalEquipamentos = 0;
-    let totalDisponivel = 0;
-    let totalIndisponivel = 0;
-    let totalManutencao = 0;
-
-    snapshot.forEach((doc) => {
-      const equipamento = doc.data();
-
-      const quantidadeTotal = Number(equipamento.quantidadeTotal || 0);
-      const quantidadeDisponivel = Number(
-        equipamento.quantidadeDisponivel || 0,
-      );
-
-      totalEquipamentos += quantidadeTotal;
-
-      if (equipamento.status === "disponivel") {
-        totalDisponivel += quantidadeDisponivel;
-      }
-
-      if (equipamento.status === "indisponivel") {
-        totalIndisponivel += quantidadeTotal;
-      }
-
-      if (equipamento.status === "manutencao") {
-        totalManutencao += quantidadeTotal;
-      }
-    });
+    const estatisticas = await EquipamentoService.obterEstatisticas();
 
     const totalEquipamentosEl = document.getElementById("totalEquipamentos");
     const totalDisponivelEl = document.getElementById("totalDisponivel");
@@ -573,24 +472,28 @@ async function atualizarEstatisticas() {
     const totalManutencaoEl = document.getElementById("totalManutencao");
 
     if (totalEquipamentosEl) {
-      totalEquipamentosEl.textContent = totalEquipamentos;
+      totalEquipamentosEl.textContent = estatisticas.totalEquipamentos;
     }
 
     if (totalDisponivelEl) {
-      totalDisponivelEl.textContent = totalDisponivel;
+      totalDisponivelEl.textContent = estatisticas.totalDisponivel;
     }
 
     if (totalIndisponivelEl) {
-      totalIndisponivelEl.textContent = totalIndisponivel;
+      totalIndisponivelEl.textContent = estatisticas.totalIndisponivel;
     }
 
     if (totalManutencaoEl) {
-      totalManutencaoEl.textContent = totalManutencao;
+      totalManutencaoEl.textContent = estatisticas.totalManutencao;
     }
   } catch (error) {
     console.error("Erro ao atualizar estatísticas:", error);
   }
 }
+
+// ============================================
+// LIMPEZA
+// ============================================
 
 function limparFormularioEquipamento() {
   const form = document.getElementById("equipamentoForm");
