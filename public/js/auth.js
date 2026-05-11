@@ -1,314 +1,262 @@
-// auth.js
-// Variáveis globais para estado
-let isInitialized = false;
 let currentUser = null;
+let authInitialized = false;
 
-// Função para verificar se estamos na página de login
 function isLoginPage() {
-  const currentPath = window.location.pathname;
-  return (
-    currentPath.includes("login.html") ||
-    currentPath.includes("pages/login.html")
-  );
+  return window.location.pathname.includes("/pages/login.html");
 }
 
-// Função para verificar se estamos na página de impressão
 function isPrintPage() {
-  const currentPath = window.location.pathname;
-  return (
-    currentPath.includes("imprimir.html") ||
-    currentPath.includes("pages/imprimir.html")
-  );
+  return window.location.pathname.includes("/pages/imprimir.html");
 }
 
-// Função para atualizar a barra do usuário
+function getLoginPath() {
+  return "/pages/login.html";
+}
+
+function getHomePath() {
+  return "/index.html";
+}
+
+async function aguardarFirebaseAuth() {
+  if (window.firebaseReady) {
+    await window.firebaseReady;
+  }
+
+  if (!window.auth || !window.db) {
+    throw new Error("Firebase Auth ou Firestore não inicializado.");
+  }
+
+  return {
+    auth: window.auth,
+    db: window.db,
+  };
+}
+
+function limparSessaoLocal() {
+  localStorage.removeItem("userLoggedIn");
+  localStorage.removeItem("userEmail");
+  localStorage.removeItem("userId");
+  localStorage.removeItem("userName");
+  localStorage.removeItem("userRole");
+}
+
+function salvarSessaoLocal(user, userData = {}) {
+  const nome = userData.nome || user.displayName || user.email.split("@")[0];
+  const role = userData.role || "user";
+
+  localStorage.setItem("userLoggedIn", "true");
+  localStorage.setItem("userEmail", user.email);
+  localStorage.setItem("userId", user.uid);
+  localStorage.setItem("userName", nome);
+  localStorage.setItem("userRole", role);
+
+  return {
+    id: user.uid,
+    nome,
+    email: user.email,
+    role,
+  };
+}
+
+function setupLogoutButton() {
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  if (!logoutBtn) {
+    return;
+  }
+
+  const novoBotao = logoutBtn.cloneNode(true);
+  logoutBtn.parentNode.replaceChild(novoBotao, logoutBtn);
+
+  novoBotao.addEventListener("click", function (event) {
+    event.preventDefault();
+    logout();
+  });
+}
+
 function updateUserBar(userInfo) {
+  const userBar = document.getElementById("userBar");
   const userBarName = document.getElementById("userBarName");
   const userBarEmail = document.getElementById("userBarEmail");
   const userRoleText = document.getElementById("userRoleText");
-  const userBar = document.getElementById("userBar");
 
-  if (!userBar) return; // Se não tem barra de usuário na página
-
-  if (userInfo) {
-    // Atualizar nome
-    if (userBarName) userBarName.textContent = userInfo.nome || "Usuário";
-
-    // Atualizar email
-    if (userBarEmail) userBarEmail.textContent = userInfo.email || "";
-
-    // Atualizar role
-    if (userRoleText) {
-      const roleDisplay =
-        userInfo.role === "admin" ? "Administrador" : "Usuário";
-      userRoleText.textContent = roleDisplay;
-    }
-
-    // Mostrar a barra
-    userBar.style.display = "block";
-  } else {
-    // Esconder a barra se não tem usuário
-    userBar.style.display = "none";
+  if (!userBar) {
+    return;
   }
+
+  if (!userInfo) {
+    userBar.style.display = "none";
+    return;
+  }
+
+  if (userBarName) {
+    userBarName.textContent = userInfo.nome || "Usuário";
+  }
+
+  if (userBarEmail) {
+    userBarEmail.textContent = userInfo.email || "";
+  }
+
+  if (userRoleText) {
+    userRoleText.textContent =
+      userInfo.role === "admin" ? "Administrador" : "Usuário";
+  }
+
+  userBar.style.display = "block";
+  setupLogoutButton();
 }
 
-// Função para inicializar autenticação
+async function buscarOuCriarUsuario(user) {
+  const { db } = await aguardarFirebaseAuth();
+
+  const userRef = db.collection("usuarios").doc(user.uid);
+  const userDoc = await userRef.get();
+
+  if (userDoc.exists) {
+    const dados = userDoc.data();
+
+    await userRef.update({
+      ultimoLogin: new Date().toISOString(),
+    });
+
+    return dados;
+  }
+
+  const novoUsuario = {
+    nome: user.displayName || user.email.split("@")[0],
+    email: user.email,
+    role: "user",
+    status: "ativo",
+    dataCriacao: new Date().toISOString(),
+    ultimoLogin: new Date().toISOString(),
+  };
+
+  await userRef.set(novoUsuario);
+
+  return novoUsuario;
+}
+
 async function initializeAuth() {
+  if (authInitialized) {
+    return;
+  }
+
   try {
-    if (isInitialized) return;
+    const { auth } = await aguardarFirebaseAuth();
 
-    if (!window.db || !window.auth) {
-      setTimeout(initializeAuth, 500);
-      return;
-    }
+    authInitialized = true;
 
-    auth.onAuthStateChanged(async (user) => {
+    auth.onAuthStateChanged(async function (user) {
       currentUser = user;
-      isInitialized = true;
 
       if (user) {
-        localStorage.setItem("userLoggedIn", "true");
-        localStorage.setItem("userEmail", user.email);
-        localStorage.setItem("userId", user.uid);
-
-        // Carregar informações do usuário do Firestore
         try {
-          const userDoc = await db.collection("usuarios").doc(user.uid).get();
+          const userData = await buscarOuCriarUsuario(user);
+          const userInfo = salvarSessaoLocal(user, userData);
 
-          if (userDoc.exists) {
-            const userData = userDoc.data();
-            const nome =
-              userData.nome || user.displayName || user.email.split("@")[0];
+          updateUserBar(userInfo);
 
-            localStorage.setItem("userName", nome);
-            localStorage.setItem("userRole", userData.role || "user");
-
-            // Atualizar barra do usuário
-            updateUserBar({
-              nome: nome,
-              email: user.email,
-              role: userData.role || "user",
-            });
-          } else {
-            // Criar documento do usuário se não existir
-            const userData = {
-              nome: user.displayName || user.email.split("@")[0],
-              email: user.email,
-              role: "user",
-              dataCriacao: new Date().toISOString(),
-            };
-
-            await db.collection("usuarios").doc(user.uid).set(userData);
-
-            localStorage.setItem("userName", userData.nome);
-            localStorage.setItem("userRole", "user");
-
-            // Atualizar barra do usuário
-            updateUserBar({
-              nome: userData.nome,
-              email: user.email,
-              role: "user",
-            });
+          if (isLoginPage()) {
+            window.location.replace(getHomePath());
           }
         } catch (error) {
-          console.error("Erro ao carregar dados do usuário:", error);
+          console.error("Erro ao carregar perfil do usuário:", error);
 
-          // Fallback para dados básicos
-          const nome = user.displayName || user.email.split("@")[0];
-          localStorage.setItem("userName", nome);
-          localStorage.setItem("userRole", "user");
-
-          updateUserBar({
-            nome: nome,
-            email: user.email,
+          const userInfo = salvarSessaoLocal(user, {
+            nome: user.displayName || user.email.split("@")[0],
             role: "user",
           });
+
+          updateUserBar(userInfo);
+
+          if (isLoginPage()) {
+            window.location.replace(getHomePath());
+          }
         }
 
-        // Redirecionar se estiver na página de login
-        if (isLoginPage() && !window.blockLoginRedirect) {
-          setTimeout(() => {
-            window.location.href = "../index.html";
-          }, 1000);
-          return;
-        }
-      } else {
-        // Usuário não logado
-        localStorage.removeItem("userLoggedIn");
-        localStorage.removeItem("userEmail");
-        localStorage.removeItem("userId");
-        localStorage.removeItem("userName");
-        localStorage.removeItem("userRole");
+        return;
+      }
 
-        // Esconder barra do usuário
-        updateUserBar(null);
+      limparSessaoLocal();
+      updateUserBar(null);
 
-        // Redirecionar se não estiver na página de login
-        if (!isLoginPage() && !isPrintPage()) {
-          setTimeout(() => {
-            window.location.href = "pages/login.html";
-          }, 1000);
-        }
+      if (!isLoginPage() && !isPrintPage()) {
+        window.location.replace(getLoginPath());
       }
     });
   } catch (error) {
-    console.error("Erro ao inicializar auth:", error);
+    console.error("Erro ao inicializar autenticação:", error);
+
+    if (!isLoginPage() && !isPrintPage()) {
+      window.location.replace(getLoginPath());
+    }
   }
 }
 
-// Função para verificar se usuário está logado
 function isUserLoggedIn() {
-  return !!currentUser || !!auth?.currentUser;
+  return !!currentUser || !!window.auth?.currentUser;
 }
 
-// Função para verificar login e proteger páginas
-function protectPage() {
-  if (isLoginPage() || isPrintPage()) {
-    return true;
-  }
-
-  if (!isUserLoggedIn()) {
-    window.location.href = "pages/login.html";
-    return false;
-  }
-
-  return true;
-}
-
-// Função para logout
-function logout() {
-  if (!auth) return;
-
-  if (confirm("Deseja sair do sistema?")) {
-    auth
-      .signOut()
-      .then(() => {
-        localStorage.clear();
-        window.location.href = "pages/login.html";
-      })
-      .catch((error) => {
-        alert("Erro ao sair do sistema: " + error.message);
-      });
-  }
-}
-
-// Função para obter informações do usuário
 async function getUserInfo() {
-  if (!isUserLoggedIn()) return null;
-
-  const user = auth.currentUser;
-  if (!user) return null;
-
   try {
-    const userDoc = await db.collection("usuarios").doc(user.uid).get();
+    const { auth } = await aguardarFirebaseAuth();
 
-    if (userDoc.exists) {
-      const data = userDoc.data();
-      return {
-        id: user.uid,
-        email: user.email,
-        nome: data.nome || user.displayName || user.email.split("@")[0],
-        role: data.role || "user",
-      };
+    const user = auth.currentUser;
+
+    if (!user) {
+      return null;
     }
 
-    const userData = {
-      nome: user.displayName || user.email.split("@")[0],
-      email: user.email,
-      role: "user",
-      dataCriacao: new Date().toISOString(),
-    };
-
-    await db.collection("usuarios").doc(user.uid).set(userData);
+    const userData = await buscarOuCriarUsuario(user);
 
     return {
       id: user.uid,
       email: user.email,
-      nome: user.displayName || user.email.split("@")[0],
-      role: "user",
+      nome: userData.nome || user.displayName || user.email.split("@")[0],
+      role: userData.role || "user",
     };
   } catch (error) {
-    console.error("Erro ao buscar usuário:", error);
+    console.error("Erro ao buscar informações do usuário:", error);
     return null;
   }
 }
 
-// Função para carregar perfil do usuário (mantida para compatibilidade)
 async function loadUserProfile() {
   const userInfo = await getUserInfo();
+
   if (userInfo) {
     updateUserBar(userInfo);
   }
 }
 
-// Inicialização quando a página carrega
-document.addEventListener("DOMContentLoaded", function () {
-  const isLogin = isLoginPage();
+async function logout() {
+  const confirmar = confirm("Deseja sair do sistema?");
 
-  if (isLogin) window.blockLoginRedirect = true;
-
-  if (typeof firebase === "undefined") {
-    setTimeout(() => {
-      if (typeof firebase !== "undefined") initializeAuth();
-    }, 1000);
+  if (!confirmar) {
     return;
   }
 
-  initializeAuth();
+  try {
+    const { auth } = await aguardarFirebaseAuth();
 
-  if (!isLogin && !isPrintPage()) {
-    setTimeout(() => protectPage(), 1000);
+    await auth.signOut();
+
+    limparSessaoLocal();
+
+    window.location.replace(getLoginPath());
+  } catch (error) {
+    console.error("Erro ao sair:", error);
+    alert("Erro ao sair do sistema: " + error.message);
   }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  initializeAuth();
 });
 
-// Adicione esta função no auth.js
-function setupLogoutButton() {
-  const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) {
-    // Remove listeners antigos para não duplicar
-    const newLogoutBtn = logoutBtn.cloneNode(true);
-    logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
-
-    // Adiciona listener novo
-    newLogoutBtn.addEventListener("click", function (e) {
-      e.preventDefault();
-      logout(); // Chama a função logout do auth.js
-    });
-  }
-}
-
-// E modifique a função updateUserBar para configurar o botão:
-function updateUserBar(userInfo) {
-  const userBarName = document.getElementById("userBarName");
-  const userBarEmail = document.getElementById("userBarEmail");
-  const userRoleText = document.getElementById("userRoleText");
-  const userBar = document.getElementById("userBar");
-
-  if (!userBar) return;
-
-  if (userInfo) {
-    if (userBarName) userBarName.textContent = userInfo.nome || "Usuário";
-    if (userBarEmail) userBarEmail.textContent = userInfo.email || "";
-
-    if (userRoleText) {
-      const roleDisplay =
-        userInfo.role === "admin" ? "Administrador" : "Usuário";
-      userRoleText.textContent = roleDisplay;
-    }
-
-    userBar.style.display = "block";
-
-    // Configurar botão de logout
-    setupLogoutButton();
-  } else {
-    userBar.style.display = "none";
-  }
-}
-
-// Exportar funções para uso global
 window.logout = logout;
 window.isUserLoggedIn = isUserLoggedIn;
 window.getUserInfo = getUserInfo;
 window.loadUserProfile = loadUserProfile;
-window.isLoginPage = isLoginPage;
-window.updateUserBar = updateUserBar; // Exportar a nova função
+window.updateUserBar = updateUserBar;
+window.initializeAuth = initializeAuth;
