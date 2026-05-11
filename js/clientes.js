@@ -145,7 +145,7 @@ async function salvarCliente(event) {
   }
 
   try {
-    const cpfDuplicado = await ClienteService.cpfJaExiste(
+    const cpfDuplicado = await clientesService.cpfJaExiste(
       dadosCliente.cpfLimpo,
       clienteEditando,
     );
@@ -161,10 +161,10 @@ async function salvarCliente(event) {
     }
 
     if (clienteEditando) {
-      await ClienteService.atualizar(clienteEditando, dadosCliente);
+      await clientesService.atualizar(clienteEditando, dadosCliente);
       mostrarMensagem("Sucesso", "Cliente atualizado com sucesso!");
     } else {
-      await ClienteService.criar(dadosCliente);
+      await clientesService.criar(dadosCliente);
       mostrarMensagem("Sucesso", "Cliente cadastrado com sucesso!");
     }
 
@@ -198,7 +198,7 @@ async function carregarClientes() {
       </tr>
     `;
 
-    clientes = await ClienteService.listar();
+    clientes = await clientesService.listar();
 
     if (!clientes.length) {
       clientesList.innerHTML = `
@@ -278,7 +278,7 @@ function buscarClientes() {
 
 async function editarCliente(clienteId) {
   try {
-    const cliente = await ClienteService.obterPorId(clienteId);
+    const cliente = await clientesService.obterPorId(clienteId);
 
     if (!cliente) {
       mostrarMensagem("Erro", "Cliente não encontrado.", "error");
@@ -344,7 +344,7 @@ async function excluirCliente(clienteId) {
   }
 
   try {
-    await ClienteService.excluir(clienteId);
+    await clientesService.excluir(clienteId);
 
     mostrarMensagem("Sucesso", "Cliente excluído com sucesso!");
 

@@ -53,7 +53,7 @@
     };
   }
 
-  window.ClienteService = {
+  window.clientesService = {
     async listar() {
       const db = await getDb();
 
