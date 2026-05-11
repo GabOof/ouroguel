@@ -10,9 +10,21 @@ async function aguardarFirebaseEstoque() {
     await window.firebaseReady;
   }
 
-  if (!window.db) {
-    throw new Error("Firestore não inicializado.");
+  if (!window.db || !window.auth) {
+    throw new Error("Firebase Auth ou Firestore não inicializado.");
   }
+
+  const user = await new Promise((resolve, reject) => {
+    const unsubscribe = window.auth.onAuthStateChanged((usuario) => {
+      unsubscribe();
+
+      if (usuario) {
+        resolve(usuario);
+      } else {
+        reject(new Error("Usuário não autenticado no Firebase Auth."));
+      }
+    });
+  });
 
   return window.db;
 }
