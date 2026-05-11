@@ -497,7 +497,7 @@ async function excluirEquipamento(equipamentoId) {
 
     const alugueisSnapshot = await db
       .collection("alugueis")
-      .where("equipamentos", "array-contains", equipamentoId)
+      .where("equipamentosIds", "array-contains", equipamentoId)
       .where("status", "==", "ativo")
       .get();
 
