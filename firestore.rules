@@ -1,0 +1,30 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function usuarioAutenticado() {
+      return request.auth != null;
+    }
+
+    match /clientes/{clienteId} {
+      allow read, create, update, delete: if usuarioAutenticado();
+    }
+
+    match /equipamentos/{equipamentoId} {
+      allow read, create, update, delete: if usuarioAutenticado();
+    }
+
+    match /alugueis/{aluguelId} {
+      allow read, create, update, delete: if usuarioAutenticado();
+    }
+
+    match /estoque/{estoqueId} {
+      allow read, create, update, delete: if usuarioAutenticado();
+    }
+
+    match /usuarios/{usuarioId} {
+      allow read, create, update, delete: if usuarioAutenticado();
+    }
+  }
+}
