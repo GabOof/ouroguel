@@ -19,7 +19,11 @@ service cloud.firestore {
       allow read, create, update, delete: if usuarioAutenticado();
     }
 
-    match /historico_ajustes/{ajusteId} {
+    match /estoque/{estoqueId} {
+      allow read, create, update, delete: if usuarioAutenticado();
+    }
+
+        match /historico_ajustes/{ajusteId} {
       allow read, create, update, delete: if usuarioAutenticado();
     }
 
