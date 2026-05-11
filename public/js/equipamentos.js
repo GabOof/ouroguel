@@ -270,6 +270,7 @@ async function salvarEquipamento(event) {
         ...dadosEquipamento,
         quantidadeDisponivel: dadosEquipamento.quantidadeTotal,
         quantidadeAlugada: 0,
+        quantidadeManutencao: 0,
         ativo: true,
         dataCadastro: new Date().toISOString(),
         criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
