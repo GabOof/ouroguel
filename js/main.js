@@ -1,6 +1,15 @@
-// main.js - Funcionalidades gerais do sistema
+async function aguardarFirebase() {
+  if (window.firebaseReady) {
+    await window.firebaseReady;
+  }
 
-// Função para formatar data
+  if (!window.db) {
+    throw new Error("Firestore não foi inicializado.");
+  }
+
+  return window.db;
+}
+
 function formatarData(data) {
   if (!data) return "";
 
@@ -8,7 +17,6 @@ function formatarData(data) {
   return dataObj.toLocaleDateString("pt-BR");
 }
 
-// Função para formatar moeda
 function formatarMoeda(valor) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -16,40 +24,53 @@ function formatarMoeda(valor) {
   }).format(valor || 0);
 }
 
-// Função para mostrar mensagem de sucesso
+function escaparHTML(valor) {
+  const div = document.createElement("div");
+  div.textContent = String(valor || "");
+  return div.innerHTML;
+}
+
 function mostrarMensagem(titulo, mensagem, tipo = "success") {
-  // Remove mensagens anteriores
   const mensagensAntigas = document.querySelectorAll(".alert-flutuante");
   mensagensAntigas.forEach((msg) => msg.remove());
 
-  // Cria nova mensagem
+  const tituloSeguro = escaparHTML(titulo);
+  const mensagemSegura = escaparHTML(mensagem);
+
+  const icone =
+    tipo === "success"
+      ? "check-circle"
+      : tipo === "info"
+        ? "info-circle"
+        : tipo === "warning"
+          ? "exclamation-triangle"
+          : "exclamation-circle";
+
   const alertDiv = document.createElement("div");
   alertDiv.className = `alert alert-${tipo} alert-flutuante`;
+
   alertDiv.innerHTML = `
-        <i class="fas fa-${tipo === "success" ? "check-circle" : "exclamation-circle"}"></i>
-        <div>
-            <strong>${titulo}</strong>
-            <p>${mensagem}</p>
-        </div>
-        <button onclick="this.parentElement.remove()" style="background:none; border:none; cursor:pointer;">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
+    <i class="fas fa-${icone}"></i>
+    <div>
+      <strong>${tituloSeguro}</strong>
+      <p>${mensagemSegura}</p>
+    </div>
+    <button type="button" aria-label="Fechar mensagem" onclick="this.parentElement.remove()" style="background:none; border:none; cursor:pointer;">
+      <i class="fas fa-times"></i>
+    </button>
+  `;
 
-  // Estilo para mensagem flutuante
   alertDiv.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        max-width: 400px;
-        animation: slideIn 0.3s ease;
-    `;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 400px;
+    animation: slideIn 0.3s ease;
+  `;
 
-  // Adiciona ao corpo
   document.body.appendChild(alertDiv);
 
-  // Remove automaticamente após 5 segundos
   setTimeout(() => {
     if (alertDiv.parentElement) {
       alertDiv.remove();
@@ -57,7 +78,6 @@ function mostrarMensagem(titulo, mensagem, tipo = "success") {
   }, 5000);
 }
 
-// Adiciona estilo CSS para animação
 if (!document.querySelector("#alert-styles")) {
   const style = document.createElement("style");
   style.id = "alert-styles";
@@ -74,25 +94,23 @@ if (!document.querySelector("#alert-styles")) {
   document.head.appendChild(style);
 }
 
-// Função para carregar clientes (usada em várias páginas)
 async function carregarClientesParaSelect(selectId) {
   const select = document.getElementById(selectId);
   if (!select) return;
 
   try {
-    // Limpa opções existentes (exceto a primeira)
+    const db = await aguardarFirebase();
+
     while (select.options.length > 1) {
       select.remove(1);
     }
 
-    // Busca clientes no Firestore
     const snapshot = await db.collection("clientes").get();
 
     if (snapshot.empty) {
       return;
     }
 
-    // Adiciona cada cliente como opção
     snapshot.forEach((doc) => {
       const cliente = doc.data();
       const option = document.createElement("option");
@@ -106,22 +124,25 @@ async function carregarClientesParaSelect(selectId) {
   }
 }
 
-// Função para carregar equipamentos (usada em várias páginas)
 async function carregarEquipamentosParaSelect(
   selectId,
   apenasDisponiveis = true,
 ) {
   const select = document.getElementById(selectId);
-  if (!select) return;
+
+  if (!select) {
+    return;
+  }
 
   try {
-    // Limpa opções existentes (exceto a primeira)
+    const db = await aguardarFirebase();
+
     while (select.options.length > 1) {
       select.remove(1);
     }
 
-    // Cria query
     let query = db.collection("equipamentos");
+
     if (apenasDisponiveis) {
       query = query.where("status", "==", "disponivel");
     }
@@ -132,17 +153,36 @@ async function carregarEquipamentosParaSelect(
       return;
     }
 
-    // Adiciona cada equipamento como opção
     snapshot.forEach((doc) => {
       const equipamento = doc.data();
+
+      if (equipamento.ativo === false) {
+        return;
+      }
+
       const option = document.createElement("option");
       option.value = doc.id;
-      option.textContent = `${equipamento.nomeEquipamento} (${equipamento.quantidadeDisponivel || 0} disp.)`;
-      option.dataset.equipamento = JSON.stringify(equipamento);
+
+      const nome =
+        equipamento.nomeEquipamento ||
+        equipamento.nome ||
+        "Equipamento sem nome";
+      const quantidade = equipamento.quantidadeDisponivel || 0;
+
+      option.textContent = `${nome} (${quantidade} disp.)`;
+      option.dataset.equipamento = JSON.stringify({
+        id: doc.id,
+        nomeEquipamento: nome,
+        quantidadeDisponivel: quantidade,
+        valorDiaria: equipamento.valorDiaria || 0,
+        status: equipamento.status || "",
+      });
+
       select.appendChild(option);
     });
   } catch (error) {
     console.error("Erro ao carregar equipamentos:", error);
+
     mostrarMensagem(
       "Erro",
       "Não foi possível carregar os equipamentos",
@@ -151,9 +191,10 @@ async function carregarEquipamentosParaSelect(
   }
 }
 
-// Função para buscar informações de um cliente
 async function buscarClientePorId(clienteId) {
   try {
+    const db = await aguardarFirebase();
+
     const doc = await db.collection("clientes").doc(clienteId).get();
     if (doc.exists) {
       return { id: doc.id, ...doc.data() };
@@ -165,9 +206,10 @@ async function buscarClientePorId(clienteId) {
   }
 }
 
-// Função para buscar informações de um equipamento
 async function buscarEquipamentoPorId(equipamentoId) {
   try {
+    const db = await aguardarFirebase();
+
     const doc = await db.collection("equipamentos").doc(equipamentoId).get();
     if (doc.exists) {
       return { id: doc.id, ...doc.data() };
@@ -179,17 +221,13 @@ async function buscarEquipamentoPorId(equipamentoId) {
   }
 }
 
-// Função para validar CPF/CNPJ
 function validarCPFCNPJ(valor) {
-  // Remove caracteres não numéricos
   const limpo = valor.replace(/\D/g, "");
 
-  // Valida CPF (11 dígitos)
   if (limpo.length === 11) {
     return validarCPF(limpo);
   }
 
-  // Valida CNPJ (14 dígitos)
   if (limpo.length === 14) {
     return validarCNPJ(limpo);
   }
@@ -202,10 +240,8 @@ function validarCPF(cpf) {
 
   if (cpf.length !== 11) return false;
 
-  // Verifica se todos os dígitos são iguais
   if (/^(\d)\1+$/.test(cpf)) return false;
 
-  // Validação dos dígitos verificadores
   let soma = 0;
   let resto;
 
@@ -234,7 +270,6 @@ function validarCNPJ(cnpj) {
 
   if (cnpj.length !== 14) return false;
 
-  // Validação dos dígitos verificadores
   let tamanho = cnpj.length - 2;
   let numeros = cnpj.substring(0, tamanho);
   const digitos = cnpj.substring(tamanho);
@@ -265,7 +300,6 @@ function validarCNPJ(cnpj) {
   return true;
 }
 
-// Função para formatar CPF/CNPJ
 function formatarCPFCNPJ(valor) {
   const limpo = valor.replace(/\D/g, "");
 
@@ -283,7 +317,6 @@ function formatarCPFCNPJ(valor) {
   return valor;
 }
 
-// Função para formatar telefone
 function formatarTelefone(valor) {
   const limpo = valor.replace(/\D/g, "");
 
@@ -298,21 +331,29 @@ function formatarTelefone(valor) {
   return valor;
 }
 
-// Inicialização quando o DOM estiver carregado
 document.addEventListener("DOMContentLoaded", function () {
-  // Configura data atual nos campos de data
   const dataAtual = new Date().toISOString().split("T")[0];
-  const camposData = document.querySelectorAll('input[type="date"]');
-  camposData.forEach((campo) => {
+
+  const camposDataAtual = document.querySelectorAll(
+    'input[type="date"][data-default-today="true"]',
+  );
+
+  camposDataAtual.forEach((campo) => {
     if (!campo.value) {
       campo.value = dataAtual;
     }
-    // Garante que o campo é grande o suficiente
+
     campo.style.fontSize = "18px";
     campo.style.padding = "12px";
   });
 
-  // Adiciona máscaras aos campos
+  const camposData = document.querySelectorAll('input[type="date"]');
+
+  camposData.forEach((campo) => {
+    campo.style.fontSize = "18px";
+    campo.style.padding = "12px";
+  });
+
   const camposCPF = document.querySelectorAll(
     'input[placeholder*="CPF"], input[placeholder*="cnpj"]',
   );
@@ -351,7 +392,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Adiciona estilo de foco melhorado para acessibilidade
   const todosInputs = document.querySelectorAll(
     "input, select, textarea, button",
   );
