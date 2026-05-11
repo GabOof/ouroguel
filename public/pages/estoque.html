@@ -1,21 +1,13 @@
 <!doctype html>
 <html lang="pt-BR">
   <head>
-    <!-- NO INÍCIO DO <head> -->
     <script>
-      // Verificação IMEDIATA de autenticação
       (function () {
-        // Verificar localStorage
         const userLoggedIn = localStorage.getItem("userLoggedIn");
-        const userEmail = localStorage.getItem("userEmail");
 
-        (function () {
-          const userLoggedIn = localStorage.getItem("userLoggedIn");
-
-          if (userLoggedIn !== "true") {
-            window.location.replace("/pages/login.html");
-          }
-        })();
+        if (userLoggedIn !== "true") {
+          window.location.replace("/pages/login.html");
+        }
       })();
     </script>
 
@@ -119,9 +111,16 @@
                   <option value="">Todas as categorias</option>
                   <option value="andaime">Andaime</option>
                   <option value="escada">Escada</option>
-                  <option value="betoneira">Betoneira</option>
-                  <option value="compactador">Compactador</option>
-                  <option value="ferramentas">Ferramentas</option>
+                  <option value="extensao">Extensão</option>
+                  <option value="seguranca">Equipamentos de Segurança</option>
+                  <option value="ferramentas">Ferramentas Manuais</option>
+                  <option value="ferramentas_eletricas">
+                    Ferramentas Elétricas
+                  </option>
+                  <option value="maquinas_eletricas">Máquinas Elétricas</option>
+                  <option value="maquinas_combustivel">
+                    Máquinas a Combustível
+                  </option>
                   <option value="outros">Outros</option>
                 </select>
               </div>
@@ -313,8 +312,8 @@
     </footer>
 
     <script src="/js/firebase-config.js"></script>
+    <script src="/js/auth.js"></script>
     <script src="/js/main.js"></script>
     <script src="/js/estoque.js"></script>
-    <script src="/js/auth.js"></script>
   </body>
 </html>
