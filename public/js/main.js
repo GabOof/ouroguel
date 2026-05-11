@@ -343,7 +343,180 @@ function formatarTelefone(valor) {
   return valor;
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+function somenteNumeros(valor) {
+  return String(valor || "").replace(/\D/g, "");
+}
+
+function aplicarCapsLockCampo(campo) {
+  if (!campo) return;
+
+  const tag = campo.tagName.toLowerCase();
+  const type = (campo.getAttribute("type") || "text").toLowerCase();
+
+  const tiposIgnorados = [
+    "email",
+    "password",
+    "number",
+    "date",
+    "datetime-local",
+    "time",
+    "month",
+    "week",
+    "range",
+    "checkbox",
+    "radio",
+    "file",
+    "hidden",
+    "submit",
+    "button",
+    "reset",
+  ];
+
+  if (tag === "select" || tag === "button") return;
+  if (tiposIgnorados.includes(type)) return;
+  if (campo.dataset.noCapslock === "true") return;
+  if (campo.classList.contains("no-capslock")) return;
+
+  const inicio = campo.selectionStart;
+  const fim = campo.selectionEnd;
+
+  campo.value = campo.value.toUpperCase();
+
+  try {
+    campo.setSelectionRange(inicio, fim);
+  } catch (error) {
+    // Alguns campos não permitem manipular cursor.
+  }
+}
+
+function aplicarCapsLockAutomatico() {
+  const campos = document.querySelectorAll("input, textarea");
+
+  campos.forEach((campo) => {
+    campo.addEventListener("input", function () {
+      aplicarCapsLockCampo(this);
+    });
+
+    campo.addEventListener("blur", function () {
+      aplicarCapsLockCampo(this);
+    });
+  });
+}
+
+function formatarCPF(valor) {
+  const numeros = somenteNumeros(valor).substring(0, 11);
+
+  if (numeros.length <= 3) {
+    return numeros;
+  }
+
+  if (numeros.length <= 6) {
+    return numeros.replace(/(\d{3})(\d+)/, "$1.$2");
+  }
+
+  if (numeros.length <= 9) {
+    return numeros.replace(/(\d{3})(\d{3})(\d+)/, "$1.$2.$3");
+  }
+
+  return numeros.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, "$1.$2.$3-$4");
+}
+
+function formatarRG(valor) {
+  const limpo = String(valor || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+
+  const letras = limpo.replace(/[^A-Z]/g, "").substring(0, 2);
+  const numeros = limpo.replace(/\D/g, "").substring(0, 8);
+
+  let resultado = letras;
+
+  if (letras.length === 2 && numeros.length > 0) {
+    resultado += "-";
+  }
+
+  if (numeros.length <= 2) {
+    resultado += numeros;
+  } else if (numeros.length <= 5) {
+    resultado += numeros.replace(/(\d{2})(\d+)/, "$1.$2");
+  } else {
+    resultado += numeros.replace(/(\d{2})(\d{3})(\d{1,3})/, "$1.$2.$3");
+  }
+
+  return resultado;
+}
+
+function aplicarMascaraCPF() {
+  const camposCPF = document.querySelectorAll(
+    '#cpf, input[data-mask="cpf"], input[placeholder*="CPF"]',
+  );
+
+  camposCPF.forEach((campo) => {
+    campo.setAttribute("maxlength", "14");
+
+    campo.addEventListener("input", function () {
+      this.value = formatarCPF(this.value);
+    });
+
+    campo.addEventListener("blur", function () {
+      this.value = formatarCPF(this.value);
+    });
+  });
+}
+
+function aplicarMascaraRG() {
+  const camposRG = document.querySelectorAll(
+    '#identidade, #rg, input[data-mask="rg"], input[placeholder*="RG"], input[placeholder*="Identidade"], input[placeholder*="identidade"]',
+  );
+
+  camposRG.forEach((campo) => {
+    campo.setAttribute("maxlength", "13");
+
+    campo.addEventListener("input", function () {
+      this.value = formatarRG(this.value);
+    });
+
+    campo.addEventListener("blur", function () {
+      this.value = formatarRG(this.value);
+    });
+  });
+}
+
+function aplicarMascaraTelefone() {
+  const camposTelefone = document.querySelectorAll(
+    'input[type="tel"], input[placeholder*="telefone"], input[placeholder*="Telefone"], input[placeholder*="celular"], input[placeholder*="Celular"]',
+  );
+
+  camposTelefone.forEach((campo) => {
+    campo.addEventListener("input", function () {
+      this.value = formatarTelefone(this.value).substring(0, 15);
+    });
+
+    campo.addEventListener("blur", function () {
+      this.value = formatarTelefone(this.value).substring(0, 15);
+    });
+  });
+}
+
+function aplicarAcessibilidadeFoco() {
+  const elementos = document.querySelectorAll(
+    "input, select, textarea, button",
+  );
+
+  elementos.forEach((elemento) => {
+    elemento.addEventListener("focus", function () {
+      this.style.outline = "3px solid #3498db";
+      this.style.outlineOffset = "2px";
+    });
+
+    elemento.addEventListener("blur", function () {
+      this.style.outline = "";
+      this.style.outlineOffset = "";
+    });
+  });
+}
+
+function configurarCamposData() {
   const dataAtual = new Date().toISOString().split("T")[0];
 
   const camposDataAtual = document.querySelectorAll(
@@ -365,57 +538,16 @@ document.addEventListener("DOMContentLoaded", function () {
     campo.style.fontSize = "18px";
     campo.style.padding = "12px";
   });
+}
 
-  const camposCPF = document.querySelectorAll(
-    'input[placeholder*="CPF"], input[placeholder*="cnpj"]',
-  );
-  camposCPF.forEach((campo) => {
-    campo.addEventListener("input", function (e) {
-      let valor = e.target.value;
-      const limpo = valor.replace(/\D/g, "");
+document.addEventListener("DOMContentLoaded", function () {
+  configurarCamposData();
 
-      if (limpo.length <= 11) {
-        valor = limpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-      } else {
-        valor = limpo.replace(
-          /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
-          "$1.$2.$3/$4-$5",
-        );
-      }
+  aplicarCapsLockAutomatico();
 
-      e.target.value = valor.substring(0, 18);
-    });
-  });
+  aplicarMascaraCPF();
+  aplicarMascaraRG();
+  aplicarMascaraTelefone();
 
-  const camposTelefone = document.querySelectorAll(
-    'input[type="tel"], input[placeholder*="telefone"], input[placeholder*="celular"]',
-  );
-  camposTelefone.forEach((campo) => {
-    campo.addEventListener("input", function (e) {
-      let valor = e.target.value.replace(/\D/g, "");
-
-      if (valor.length <= 10) {
-        valor = valor.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
-      } else {
-        valor = valor.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
-      }
-
-      e.target.value = valor.substring(0, 15);
-    });
-  });
-
-  const todosInputs = document.querySelectorAll(
-    "input, select, textarea, button",
-  );
-  todosInputs.forEach((elemento) => {
-    elemento.addEventListener("focus", function () {
-      this.style.outline = "3px solid #3498db";
-      this.style.outlineOffset = "2px";
-    });
-
-    elemento.addEventListener("blur", function () {
-      this.style.outline = "";
-      this.style.outlineOffset = "";
-    });
-  });
+  aplicarAcessibilidadeFoco();
 });
