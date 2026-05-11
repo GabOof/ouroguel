@@ -1,21 +1,13 @@
 <!doctype html>
 <html lang="pt-BR">
   <head>
-    <!-- NO INÍCIO DO <head> -->
     <script>
-      // Verificação IMEDIATA de autenticação
       (function () {
-        // Verificar localStorage
         const userLoggedIn = localStorage.getItem("userLoggedIn");
-        const userEmail = localStorage.getItem("userEmail");
 
-        (function () {
-          const userLoggedIn = localStorage.getItem("userLoggedIn");
-
-          if (userLoggedIn !== "true") {
-            window.location.replace("/pages/login.html");
-          }
-        })();
+        if (userLoggedIn !== "true") {
+          window.location.replace("/pages/login.html");
+        }
       })();
     </script>
 
@@ -218,7 +210,7 @@
                     Valor por Mês (R$) *</label
                   >
                   <input
-                    type="number"
+                    type="text"
                     id="valorMes"
                     required
                     placeholder="0,00"
@@ -245,6 +237,7 @@
                         name="status"
                         value="disponivel"
                         required
+                        checked
                         aria-describedby="statusDisponivelDesc"
                       />
                       <span class="radio-content">
@@ -407,8 +400,8 @@
     </footer>
 
     <script src="/js/firebase-config.js"></script>
+    <script src="/js/auth.js"></script>
     <script src="/js/main.js"></script>
     <script src="/js/equipamentos.js"></script>
-    <script src="/js/auth.js"></script>
   </body>
 </html>
