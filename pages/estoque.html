@@ -9,17 +9,13 @@
         const userLoggedIn = localStorage.getItem("userLoggedIn");
         const userEmail = localStorage.getItem("userEmail");
 
-        // Se não está logado, REDIRECIONAR AGORA
-        if (userLoggedIn !== "true" || !userEmail) {
-          // Parar qualquer carregamento adicional
-          document.write = function () {};
+        (function () {
+          const userLoggedIn = localStorage.getItem("userLoggedIn");
 
-          // Redirecionar IMEDIATAMENTE
-          window.location.replace("/pages/login.html");
-
-          // Lançar erro para parar execução
-          throw new Error("Redirecionando para login");
-        }
+          if (userLoggedIn !== "true") {
+            window.location.replace("/pages/login.html");
+          }
+        })();
       })();
     </script>
 
