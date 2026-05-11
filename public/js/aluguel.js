@@ -3,20 +3,8 @@ let equipamentosSelecionados = [];
 let clienteSelecionado = null;
 
 // ============================================
-// FUNÇÕES AUXILIARES
+// FUNÇÕES AUXILIARES DE INTERFACE
 // ============================================
-
-async function aguardarFirebaseAluguel() {
-  if (window.firebaseReady) {
-    await window.firebaseReady;
-  }
-
-  if (!window.db) {
-    throw new Error("Firestore não inicializado.");
-  }
-
-  return window.db;
-}
 
 function valorCampo(id) {
   const campo = document.getElementById(id);
@@ -54,7 +42,7 @@ function dataHojeISO() {
   return hoje.toISOString().split("T")[0];
 }
 
-function calcularDataDevolucao(dataInicio, periodo, duracao) {
+function calcularDataDevolucaoLocal(dataInicio, periodo, duracao) {
   const [ano, mes, dia] = dataInicio.split("-").map(Number);
   const data = new Date(ano, mes - 1, dia);
 
@@ -103,7 +91,6 @@ function getValorPorPeriodo(equipamento) {
 }
 
 function obterResumoNumerico() {
-  const periodo = valorCampo("periodo");
   const duracao = parseInt(valorCampo("duracao"), 10) || 1;
 
   let subtotal = 0;
@@ -147,6 +134,20 @@ function validarFormularioAluguel() {
   return null;
 }
 
+async function aguardarDependenciasAluguel() {
+  if (window.firebaseReady) {
+    await window.firebaseReady;
+  }
+
+  if (!window.AluguelService) {
+    throw new Error("AluguelService não foi carregado.");
+  }
+}
+
+// ============================================
+// CONFIGURAÇÃO DA TELA
+// ============================================
+
 function configurarFormularioAluguel() {
   const form = document.getElementById("aluguelForm");
 
@@ -186,13 +187,9 @@ function configurarFormularioAluguel() {
   }
 }
 
-// ============================================
-// INICIALIZAÇÃO
-// ============================================
-
 document.addEventListener("DOMContentLoaded", async function () {
   try {
-    await aguardarFirebaseAluguel();
+    await aguardarDependenciasAluguel();
 
     configurarFormularioAluguel();
 
@@ -206,7 +203,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     mostrarMensagem(
       "Erro",
-      "Não foi possível inicializar a tela de aluguéis.",
+      "Não foi possível inicializar a tela de aluguéis: " + error.message,
       "error",
     );
   }
@@ -498,7 +495,7 @@ function calcularValor() {
 }
 
 // ============================================
-// REGISTRO TRANSACIONAL DE ALUGUEL
+// REGISTRO DE ALUGUEL
 // ============================================
 
 async function registrarAluguel(event) {
@@ -521,8 +518,6 @@ async function registrarAluguel(event) {
   }
 
   try {
-    const db = await aguardarFirebaseAluguel();
-
     const clienteId = valorCampo("clienteSelect");
     const dataInicio = valorCampo("dataInicio");
     const periodo = valorCampo("periodo");
@@ -537,115 +532,14 @@ async function registrarAluguel(event) {
       throw new Error("Cliente selecionado não foi encontrado.");
     }
 
-    const dataDevolucao = calcularDataDevolucao(dataInicio, periodo, duracao);
-    const aluguelRef = db.collection("alugueis").doc();
-
-    await db.runTransaction(async function (transaction) {
-      const equipamentoRefs = equipamentosSelecionados.map((item) =>
-        db.collection("equipamentos").doc(item.id),
-      );
-
-      const equipamentoDocs = [];
-
-      for (const ref of equipamentoRefs) {
-        equipamentoDocs.push(await transaction.get(ref));
-      }
-
-      const equipamentosDetalhes = [];
-      let subtotal = 0;
-
-      for (let i = 0; i < equipamentosSelecionados.length; i++) {
-        const itemSelecionado = equipamentosSelecionados[i];
-        const equipamentoDoc = equipamentoDocs[i];
-
-        if (!equipamentoDoc.exists) {
-          throw new Error(
-            `Equipamento ${itemSelecionado.nomeEquipamento} não encontrado.`,
-          );
-        }
-
-        const equipamentoAtual = equipamentoDoc.data();
-
-        if (equipamentoAtual.status !== "disponivel") {
-          throw new Error(
-            `Equipamento "${equipamentoAtual.nomeEquipamento}" não está disponível para aluguel.`,
-          );
-        }
-
-        const quantidadeDisponivel = Number(
-          equipamentoAtual.quantidadeDisponivel || 0,
-        );
-        const quantidadeAlugada = Number(
-          equipamentoAtual.quantidadeAlugada || 0,
-        );
-        const quantidadeSolicitada = Number(itemSelecionado.quantidade || 0);
-
-        if (quantidadeSolicitada > quantidadeDisponivel) {
-          throw new Error(
-            `Estoque insuficiente para "${equipamentoAtual.nomeEquipamento}". Disponível: ${quantidadeDisponivel}.`,
-          );
-        }
-
-        const valorUnitario = obterValorPorPeriodoDoObjeto(
-          equipamentoAtual,
-          periodo,
-        );
-
-        if (valorUnitario <= 0) {
-          throw new Error(
-            `Valor do período não configurado para "${equipamentoAtual.nomeEquipamento}".`,
-          );
-        }
-
-        subtotal += valorUnitario * quantidadeSolicitada;
-
-        equipamentosDetalhes.push({
-          equipamentoId: itemSelecionado.id,
-          nome:
-            equipamentoAtual.nomeEquipamento || itemSelecionado.nomeEquipamento,
-          nomeEquipamento:
-            equipamentoAtual.nomeEquipamento || itemSelecionado.nomeEquipamento,
-          quantidade: quantidadeSolicitada,
-          valorUnitario,
-          valorHora: Number(equipamentoAtual.valorHora || 0),
-          valorDia: Number(equipamentoAtual.valorDia || 0),
-          valorMes: Number(equipamentoAtual.valorMes || 0),
-        });
-
-        transaction.update(equipamentoRefs[i], {
-          quantidadeDisponivel: quantidadeDisponivel - quantidadeSolicitada,
-          quantidadeAlugada: quantidadeAlugada + quantidadeSolicitada,
-          atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-        });
-      }
-
-      const valorTotal = subtotal * duracao;
-
-      transaction.set(aluguelRef, {
-        clienteId,
-        clienteNome: clienteSelecionado.nome || "",
-        clienteCpf: clienteSelecionado.cpf || "",
-        clienteCelular: clienteSelecionado.celular || "",
-
-        dataInicio,
-        dataDevolucao,
-        periodo,
-        duracao,
-
-        equipamentosIds: equipamentosDetalhes.map((item) => item.equipamentoId),
-        equipamentos: equipamentosDetalhes,
-        equipamentosDetalhes,
-
-        subtotal,
-        valorTotal,
-        observacoes,
-
-        status: "ativo",
-        dataRegistro: new Date().toISOString(),
-        criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-        atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-        criadoPor: window.auth?.currentUser?.uid || null,
-      });
+    const aluguelId = await AluguelService.registrar({
+      clienteId,
+      cliente: clienteSelecionado,
+      dataInicio,
+      periodo,
+      duracao,
+      observacoes,
+      equipamentos: equipamentosSelecionados,
     });
 
     mostrarMensagem("Sucesso", "Aluguel registrado com sucesso!");
@@ -656,7 +550,7 @@ async function registrarAluguel(event) {
     const btnImprimir = document.getElementById("btnImprimir");
 
     if (btnImprimir) {
-      btnImprimir.dataset.aluguelId = aluguelRef.id;
+      btnImprimir.dataset.aluguelId = aluguelId;
       btnImprimir.disabled = false;
       btnImprimir.style.display = "inline-flex";
     }
@@ -688,8 +582,6 @@ async function carregarAlugueis() {
   }
 
   try {
-    const db = await aguardarFirebaseAluguel();
-
     alugueisList.innerHTML = `
       <tr>
         <td colspan="7" style="text-align: center; padding: 40px;">
@@ -699,14 +591,9 @@ async function carregarAlugueis() {
       </tr>
     `;
 
-    const snapshot = await db
-      .collection("alugueis")
-      .orderBy("dataRegistro", "desc")
-      .get();
+    alugueis = await AluguelService.listar();
 
-    alugueis = [];
-
-    if (snapshot.empty) {
+    if (!alugueis.length) {
       alugueisList.innerHTML = `
         <tr>
           <td colspan="7" class="empty-message">
@@ -717,13 +604,6 @@ async function carregarAlugueis() {
       `;
       return;
     }
-
-    snapshot.forEach((doc) => {
-      alugueis.push({
-        id: doc.id,
-        ...doc.data(),
-      });
-    });
 
     alugueisList.innerHTML = alugueis
       .map((aluguel) => {
@@ -831,7 +711,7 @@ function buscarAlugueis() {
 }
 
 // ============================================
-// FINALIZAÇÃO TRANSACIONAL DE ALUGUEL
+// FINALIZAÇÃO DE ALUGUEL
 // ============================================
 
 async function finalizarAluguel(aluguelId) {
@@ -844,75 +724,10 @@ async function finalizarAluguel(aluguelId) {
   }
 
   try {
-    const db = await aguardarFirebaseAluguel();
-
-    const aluguelRef = db.collection("alugueis").doc(aluguelId);
-
-    await db.runTransaction(async function (transaction) {
-      const aluguelDoc = await transaction.get(aluguelRef);
-
-      if (!aluguelDoc.exists) {
-        throw new Error("Aluguel não encontrado.");
-      }
-
-      const aluguel = aluguelDoc.data();
-
-      if (aluguel.status === "finalizado") {
-        throw new Error("Este aluguel já está finalizado.");
-      }
-
-      if (aluguel.status === "cancelado") {
-        throw new Error("Este aluguel está cancelado.");
-      }
-
-      const equipamentos =
-        aluguel.equipamentosDetalhes || aluguel.equipamentos || [];
-
-      const equipamentoRefs = equipamentos.map((item) =>
-        db.collection("equipamentos").doc(item.equipamentoId || item.id),
-      );
-
-      const equipamentoDocs = [];
-
-      for (const ref of equipamentoRefs) {
-        equipamentoDocs.push(await transaction.get(ref));
-      }
-
-      transaction.update(aluguelRef, {
-        status: "finalizado",
-        dataDevolucaoReal: dataHojeISO(),
-        atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-      });
-
-      for (let i = 0; i < equipamentos.length; i++) {
-        const item = equipamentos[i];
-        const equipamentoDoc = equipamentoDocs[i];
-
-        if (!equipamentoDoc.exists) {
-          throw new Error(`Equipamento relacionado ao aluguel não encontrado.`);
-        }
-
-        const equipamento = equipamentoDoc.data();
-
-        const quantidade = Number(item.quantidade || 0);
-        const quantidadeTotal = Number(equipamento.quantidadeTotal || 0);
-        const quantidadeDisponivel = Number(
-          equipamento.quantidadeDisponivel || 0,
-        );
-        const quantidadeAlugada = Number(equipamento.quantidadeAlugada || 0);
-
-        transaction.update(equipamentoRefs[i], {
-          quantidadeDisponivel: Math.min(
-            quantidadeTotal,
-            quantidadeDisponivel + quantidade,
-          ),
-          quantidadeAlugada: Math.max(0, quantidadeAlugada - quantidade),
-          atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-        });
-      }
-    });
+    await AluguelService.finalizar(aluguelId);
 
     mostrarMensagem("Sucesso", "Aluguel finalizado com sucesso!");
+
     await carregarAlugueis();
     await carregarEquipamentosParaSelect("equipamentoSelect");
   } catch (error) {
@@ -927,7 +742,7 @@ async function finalizarAluguel(aluguelId) {
 }
 
 // ============================================
-// IMPRESSÃO E LIMPEZA
+// IMPRESSÃO, VISUALIZAÇÃO E LIMPEZA
 // ============================================
 
 function visualizarAluguel(aluguelId) {

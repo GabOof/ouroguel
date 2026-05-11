@@ -2,8 +2,32 @@ let estoque = [];
 let ajustesHistorico = [];
 
 // ============================================
-// FUNÇÕES AUXILIARES DE INTERFACE
+// FUNÇÕES AUXILIARES
 // ============================================
+
+async function aguardarFirebaseEstoque() {
+  if (window.firebaseReady) {
+    await window.firebaseReady;
+  }
+
+  if (!window.db || !window.auth) {
+    throw new Error("Firebase Auth ou Firestore não inicializado.");
+  }
+
+  const user = await new Promise((resolve, reject) => {
+    const unsubscribe = window.auth.onAuthStateChanged((usuario) => {
+      unsubscribe();
+
+      if (usuario) {
+        resolve(usuario);
+      } else {
+        reject(new Error("Usuário não autenticado no Firebase Auth."));
+      }
+    });
+  });
+
+  return window.db;
+}
 
 function valorCampoEstoque(id) {
   const campo = document.getElementById(id);
@@ -92,10 +116,16 @@ function obterStatusEstoque(item) {
   };
 }
 
-function aguardarDependenciasEstoque() {
-  if (!window.EstoqueService) {
-    throw new Error("EstoqueService não foi carregado.");
+function calcularStatusOperacional(quantidadeDisponivel, quantidadeManutencao) {
+  if (quantidadeDisponivel > 0) {
+    return "disponivel";
   }
+
+  if (quantidadeManutencao > 0) {
+    return "manutencao";
+  }
+
+  return "indisponivel";
 }
 
 function configurarEventosEstoque() {
@@ -122,19 +152,19 @@ function configurarEventosEstoque() {
 
 document.addEventListener("DOMContentLoaded", async function () {
   try {
-    aguardarDependenciasEstoque();
+    await aguardarFirebaseEstoque();
 
     configurarEventosEstoque();
 
     await carregarEstoque();
     await carregarHistoricoAjustes();
-    await carregarEquipamentosParaAjuste();
+    await carregarEquipamentosParaSelect("ajusteEquipamento", false);
   } catch (error) {
     console.error("Erro ao inicializar estoque:", error);
 
     mostrarMensagem(
       "Erro",
-      "Não foi possível inicializar a tela de estoque: " + error.message,
+      "Não foi possível inicializar a tela de estoque.",
       "error",
     );
   }
@@ -152,6 +182,8 @@ async function carregarEstoque() {
   }
 
   try {
+    const db = await aguardarFirebaseEstoque();
+
     estoqueList.innerHTML = `
       <tr>
         <td colspan="8" style="text-align: center; padding: 40px;">
@@ -161,9 +193,14 @@ async function carregarEstoque() {
       </tr>
     `;
 
-    estoque = await EstoqueService.listarEstoque();
+    const snapshot = await db
+      .collection("equipamentos")
+      .orderBy("nomeEquipamento")
+      .get();
 
-    if (!estoque.length) {
+    estoque = [];
+
+    if (snapshot.empty) {
       estoqueList.innerHTML = `
         <tr>
           <td colspan="8" class="empty-message">
@@ -176,6 +213,13 @@ async function carregarEstoque() {
       atualizarEstatisticasEstoque();
       return;
     }
+
+    snapshot.forEach((doc) => {
+      estoque.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
 
     estoqueList.innerHTML = estoque
       .map((item) => {
@@ -258,36 +302,6 @@ async function carregarEstoque() {
         </td>
       </tr>
     `;
-  }
-}
-
-async function carregarEquipamentosParaAjuste() {
-  const select = document.getElementById("ajusteEquipamento");
-
-  if (!select) {
-    return;
-  }
-
-  try {
-    while (select.options.length > 1) {
-      select.remove(1);
-    }
-
-    const equipamentos = await EstoqueService.listarEstoque();
-
-    equipamentos.forEach((equipamento) => {
-      const option = document.createElement("option");
-      option.value = equipamento.id;
-      option.textContent = `${equipamento.nomeEquipamento || "Equipamento sem nome"} (${equipamento.quantidadeDisponivel || 0} disp.)`;
-      select.appendChild(option);
-    });
-  } catch (error) {
-    console.error("Erro ao carregar equipamentos para ajuste:", error);
-    mostrarMensagem(
-      "Erro",
-      "Não foi possível carregar os equipamentos para ajuste.",
-      "error",
-    );
   }
 }
 
@@ -398,17 +412,38 @@ function limparFiltros() {
 // ============================================
 
 function atualizarEstatisticasEstoque() {
-  const estatisticas = EstoqueService.calcularEstatisticas(estoque);
+  let totalItens = 0;
+  let disponiveis = 0;
+  let alugados = 0;
+  let indisponiveis = 0;
+
+  estoque.forEach((item) => {
+    const quantidadeTotal = Number(item.quantidadeTotal || 0);
+    const quantidadeDisponivel = Number(item.quantidadeDisponivel || 0);
+    const quantidadeAlugada = Number(item.quantidadeAlugada || 0);
+    const quantidadeManutencao = Number(item.quantidadeManutencao || 0);
+
+    totalItens += quantidadeTotal;
+    disponiveis += quantidadeDisponivel;
+    alugados += quantidadeAlugada;
+
+    const foraDeUso = Math.max(
+      0,
+      quantidadeTotal - quantidadeDisponivel - quantidadeAlugada,
+    );
+
+    indisponiveis += Math.max(foraDeUso, quantidadeManutencao);
+  });
 
   const totalItensEl = document.getElementById("totalItens");
   const disponiveisEl = document.getElementById("disponiveis");
   const alugadosEl = document.getElementById("alugados");
   const indisponiveisEl = document.getElementById("indisponiveis");
 
-  if (totalItensEl) totalItensEl.textContent = estatisticas.totalItens;
-  if (disponiveisEl) disponiveisEl.textContent = estatisticas.disponiveis;
-  if (alugadosEl) alugadosEl.textContent = estatisticas.alugados;
-  if (indisponiveisEl) indisponiveisEl.textContent = estatisticas.indisponiveis;
+  if (totalItensEl) totalItensEl.textContent = totalItens;
+  if (disponiveisEl) disponiveisEl.textContent = disponiveis;
+  if (alugadosEl) alugadosEl.textContent = alugados;
+  if (indisponiveisEl) indisponiveisEl.textContent = indisponiveis;
 }
 
 // ============================================
@@ -451,15 +486,118 @@ function ajustarEstoqueRapido(equipamentoId) {
 }
 
 async function realizarAjuste() {
-  const dadosAjuste = {
-    equipamentoId: valorCampoEstoque("ajusteEquipamento"),
-    tipo: valorCampoEstoque("ajusteTipo"),
-    quantidade: parseInt(valorCampoEstoque("ajusteQuantidade"), 10) || 0,
-    motivo: valorCampoEstoque("ajusteMotivo"),
-  };
+  const equipamentoId = valorCampoEstoque("ajusteEquipamento");
+  const tipo = valorCampoEstoque("ajusteTipo");
+  const quantidade = parseInt(valorCampoEstoque("ajusteQuantidade"), 10) || 0;
+  const motivo = valorCampoEstoque("ajusteMotivo");
+
+  if (!equipamentoId) {
+    mostrarMensagem("Erro", "Selecione um equipamento.", "error");
+    return;
+  }
+
+  if (!["entrada", "saida", "manutencao", "retorno"].includes(tipo)) {
+    mostrarMensagem("Erro", "Tipo de ajuste inválido.", "error");
+    return;
+  }
+
+  if (quantidade <= 0) {
+    mostrarMensagem("Erro", "A quantidade deve ser maior que zero.", "error");
+    return;
+  }
+
+  if (!motivo) {
+    mostrarMensagem("Erro", "Informe o motivo do ajuste.", "error");
+    return;
+  }
 
   try {
-    await EstoqueService.realizarAjuste(dadosAjuste);
+    const db = await aguardarFirebaseEstoque();
+
+    const equipamentoRef = db.collection("equipamentos").doc(equipamentoId);
+    const historicoRef = db.collection("historico_ajustes").doc();
+
+    await db.runTransaction(async function (transaction) {
+      const equipamentoDoc = await transaction.get(equipamentoRef);
+
+      if (!equipamentoDoc.exists) {
+        throw new Error("Equipamento não encontrado.");
+      }
+
+      const equipamento = equipamentoDoc.data();
+
+      let quantidadeTotal = Number(equipamento.quantidadeTotal || 0);
+      let quantidadeDisponivel = Number(equipamento.quantidadeDisponivel || 0);
+      let quantidadeAlugada = Number(equipamento.quantidadeAlugada || 0);
+      let quantidadeManutencao = Number(equipamento.quantidadeManutencao || 0);
+
+      switch (tipo) {
+        case "entrada":
+          quantidadeTotal += quantidade;
+          quantidadeDisponivel += quantidade;
+          break;
+
+        case "saida":
+          if (quantidade > quantidadeDisponivel) {
+            throw new Error("Quantidade insuficiente disponível para saída.");
+          }
+
+          quantidadeTotal -= quantidade;
+          quantidadeDisponivel -= quantidade;
+          break;
+
+        case "manutencao":
+          if (quantidade > quantidadeDisponivel) {
+            throw new Error(
+              "Quantidade insuficiente disponível para enviar à manutenção.",
+            );
+          }
+
+          quantidadeDisponivel -= quantidade;
+          quantidadeManutencao += quantidade;
+          break;
+
+        case "retorno":
+          if (quantidade > quantidadeManutencao) {
+            throw new Error(
+              `Quantidade em manutenção insuficiente. Em manutenção: ${quantidadeManutencao}.`,
+            );
+          }
+
+          quantidadeManutencao -= quantidade;
+          quantidadeDisponivel += quantidade;
+          break;
+      }
+
+      const statusAtualizado = calcularStatusOperacional(
+        quantidadeDisponivel,
+        quantidadeManutencao,
+      );
+
+      transaction.update(equipamentoRef, {
+        quantidadeTotal,
+        quantidadeDisponivel,
+        quantidadeAlugada,
+        quantidadeManutencao,
+        status: statusAtualizado,
+        atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+
+      transaction.set(historicoRef, {
+        equipamentoId,
+        equipamentoNome: equipamento.nomeEquipamento || "",
+        tipo,
+        quantidade,
+        motivo,
+        data: new Date().toISOString(),
+        criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+        usuarioId: window.auth?.currentUser?.uid || null,
+        usuario:
+          localStorage.getItem("userName") ||
+          window.auth?.currentUser?.email ||
+          "Sistema",
+      });
+    });
 
     mostrarMensagem("Sucesso", "Ajuste realizado com sucesso!");
 
@@ -467,7 +605,7 @@ async function realizarAjuste() {
 
     await carregarEstoque();
     await carregarHistoricoAjustes();
-    await carregarEquipamentosParaAjuste();
+    await carregarEquipamentosParaSelect("ajusteEquipamento", false);
   } catch (error) {
     console.error("Erro ao realizar ajuste:", error);
 
@@ -491,6 +629,8 @@ async function carregarHistoricoAjustes() {
   }
 
   try {
+    const db = await aguardarFirebaseEstoque();
+
     historicoList.innerHTML = `
       <tr>
         <td colspan="6" style="text-align: center; padding: 40px;">
@@ -500,9 +640,15 @@ async function carregarHistoricoAjustes() {
       </tr>
     `;
 
-    ajustesHistorico = await EstoqueService.listarHistorico(50);
+    const snapshot = await db
+      .collection("historico_ajustes")
+      .orderBy("data", "desc")
+      .limit(50)
+      .get();
 
-    if (!ajustesHistorico.length) {
+    ajustesHistorico = [];
+
+    if (snapshot.empty) {
       historicoList.innerHTML = `
         <tr>
           <td colspan="6" class="empty-message">
@@ -513,6 +659,13 @@ async function carregarHistoricoAjustes() {
       `;
       return;
     }
+
+    snapshot.forEach((doc) => {
+      ajustesHistorico.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
 
     historicoList.innerHTML = ajustesHistorico
       .map((ajuste) => {
@@ -603,8 +756,7 @@ async function carregarHistoricoAjustes() {
 
 async function visualizarDetalhes(equipamentoId) {
   try {
-    const equipamento =
-      await EstoqueService.obterEquipamentoPorId(equipamentoId);
+    const equipamento = await buscarEquipamentoPorId(equipamentoId);
 
     if (!equipamento) {
       mostrarMensagem("Erro", "Equipamento não encontrado.", "error");
