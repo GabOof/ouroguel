@@ -1,8 +1,3 @@
-// ============================================
-// CONFIGURAÇÃO DO FIREBASE - OUROGUEL
-// Versão Final (sem App Check)
-// ============================================
-
 const firebaseConfig = {
   apiKey: "AIzaSyDxpJE_2EYqfRlDcRGOayd1ZmJqjHOs67U",
   authDomain: "ouroguel-1190.firebaseapp.com",
@@ -13,37 +8,36 @@ const firebaseConfig = {
   measurementId: "G-6LVN3Y4MV9",
 };
 
-// ============================================
-// INICIALIZAÇÃO
-// ============================================
-
-if (!firebase.apps.length) {
+window.firebaseReady = (async function inicializarFirebase() {
   try {
-    // Inicializar Firebase
-    firebase.initializeApp(firebaseConfig);
+    if (typeof firebase === "undefined") {
+      throw new Error(
+        "SDK do Firebase não foi carregado. Verifique as tags CDN no HTML.",
+      );
+    }
 
-    // Inicializar serviços
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // Configurar persistência LOCAL
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-    // Tornar globalmente disponível
+    window.firebase = firebase;
     window.auth = auth;
     window.db = db;
-    window.firebase = firebase;
 
-    console.log("✅ Firebase inicializado com sucesso");
+    console.log("Firebase inicializado com sucesso");
     console.log(
-      "📍 Ambiente:",
+      "Ambiente:",
       window.location.hostname === "localhost" ? "Desenvolvimento" : "Produção",
     );
+
+    return { auth, db };
   } catch (error) {
-    console.error("❌ Erro ao configurar Firebase:", error);
+    console.error("Erro ao configurar Firebase:", error);
+    throw error;
   }
-} else {
-  window.auth = firebase.auth();
-  window.db = firebase.firestore();
-  window.firebase = firebase;
-}
+})();
