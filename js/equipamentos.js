@@ -158,8 +158,8 @@ async function aguardarDependenciasEquipamentos() {
     await window.firebaseReady;
   }
 
-  if (!window.EquipamentoService) {
-    throw new Error("EquipamentoService não foi carregado.");
+  if (!window.equipamentosService) {
+    throw new Error("equipamentosService não foi carregado.");
   }
 }
 
@@ -231,10 +231,13 @@ async function salvarEquipamento(event) {
 
   try {
     if (equipamentoEditando) {
-      await EquipamentoService.atualizar(equipamentoEditando, dadosEquipamento);
+      await equipamentosService.atualizar(
+        equipamentoEditando,
+        dadosEquipamento,
+      );
       mostrarMensagem("Sucesso", "Equipamento atualizado com sucesso!");
     } else {
-      await EquipamentoService.criar(dadosEquipamento);
+      await equipamentosService.criar(dadosEquipamento);
       mostrarMensagem("Sucesso", "Equipamento cadastrado com sucesso!");
     }
 
@@ -270,7 +273,7 @@ async function carregarEquipamentos() {
       </tr>
     `;
 
-    equipamentos = await EquipamentoService.listar();
+    equipamentos = await equipamentosService.listar();
 
     if (!equipamentos.length) {
       equipamentosList.innerHTML = `
@@ -373,7 +376,7 @@ function buscarEquipamentos() {
 
 async function editarEquipamento(equipamentoId) {
   try {
-    const equipamento = await EquipamentoService.obterPorId(equipamentoId);
+    const equipamento = await equipamentosService.obterPorId(equipamentoId);
 
     if (!equipamento) {
       mostrarMensagem("Erro", "Equipamento não encontrado.", "error");
@@ -436,7 +439,7 @@ async function excluirEquipamento(equipamentoId) {
   }
 
   try {
-    await EquipamentoService.excluir(equipamentoId);
+    await equipamentosService.excluir(equipamentoId);
 
     mostrarMensagem("Sucesso", "Equipamento excluído com sucesso!");
 
@@ -464,7 +467,7 @@ function selecionarEquipamentoParaAluguel(equipamentoId) {
 
 async function atualizarEstatisticas() {
   try {
-    const estatisticas = await EquipamentoService.obterEstatisticas();
+    const estatisticas = await equipamentosService.obterEstatisticas();
 
     const totalEquipamentosEl = document.getElementById("totalEquipamentos");
     const totalDisponivelEl = document.getElementById("totalDisponivel");

@@ -44,7 +44,7 @@
     };
   }
 
-  window.EquipamentoService = {
+  window.equipamentosService = {
     async listar() {
       const db = await aguardarFirebase();
 
