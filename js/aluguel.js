@@ -62,6 +62,34 @@ function calcularDataDevolucaoLocal(dataInicio, periodo, duracao) {
   return data.toISOString().split("T")[0];
 }
 
+function calcularDuracaoReal(dataInicio, dataFim, periodo) {
+  const criarData = (valor) => {
+    const [ano, mes, dia] = String(valor || "")
+      .split("-")
+      .map(Number);
+    return new Date(ano, mes - 1, dia);
+  };
+
+  const inicio = criarData(dataInicio);
+  const fim = criarData(dataFim);
+  const diffMs = Math.max(0, fim.getTime() - inicio.getTime());
+
+  if (periodo === "hora") {
+    return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60)));
+  }
+
+  if (periodo === "mes") {
+    let meses =
+      (fim.getFullYear() - inicio.getFullYear()) * 12 +
+      (fim.getMonth() - inicio.getMonth());
+
+    if (fim.getDate() > inicio.getDate()) meses += 1;
+    return Math.max(1, meses);
+  }
+
+  return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+}
+
 function obterTextoPeriodo(periodo) {
   if (periodo === "hora") return "Por Hora";
   if (periodo === "dia") return "Por Dia";
@@ -96,7 +124,10 @@ function obterResumoNumerico() {
   let subtotal = 0;
 
   equipamentosSelecionados.forEach((item) => {
-    subtotal += getValorPorPeriodo(item) * item.quantidade;
+    const quantidadeCobrada = Number(
+      item.quantidadeCobrada || item.quantidade || 1,
+    );
+    subtotal += getValorPorPeriodo(item) * quantidadeCobrada;
   });
 
   return {
@@ -142,6 +173,75 @@ async function aguardarDependenciasAluguel() {
   if (!window.AluguelService) {
     throw new Error("AluguelService não foi carregado.");
   }
+}
+
+function parseNumeroBR(valor) {
+  if (typeof valor === "number") return valor;
+
+  const texto = String(valor || "")
+    .replace(/\./g, "")
+    .replace(",", ".")
+    .trim();
+
+  const numero = Number(texto);
+  return Number.isFinite(numero) ? numero : 0;
+}
+
+function obterRotuloUnidadeCobranca(item) {
+  if (item.rotuloUnidadeCobranca) return item.rotuloUnidadeCobranca;
+
+  const unidade = item.unidadeCobranca || "unidade";
+
+  const rotulos = {
+    unidade: "unid.",
+    metro: "m",
+    metro2: "m²",
+    duzia: "dúzia",
+    conjunto: "conj.",
+    jogo: "jogo",
+    quilo: "kg",
+    dosagem: "200 ml",
+  };
+
+  return rotulos[unidade] || "unid.";
+}
+
+function quantidadeCobradaPadrao(item, quantidadeEstoque) {
+  const unidade = item.unidadeCobranca || "unidade";
+
+  if (["metro", "metro2", "quilo", "dosagem", "duzia"].includes(unidade)) {
+    return 1;
+  }
+
+  return quantidadeEstoque || 1;
+}
+
+function calcularDuracaoRealLocal(dataInicio, dataFim, periodo) {
+  const criarData = (valor) => {
+    const [ano, mes, dia] = String(valor || "")
+      .split("-")
+      .map(Number);
+    return new Date(ano, mes - 1, dia);
+  };
+
+  const inicio = criarData(dataInicio);
+  const fim = criarData(dataFim);
+  const diffMs = Math.max(0, fim.getTime() - inicio.getTime());
+
+  if (periodo === "hora") {
+    return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60)));
+  }
+
+  if (periodo === "mes") {
+    let meses =
+      (fim.getFullYear() - inicio.getFullYear()) * 12 +
+      (fim.getMonth() - inicio.getMonth());
+
+    if (fim.getDate() > inicio.getDate()) meses += 1;
+    return Math.max(1, meses);
+  }
+
+  return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 }
 
 // ============================================
@@ -319,6 +419,31 @@ async function atualizarInfoEquipamento() {
       quantidadeInput.value = quantidadeDisponivel > 0 ? 1 : 0;
     }
 
+    const quantidadeCobrancaInput =
+      document.getElementById("quantidadeCobranca");
+    const unidadeCobrancaInfo = document.getElementById("unidadeCobrancaInfo");
+    const labelQuantidadeCobranca = document.getElementById(
+      "labelQuantidadeCobranca",
+    );
+
+    const rotuloUnidade = obterRotuloUnidadeCobranca(equipamento);
+    const quantidadeCobranca = quantidadeCobradaPadrao(equipamento, 1);
+
+    if (quantidadeCobrancaInput) {
+      quantidadeCobrancaInput.value = quantidadeCobranca;
+      quantidadeCobrancaInput.step = equipamento.permiteQuantidadeDecimal
+        ? "0.01"
+        : "1";
+    }
+
+    if (unidadeCobrancaInfo) {
+      unidadeCobrancaInfo.textContent = `Cobrança por ${rotuloUnidade}. Estoque continua sendo controlado por unidade física.`;
+    }
+
+    if (labelQuantidadeCobranca) {
+      labelQuantidadeCobranca.textContent = `Quantidade cobrada (${rotuloUnidade})`;
+    }
+
     if (infoEquipamento) {
       infoEquipamento.style.display = "block";
     }
@@ -340,6 +465,8 @@ function adicionarEquipamento() {
   const equipamentoSelect = document.getElementById("equipamentoSelect");
   const equipamentoId = valorCampo("equipamentoSelect");
   const quantidade = parseInt(valorCampo("quantidadeAlugar"), 10) || 0;
+  const quantidadeCobranca =
+    parseNumeroBR(valorCampo("quantidadeCobranca")) || quantidade;
   const periodo = valorCampo("periodo");
 
   if (!equipamentoId) {
@@ -358,6 +485,15 @@ function adicionarEquipamento() {
 
   if (quantidade <= 0) {
     mostrarMensagem("Erro", "A quantidade deve ser maior que zero.", "error");
+    return;
+  }
+
+  if (quantidadeCobranca <= 0) {
+    mostrarMensagem(
+      "Erro",
+      "A quantidade cobrada deve ser maior que zero.",
+      "error",
+    );
     return;
   }
 
@@ -394,6 +530,9 @@ function adicionarEquipamento() {
 
   if (existente) {
     existente.quantidade += quantidade;
+    existente.quantidadeEstoque = existente.quantidade;
+    existente.quantidadeCobrada =
+      Number(existente.quantidadeCobrada || 0) + quantidadeCobranca;
   } else {
     const nomeEquipamento =
       equipamentoData.nomeEquipamento || equipamentoData.nome || "Equipamento";
@@ -404,6 +543,15 @@ function adicionarEquipamento() {
       nome: nomeEquipamento,
       nomeEquipamento,
       quantidade,
+      quantidadeEstoque: quantidade,
+      quantidadeCobrada,
+      unidadeCobranca: equipamentoData.unidadeCobranca || "unidade",
+      rotuloUnidadeCobranca:
+        equipamentoData.rotuloUnidadeCobranca ||
+        obterRotuloUnidadeCobranca(equipamentoData),
+      permiteQuantidadeDecimal: Boolean(
+        equipamentoData.permiteQuantidadeDecimal,
+      ),
       valorHora: Number(equipamentoData.valorHora || 0),
       valorDia: Number(equipamentoData.valorDia || 0),
       valorMes: Number(equipamentoData.valorMes || 0),
@@ -442,12 +590,21 @@ function atualizarListaEquipamentos() {
   lista.innerHTML = equipamentosSelecionados
     .map((item, index) => {
       const valorUnitario = getValorPorPeriodo(item);
-      const subtotal = valorUnitario * item.quantidade;
+      const quantidadeCobrada = Number(
+        item.quantidadeCobrada || item.quantidade || 1,
+      );
+      const subtotal = valorUnitario * quantidadeCobrada;
+      const rotuloUnidade = obterRotuloUnidadeCobranca(item);
 
       return `
         <tr>
           <td>${escaparHTMLAluguel(item.nomeEquipamento)}</td>
-          <td>${item.quantidade}</td>
+          <td>
+            ${item.quantidadeEstoque || item.quantidade} unid. estoque
+            <small style="display:block; color:#666;">
+              Cobrança: ${quantidadeCobrada} ${rotuloUnidade}
+            </small>
+          </td>
           <td>${formatarMoedaAluguel(valorUnitario)}</td>
           <td>${formatarMoedaAluguel(subtotal)}</td>
           <td>
@@ -654,7 +811,13 @@ async function carregarAlugueis() {
 
             <td>${obterTextoPeriodo(aluguel.periodo)}</td>
 
-            <td>${formatarMoedaAluguel(aluguel.valorTotal || 0)}</td>
+            <td>
+              ${
+                aluguel.status === "ativo"
+                  ? "<small>A calcular na devolução</small>"
+                  : formatarMoedaAluguel(aluguel.valorTotal || 0)
+              }
+            </td>
 
             <td>
               <span class="status-badge ${statusClass}">
@@ -715,18 +878,95 @@ function buscarAlugueis() {
 // ============================================
 
 async function finalizarAluguel(aluguelId) {
+  const aluguel = alugueis.find((item) => item.id === aluguelId);
+
+  if (!aluguel) {
+    mostrarMensagem("Erro", "Aluguel não encontrado na lista.", "error");
+    return;
+  }
+
+  if (aluguel.status === "finalizado") {
+    mostrarMensagem("Atenção", "Este aluguel já está finalizado.", "warning");
+    return;
+  }
+
   const confirmar = confirm(
-    "Tem certeza que deseja finalizar este aluguel?\n\nEsta ação devolverá os equipamentos ao estoque.",
+    "Tem certeza que deseja finalizar este aluguel?\n\nEsta ação devolverá os equipamentos ao estoque e calculará o valor final.",
   );
 
   if (!confirmar) {
     return;
   }
 
-  try {
-    await AluguelService.finalizar(aluguelId);
+  const dataDevolucaoReal =
+    prompt("Informe a data real de devolução:", dataHojeISO()) || dataHojeISO();
 
-    mostrarMensagem("Sucesso", "Aluguel finalizado com sucesso!");
+  const equipamentos =
+    aluguel.equipamentosDetalhes || aluguel.equipamentos || [];
+  const itensFechamento = [];
+
+  for (const item of equipamentos) {
+    const nome = item.nomeEquipamento || item.nome || "Equipamento";
+    const rotulo = obterRotuloUnidadeCobranca(item);
+    const quantidadeAtual =
+      item.quantidadeCobradaFinal ||
+      item.quantidadeCobrada ||
+      item.quantidade ||
+      1;
+
+    const resposta = prompt(
+      `Quantidade cobrada para:\n${nome}\n\nUnidade de cobrança: ${rotulo}`,
+      String(quantidadeAtual).replace(".", ","),
+    );
+
+    if (resposta === null) {
+      mostrarMensagem("Atenção", "Finalização cancelada.", "warning");
+      return;
+    }
+
+    const quantidadeCobradaFinal = parseNumeroBR(resposta);
+
+    if (quantidadeCobradaFinal <= 0) {
+      mostrarMensagem(
+        "Erro",
+        `Quantidade cobrada inválida para "${nome}".`,
+        "error",
+      );
+      return;
+    }
+
+    itensFechamento.push({
+      equipamentoId: item.equipamentoId || item.id,
+      quantidadeCobradaFinal,
+    });
+  }
+
+  const desconto = parseNumeroBR(prompt("Desconto em R$:", "0") || "0");
+  const acrescimo = parseNumeroBR(prompt("Acréscimo em R$:", "0") || "0");
+
+  let valorPagoTexto = prompt(
+    "Valor pago em R$:\n\nDeixe vazio para considerar pagamento total.",
+    "",
+  );
+
+  const formaPagamento = prompt("Forma de pagamento:", "Dinheiro") || "";
+
+  const fechamento = {
+    dataDevolucaoReal,
+    itensFechamento,
+    desconto,
+    acrescimo,
+    formaPagamento,
+  };
+
+  if (valorPagoTexto !== null && valorPagoTexto.trim() !== "") {
+    fechamento.valorPago = parseNumeroBR(valorPagoTexto);
+  }
+
+  try {
+    await AluguelService.finalizar(aluguelId, fechamento);
+
+    mostrarMensagem("Sucesso", "Aluguel finalizado e cobrança calculada!");
 
     await carregarAlugueis();
     await carregarEquipamentosParaSelect("equipamentoSelect");
