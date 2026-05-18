@@ -285,19 +285,27 @@ async function carregarEquipamentos() {
 
     equipamentos = await equipamentosService.listar();
 
-    if (!equipamentos.length) {
+    const equipamentosComPreco = equipamentos.filter((equipamento) => {
+      const valorHora = Number(equipamento.valorHora || 0);
+      const valorDia = Number(equipamento.valorDia || 0);
+      const valorMes = Number(equipamento.valorMes || 0);
+
+      return valorHora > 0 || valorDia > 0 || valorMes > 0;
+    });
+
+    if (!equipamentosComPreco.length) {
       equipamentosList.innerHTML = `
-        <tr>
-          <td colspan="5" class="empty-message">
-            <i class="fas fa-box"></i>
-            <p>Nenhum equipamento cadastrado ainda</p>
-          </td>
-        </tr>
-      `;
+    <tr>
+      <td colspan="5" class="empty-message">
+        <i class="fas fa-box"></i>
+        <p>Nenhum equipamento com preço cadastrado ainda</p>
+      </td>
+    </tr>
+  `;
       return;
     }
 
-    equipamentosList.innerHTML = equipamentos
+    equipamentosList.innerHTML = equipamentosComPreco
       .map((equipamento) => {
         const status = obterStatusVisual(equipamento);
 
