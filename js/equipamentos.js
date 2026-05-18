@@ -302,7 +302,7 @@ async function carregarEquipamentos() {
 
         return `
           <tr>
-            <td>
+            <td style="width: 100% !important;">
               <strong>${nome}</strong>
               ${
                 observacoesResumo
