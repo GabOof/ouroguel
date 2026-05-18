@@ -465,7 +465,7 @@ function adicionarEquipamento() {
   const equipamentoSelect = document.getElementById("equipamentoSelect");
   const equipamentoId = valorCampo("equipamentoSelect");
   const quantidade = parseInt(valorCampo("quantidadeAlugar"), 10) || 0;
-  const quantidadeCobranca =
+  const quantidadeCobrada =
     parseNumeroBR(valorCampo("quantidadeCobranca")) || quantidade;
   const periodo = valorCampo("periodo");
 
@@ -488,7 +488,7 @@ function adicionarEquipamento() {
     return;
   }
 
-  if (quantidadeCobranca <= 0) {
+  if (quantidadeCobrada <= 0) {
     mostrarMensagem(
       "Erro",
       "A quantidade cobrada deve ser maior que zero.",
@@ -508,16 +508,52 @@ function adicionarEquipamento() {
     return;
   }
 
-  const equipamentoData = JSON.parse(option.dataset.equipamento);
+  let equipamentoData;
+
+  try {
+    equipamentoData = JSON.parse(option.dataset.equipamento);
+  } catch (error) {
+    console.error("Erro ao ler dados do equipamento:", error);
+
+    mostrarMensagem(
+      "Erro",
+      "Os dados do equipamento estão inválidos. Recarregue a página e tente novamente.",
+      "error",
+    );
+    return;
+  }
+
   const quantidadeDisponivel = Number(
     equipamentoData.quantidadeDisponivel || 0,
   );
+
+  if (quantidadeDisponivel <= 0) {
+    mostrarMensagem(
+      "Erro",
+      "Este equipamento não possui estoque disponível para aluguel.",
+      "error",
+    );
+    return;
+  }
+
+  const valorUnitario = obterValorPorPeriodoDoObjeto(equipamentoData, periodo);
+
+  if (valorUnitario <= 0) {
+    mostrarMensagem(
+      "Erro",
+      `Este equipamento não possui valor configurado para ${obterTextoPeriodo(periodo).toLowerCase()}.`,
+      "error",
+    );
+    return;
+  }
 
   const existente = equipamentosSelecionados.find(
     (item) => item.id === equipamentoId,
   );
 
-  const quantidadeJaSelecionada = existente ? existente.quantidade : 0;
+  const quantidadeJaSelecionada = existente
+    ? Number(existente.quantidade || existente.quantidadeEstoque || 0)
+    : 0;
 
   if (quantidade + quantidadeJaSelecionada > quantidadeDisponivel) {
     mostrarMensagem(
@@ -531,8 +567,9 @@ function adicionarEquipamento() {
   if (existente) {
     existente.quantidade += quantidade;
     existente.quantidadeEstoque = existente.quantidade;
+
     existente.quantidadeCobrada =
-      Number(existente.quantidadeCobrada || 0) + quantidadeCobranca;
+      Number(existente.quantidadeCobrada || 0) + quantidadeCobrada;
   } else {
     const nomeEquipamento =
       equipamentoData.nomeEquipamento || equipamentoData.nome || "Equipamento";
@@ -540,18 +577,25 @@ function adicionarEquipamento() {
     equipamentosSelecionados.push({
       id: equipamentoId,
       equipamentoId,
+
       nome: nomeEquipamento,
       nomeEquipamento,
+
       quantidade,
       quantidadeEstoque: quantidade,
+
       quantidadeCobrada,
+
       unidadeCobranca: equipamentoData.unidadeCobranca || "unidade",
+
       rotuloUnidadeCobranca:
         equipamentoData.rotuloUnidadeCobranca ||
         obterRotuloUnidadeCobranca(equipamentoData),
+
       permiteQuantidadeDecimal: Boolean(
         equipamentoData.permiteQuantidadeDecimal,
       ),
+
       valorHora: Number(equipamentoData.valorHora || 0),
       valorDia: Number(equipamentoData.valorDia || 0),
       valorMes: Number(equipamentoData.valorMes || 0),
@@ -564,9 +608,13 @@ function adicionarEquipamento() {
   equipamentoSelect.value = "";
 
   const infoEquipamento = document.getElementById("infoEquipamento");
-  if (infoEquipamento) infoEquipamento.style.display = "none";
+
+  if (infoEquipamento) {
+    infoEquipamento.style.display = "none";
+  }
 
   preencherCampo("quantidadeAlugar", 1);
+  preencherCampo("quantidadeCobranca", 1);
 
   mostrarMensagem("Sucesso", "Equipamento adicionado à lista!");
 }
