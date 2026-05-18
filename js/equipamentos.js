@@ -266,7 +266,7 @@ async function carregarEquipamentos() {
   try {
     equipamentosList.innerHTML = `
       <tr>
-        <td colspan="6" style="text-align: center; padding: 40px;">
+        <td colspan="5" style="text-align: center; padding: 40px;">
           <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #3498db;"></i>
           <p>Carregando equipamentos...</p>
         </td>
@@ -278,7 +278,7 @@ async function carregarEquipamentos() {
     if (!equipamentos.length) {
       equipamentosList.innerHTML = `
         <tr>
-          <td colspan="6" class="empty-message">
+          <td colspan="5" class="empty-message">
             <i class="fas fa-box"></i>
             <p>Nenhum equipamento cadastrado ainda</p>
           </td>
@@ -292,26 +292,20 @@ async function carregarEquipamentos() {
         const status = obterStatusVisual(equipamento);
 
         const nome = escaparHTMLLocal(equipamento.nomeEquipamento);
-        const categoria = escaparHTMLLocal(equipamento.categoria);
         const observacoes = escaparHTMLLocal(equipamento.observacoes || "");
-
-        const observacoesResumo =
-          observacoes.length > 50
-            ? observacoes.substring(0, 50) + "..."
-            : observacoes;
 
         return `
           <tr>
-            <td style="width: 100% !important;">
+            <td class="col-nome-observacoes">
               <strong>${nome}</strong>
               ${
-                observacoesResumo
-                  ? `<br><small>${observacoesResumo}</small>`
+                observacoes
+                  ? `<br><small class="texto-observacoes">${observacoes}</small>`
                   : ""
               }
             </td>
 
-            <td>
+            <td class="col-quantidade">
               <strong>${equipamento.quantidadeTotal || 0}</strong>
               <small style="display: block; color: #666;">
                 Disp: ${equipamento.quantidadeDisponivel || 0} |
@@ -319,16 +313,16 @@ async function carregarEquipamentos() {
               </small>
             </td>
 
-            <td>${formatarMoedaTabela(equipamento.valorDia || 0)}</td>
+            <td class="col-valor">${formatarMoedaTabela(equipamento.valorDia || 0)}</td>
 
-            <td>
+            <td class="col-status">
               <span class="status-badge ${status.classe}">
                 <i class="fas ${status.icone}"></i>
                 ${status.texto}
               </span>
             </td>
 
-            <td>
+            <td class="col-acoes">
               <div style="display: flex; gap: 5px; flex-wrap: wrap;">
                 <button class="btn btn-small btn-primary" onclick="editarEquipamento('${equipamento.id}')">
                   <i class="fas fa-edit"></i>
@@ -352,7 +346,7 @@ async function carregarEquipamentos() {
 
     equipamentosList.innerHTML = `
       <tr>
-        <td colspan="6" style="text-align: center; padding: 40px; color: #e74c3c;">
+        <td colspan="5" style="text-align: center; padding: 40px; color: #e74c3c;">
           <i class="fas fa-exclamation-triangle"></i>
           <p>Erro ao carregar equipamentos</p>
           <small>${escaparHTMLLocal(error.message)}</small>
