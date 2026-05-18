@@ -4,7 +4,7 @@
       await window.firebaseReady;
     }
 
-    if (!window.db || !window.auth) {
+    if (!window.db || !window.auth || !window.firebase) {
       throw new Error("Firebase Auth ou Firestore não inicializado.");
     }
 
@@ -29,24 +29,60 @@
     return hoje.toISOString().split("T")[0];
   }
 
-  function calcularDataDevolucao(dataInicio, periodo, duracao) {
-    const [ano, mes, dia] = dataInicio.split("-").map(Number);
-    const data = new Date(ano, mes - 1, dia);
+  function criarDataLocal(dataISO) {
+    const [ano, mes, dia] = String(dataISO || "")
+      .split("-")
+      .map(Number);
+
+    if (!ano || !mes || !dia) {
+      return new Date();
+    }
+
+    return new Date(ano, mes - 1, dia);
+  }
+
+  function calcularDataDevolucaoPrevista(dataInicio, periodo, duracao) {
+    const data = criarDataLocal(dataInicio);
+    const quantidade = Number(duracao || 1);
 
     if (periodo === "hora") {
-      data.setHours(data.getHours() + duracao);
+      data.setHours(data.getHours() + quantidade);
     }
 
     if (periodo === "dia") {
-      data.setDate(data.getDate() + duracao);
+      data.setDate(data.getDate() + quantidade);
     }
 
     if (periodo === "mes") {
-      data.setMonth(data.getMonth() + duracao);
+      data.setMonth(data.getMonth() + quantidade);
     }
 
     data.setMinutes(data.getMinutes() - data.getTimezoneOffset());
     return data.toISOString().split("T")[0];
+  }
+
+  function calcularDuracaoReal(dataInicio, dataFim, periodo) {
+    const inicio = criarDataLocal(dataInicio);
+    const fim = criarDataLocal(dataFim || dataHojeISO());
+    const diffMs = Math.max(0, fim.getTime() - inicio.getTime());
+
+    if (periodo === "hora") {
+      return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60)));
+    }
+
+    if (periodo === "mes") {
+      let meses =
+        (fim.getFullYear() - inicio.getFullYear()) * 12 +
+        (fim.getMonth() - inicio.getMonth());
+
+      if (fim.getDate() > inicio.getDate()) {
+        meses += 1;
+      }
+
+      return Math.max(1, meses);
+    }
+
+    return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
   }
 
   function obterValorPorPeriodo(equipamento, periodo) {
@@ -63,6 +99,35 @@
     }
 
     return 0;
+  }
+
+  function possuiAlgumPreco(equipamento) {
+    return (
+      Number(equipamento.valorHora || 0) > 0 ||
+      Number(equipamento.valorDia || 0) > 0 ||
+      Number(equipamento.valorMes || 0) > 0
+    );
+  }
+
+  function obterRotuloUnidadeCobranca(item) {
+    if (item.rotuloUnidadeCobranca) {
+      return item.rotuloUnidadeCobranca;
+    }
+
+    const unidade = item.unidadeCobranca || "unidade";
+
+    const rotulos = {
+      unidade: "unid.",
+      metro: "m",
+      metro2: "m²",
+      duzia: "dúzia",
+      conjunto: "conj.",
+      jogo: "jogo",
+      quilo: "kg",
+      dosagem: "200 ml",
+    };
+
+    return rotulos[unidade] || "unid.";
   }
 
   function validarDadosRegistro(dados) {
@@ -82,8 +147,8 @@
       throw new Error("Período inválido.");
     }
 
-    if (!dados.duracao || dados.duracao <= 0) {
-      throw new Error("Duração inválida.");
+    if (!Number(dados.duracaoPrevista || dados.duracao || 0)) {
+      throw new Error("Duração prevista inválida.");
     }
 
     if (!Array.isArray(dados.equipamentos) || dados.equipamentos.length === 0) {
@@ -91,7 +156,89 @@
     }
   }
 
+  function validarFechamento(fechamento) {
+    if (!fechamento || typeof fechamento !== "object") {
+      throw new Error("Dados de fechamento não informados.");
+    }
+
+    if (!fechamento.dataDevolucaoReal) {
+      throw new Error("Data real de devolução não informada.");
+    }
+  }
+
   window.AluguelService = {
+    async listarClientes() {
+      const db = await aguardarFirebase();
+
+      const snapshot = await db.collection("clientes").orderBy("nome").get();
+
+      return snapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter((cliente) => cliente.ativo !== false);
+    },
+
+    async obterClientePorId(clienteId) {
+      const db = await aguardarFirebase();
+
+      const doc = await db.collection("clientes").doc(clienteId).get();
+
+      if (!doc.exists) {
+        return null;
+      }
+
+      return {
+        id: doc.id,
+        ...doc.data(),
+      };
+    },
+
+    async listarEquipamentosDisponiveis() {
+      const db = await aguardarFirebase();
+
+      const snapshot = await db
+        .collection("equipamentos")
+        .orderBy("nomeEquipamento")
+        .get();
+
+      return snapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter((equipamento) => {
+          const ativo = equipamento.ativo !== false;
+          const disponivel = equipamento.status === "disponivel";
+          const quantidadeDisponivel = Number(
+            equipamento.quantidadeDisponivel || 0,
+          );
+
+          return (
+            ativo &&
+            disponivel &&
+            quantidadeDisponivel > 0 &&
+            possuiAlgumPreco(equipamento)
+          );
+        });
+    },
+
+    async obterEquipamentoPorId(equipamentoId) {
+      const db = await aguardarFirebase();
+
+      const doc = await db.collection("equipamentos").doc(equipamentoId).get();
+
+      if (!doc.exists) {
+        return null;
+      }
+
+      return {
+        id: doc.id,
+        ...doc.data(),
+      };
+    },
+
     async listar() {
       const db = await aguardarFirebase();
 
@@ -125,17 +272,20 @@
       validarDadosRegistro(dados);
 
       const db = await aguardarFirebase();
-
       const aluguelRef = db.collection("alugueis").doc();
-      const dataDevolucao = calcularDataDevolucao(
+
+      const duracaoPrevista = Number(
+        dados.duracaoPrevista || dados.duracao || 1,
+      );
+      const dataDevolucaoPrevista = calcularDataDevolucaoPrevista(
         dados.dataInicio,
         dados.periodo,
-        dados.duracao,
+        duracaoPrevista,
       );
 
       await db.runTransaction(async function (transaction) {
         const equipamentoRefs = dados.equipamentos.map((item) =>
-          db.collection("equipamentos").doc(item.id || item.equipamentoId),
+          db.collection("equipamentos").doc(item.equipamentoId || item.id),
         );
 
         const equipamentoDocs = [];
@@ -145,7 +295,7 @@
         }
 
         const equipamentosDetalhes = [];
-        let subtotal = 0;
+        let subtotalPrevisto = 0;
 
         for (let i = 0; i < dados.equipamentos.length; i++) {
           const itemSelecionado = dados.equipamentos[i];
@@ -159,6 +309,12 @@
 
           const equipamentoAtual = equipamentoDoc.data();
 
+          if (equipamentoAtual.ativo === false) {
+            throw new Error(
+              `Equipamento "${equipamentoAtual.nomeEquipamento}" está inativo.`,
+            );
+          }
+
           if (equipamentoAtual.status !== "disponivel") {
             throw new Error(
               `Equipamento "${equipamentoAtual.nomeEquipamento}" não está disponível para aluguel.`,
@@ -171,15 +327,19 @@
           const quantidadeAlugada = Number(
             equipamentoAtual.quantidadeAlugada || 0,
           );
-          const quantidadeSolicitada = Number(itemSelecionado.quantidade || 0);
+          const quantidadeEstoque = Number(
+            itemSelecionado.quantidadeEstoque ||
+              itemSelecionado.quantidade ||
+              0,
+          );
 
-          if (quantidadeSolicitada <= 0) {
+          if (quantidadeEstoque <= 0) {
             throw new Error(
-              `Quantidade inválida para "${equipamentoAtual.nomeEquipamento}".`,
+              `Quantidade de estoque inválida para "${equipamentoAtual.nomeEquipamento}".`,
             );
           }
 
-          if (quantidadeSolicitada > quantidadeDisponivel) {
+          if (quantidadeEstoque > quantidadeDisponivel) {
             throw new Error(
               `Estoque insuficiente para "${equipamentoAtual.nomeEquipamento}". Disponível: ${quantidadeDisponivel}.`,
             );
@@ -196,10 +356,36 @@
             );
           }
 
-          subtotal += valorUnitario * quantidadeSolicitada;
+          const quantidadeCobradaPrevista = Number(
+            itemSelecionado.quantidadeCobradaPrevista ||
+              itemSelecionado.quantidadeCobrada ||
+              itemSelecionado.quantidade ||
+              1,
+          );
+
+          if (quantidadeCobradaPrevista <= 0) {
+            throw new Error(
+              `Quantidade cobrada inválida para "${equipamentoAtual.nomeEquipamento}".`,
+            );
+          }
+
+          const subtotalItemPrevisto =
+            valorUnitario * quantidadeCobradaPrevista * duracaoPrevista;
+
+          subtotalPrevisto += subtotalItemPrevisto;
+
+          const unidadeCobranca =
+            itemSelecionado.unidadeCobranca ||
+            equipamentoAtual.unidadeCobranca ||
+            "unidade";
+
+          const rotuloUnidadeCobranca =
+            itemSelecionado.rotuloUnidadeCobranca ||
+            equipamentoAtual.rotuloUnidadeCobranca ||
+            obterRotuloUnidadeCobranca({ unidadeCobranca });
 
           equipamentosDetalhes.push({
-            equipamentoId: itemSelecionado.id || itemSelecionado.equipamentoId,
+            equipamentoId: itemSelecionado.equipamentoId || itemSelecionado.id,
 
             nome: equipamentoAtual.nomeEquipamento || itemSelecionado.nome,
             nomeEquipamento:
@@ -207,56 +393,47 @@
               itemSelecionado.nomeEquipamento ||
               itemSelecionado.nome,
 
-            quantidade: quantidadeSolicitada,
-            quantidadeEstoque: quantidadeSolicitada,
+            quantidade: quantidadeEstoque,
+            quantidadeEstoque,
 
-            quantidadeCobrada: Number(
-              itemSelecionado.quantidadeCobrada ||
-                itemSelecionado.quantidade ||
-                quantidadeSolicitada ||
-                1,
-            ),
+            quantidadeCobrada: quantidadeCobradaPrevista,
+            quantidadeCobradaPrevista,
 
-            unidadeCobranca:
-              itemSelecionado.unidadeCobranca ||
-              equipamentoAtual.unidadeCobranca ||
-              "unidade",
-
-            rotuloUnidadeCobranca:
-              itemSelecionado.rotuloUnidadeCobranca ||
-              equipamentoAtual.rotuloUnidadeCobranca ||
-              "unid.",
-
+            unidadeCobranca,
+            rotuloUnidadeCobranca,
             permiteQuantidadeDecimal: Boolean(
               itemSelecionado.permiteQuantidadeDecimal ||
               equipamentoAtual.permiteQuantidadeDecimal,
             ),
 
+            valorUnitarioPrevisto: valorUnitario,
             valorUnitario,
             valorHora: Number(equipamentoAtual.valorHora || 0),
             valorDia: Number(equipamentoAtual.valorDia || 0),
             valorMes: Number(equipamentoAtual.valorMes || 0),
+
+            subtotalPrevisto: subtotalItemPrevisto,
           });
 
           transaction.update(equipamentoRefs[i], {
-            quantidadeDisponivel: quantidadeDisponivel - quantidadeSolicitada,
-            quantidadeAlugada: quantidadeAlugada + quantidadeSolicitada,
+            quantidadeDisponivel: quantidadeDisponivel - quantidadeEstoque,
+            quantidadeAlugada: quantidadeAlugada + quantidadeEstoque,
             atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
           });
         }
-
-        const valorTotal = subtotal * dados.duracao;
 
         transaction.set(aluguelRef, {
           clienteId: dados.clienteId,
           clienteNome: dados.cliente.nome || "",
           clienteCpf: dados.cliente.cpf || "",
           clienteCelular: dados.cliente.celular || "",
+          clienteTelefone: dados.cliente.telefone || "",
 
           dataInicio: dados.dataInicio,
-          dataDevolucao,
+          dataDevolucaoPrevista,
           periodo: dados.periodo,
-          duracao: dados.duracao,
+          duracaoPrevista,
+          duracao: duracaoPrevista,
 
           equipamentosIds: equipamentosDetalhes.map(
             (item) => item.equipamentoId,
@@ -264,11 +441,22 @@
           equipamentos: equipamentosDetalhes,
           equipamentosDetalhes,
 
-          subtotal,
-          valorTotal,
+          subtotalPrevisto,
+          valorPrevisto: subtotalPrevisto,
+          valorTotal: null,
+          subtotal: null,
+          desconto: 0,
+          acrescimo: 0,
+          valorPago: 0,
+          saldo: null,
+          statusPagamento: "pendente",
+          formaPagamento: "",
+
           observacoes: dados.observacoes || "",
+          observacoesFechamento: "",
 
           status: "ativo",
+          cobrancaCalculada: false,
           dataRegistro: new Date().toISOString(),
           criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
           atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
@@ -280,8 +468,9 @@
     },
 
     async finalizar(aluguelId, fechamento = {}) {
-      const db = await aguardarFirebase();
+      validarFechamento(fechamento);
 
+      const db = await aguardarFirebase();
       const aluguelRef = db.collection("alugueis").doc(aluguelId);
 
       await db.runTransaction(async function (transaction) {
@@ -302,7 +491,6 @@
         }
 
         const dataDevolucaoReal = fechamento.dataDevolucaoReal || dataHojeISO();
-
         const duracaoReal = calcularDuracaoReal(
           aluguel.dataInicio,
           dataDevolucaoReal,
@@ -353,7 +541,9 @@
           const quantidadeCobradaFinal = Number(
             itemFechamento.quantidadeCobradaFinal ||
               itemFechamento.quantidadeCobrada ||
+              item.quantidadeCobradaFinal ||
               item.quantidadeCobrada ||
+              item.quantidadeCobradaPrevista ||
               item.quantidade ||
               1,
           );
@@ -364,36 +554,39 @@
             );
           }
 
-          const valorUnitario = Number(
-            item.valorUnitario ||
+          const valorUnitarioFinal = Number(
+            itemFechamento.valorUnitarioFinal ||
+              itemFechamento.valorUnitario ||
+              item.valorUnitarioFinal ||
+              item.valorUnitario ||
               obterValorPorPeriodo(equipamento, aluguel.periodo) ||
               0,
           );
 
-          if (valorUnitario <= 0) {
+          if (valorUnitarioFinal <= 0) {
             throw new Error(
-              `Valor do período não configurado para "${item.nomeEquipamento || item.nome}".`,
+              `Valor unitário inválido para "${item.nomeEquipamento || item.nome}".`,
             );
           }
 
-          const subtotalItem =
-            valorUnitario * quantidadeCobradaFinal * duracaoReal;
+          const subtotalItemFinal =
+            valorUnitarioFinal * quantidadeCobradaFinal * duracaoReal;
 
-          subtotalFinal += subtotalItem;
+          subtotalFinal += subtotalItemFinal;
 
           equipamentosFechamento.push({
             ...item,
             quantidadeEstoque,
             quantidadeCobradaFinal,
+            valorUnitarioFinal,
+            duracaoReal,
+            subtotalFinal: subtotalItemFinal,
             unidadeCobranca:
               item.unidadeCobranca || equipamento.unidadeCobranca || "unidade",
             rotuloUnidadeCobranca:
               item.rotuloUnidadeCobranca ||
               equipamento.rotuloUnidadeCobranca ||
-              "unid.",
-            valorUnitario,
-            duracaoReal,
-            subtotalFinal: subtotalItem,
+              obterRotuloUnidadeCobranca(equipamento),
           });
 
           const quantidadeTotal = Number(equipamento.quantidadeTotal || 0);
@@ -417,7 +610,6 @@
 
         const desconto = Number(fechamento.desconto || 0);
         const acrescimo = Number(fechamento.acrescimo || 0);
-
         const valorTotal = Math.max(0, subtotalFinal + acrescimo - desconto);
 
         const valorPago =
@@ -442,6 +634,7 @@
 
           equipamentosFechamento,
           equipamentosDetalhes: equipamentosFechamento,
+          equipamentos: equipamentosFechamento,
 
           subtotal: subtotalFinal,
           desconto,
@@ -451,6 +644,7 @@
           saldo,
           formaPagamento: fechamento.formaPagamento || "",
           statusPagamento,
+          observacoesFechamento: fechamento.observacoesFechamento || "",
 
           cobrancaCalculada: true,
           fechadoEm: new Date().toISOString(),
