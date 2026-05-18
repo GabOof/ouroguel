@@ -1,12 +1,11 @@
 let alugueis = [];
-let clientes = [];
 let equipamentosDisponiveis = [];
 let equipamentosSelecionados = [];
 let clienteSelecionado = null;
-let aluguelEmFechamento = null;
+let aluguelFechando = null;
 
 // ============================================
-// FUNÇÕES AUXILIARES
+// FUNÇÕES AUXILIARES DE INTERFACE
 // ============================================
 
 function valorCampo(id) {
@@ -17,16 +16,14 @@ function valorCampo(id) {
 function preencherCampo(id, valor) {
   const campo = document.getElementById(id);
 
-  if (campo) {
-    campo.value = valor ?? "";
+  if (!campo) {
+    return;
   }
-}
 
-function setTexto(id, valor) {
-  const elemento = document.getElementById(id);
-
-  if (elemento) {
-    elemento.textContent = valor ?? "";
+  if ("value" in campo) {
+    campo.value = valor ?? "";
+  } else {
+    campo.textContent = valor ?? "";
   }
 }
 
@@ -36,33 +33,37 @@ function escaparHTMLAluguel(valor) {
   return div.innerHTML;
 }
 
-function mostrarMensagemLocal(titulo, mensagem, tipo = "success") {
-  if (typeof mostrarMensagem === "function") {
-    mostrarMensagem(titulo, mensagem, tipo);
-    return;
-  }
-
-  console[tipo === "error" ? "error" : "log"](`${titulo}: ${mensagem}`);
-  alert(`${titulo}\n\n${mensagem}`);
-}
-
 function formatarMoedaAluguel(valor) {
-  const numero = Number(valor || 0);
-
   if (typeof formatarMoeda === "function") {
-    return formatarMoeda(numero);
+    return formatarMoeda(valor);
   }
 
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
-  }).format(numero);
+  }).format(Number(valor || 0));
 }
 
-function formatarMoedaInput(valor) {
-  return Number(valor || 0)
-    .toFixed(2)
-    .replace(".", ",");
+function formatarDataAluguel(dataISO) {
+  if (!dataISO) return "-";
+
+  if (typeof formatarData === "function") {
+    return formatarData(dataISO);
+  }
+
+  const [ano, mes, dia] = String(dataISO).split("-");
+
+  if (!ano || !mes || !dia) {
+    return dataISO;
+  }
+
+  return `${dia}/${mes}/${ano}`;
+}
+
+function dataHojeISO() {
+  const hoje = new Date();
+  hoje.setMinutes(hoje.getMinutes() - hoje.getTimezoneOffset());
+  return hoje.toISOString().split("T")[0];
 }
 
 function parseNumeroBR(valor) {
@@ -77,118 +78,37 @@ function parseNumeroBR(valor) {
     .trim();
 
   const numero = Number(texto);
+
   return Number.isFinite(numero) ? numero : 0;
 }
 
-function dataHojeISO() {
-  const hoje = new Date();
-  hoje.setMinutes(hoje.getMinutes() - hoje.getTimezoneOffset());
-  return hoje.toISOString().split("T")[0];
+function normalizarTextoBusca(valor) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
 
-function formatarDataAluguel(dataISO) {
-  if (!dataISO) {
-    return "-";
-  }
-
-  const [ano, mes, dia] = String(dataISO).split("-");
-
-  if (!ano || !mes || !dia) {
-    return dataISO;
-  }
-
-  return `${dia}/${mes}/${ano}`;
-}
-
-function criarDataLocal(dataISO) {
-  const [ano, mes, dia] = String(dataISO || "")
-    .split("-")
-    .map(Number);
-
-  if (!ano || !mes || !dia) {
-    return new Date();
-  }
-
-  return new Date(ano, mes - 1, dia);
-}
-
-function calcularDataDevolucaoLocal(dataInicio, periodo, duracao) {
-  const data = criarDataLocal(dataInicio);
-  const quantidade = Number(duracao || 1);
-
-  if (periodo === "hora") {
-    data.setHours(data.getHours() + quantidade);
-  }
-
-  if (periodo === "dia") {
-    data.setDate(data.getDate() + quantidade);
-  }
-
-  if (periodo === "mes") {
-    data.setMonth(data.getMonth() + quantidade);
-  }
-
-  data.setMinutes(data.getMinutes() - data.getTimezoneOffset());
-  return data.toISOString().split("T")[0];
-}
-
-function calcularDuracaoRealLocal(dataInicio, dataFim, periodo) {
-  const inicio = criarDataLocal(dataInicio);
-  const fim = criarDataLocal(dataFim || dataHojeISO());
-  const diffMs = Math.max(0, fim.getTime() - inicio.getTime());
-
-  if (periodo === "hora") {
-    return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60)));
-  }
-
-  if (periodo === "mes") {
-    let meses =
-      (fim.getFullYear() - inicio.getFullYear()) * 12 +
-      (fim.getMonth() - inicio.getMonth());
-
-    if (fim.getDate() > inicio.getDate()) {
-      meses += 1;
-    }
-
-    return Math.max(1, meses);
-  }
-
-  return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+function temAlgumPreco(equipamento) {
+  return (
+    Number(equipamento.valorHora || 0) > 0 ||
+    Number(equipamento.valorDia || 0) > 0 ||
+    Number(equipamento.valorMes || 0) > 0
+  );
 }
 
 function obterTextoPeriodo(periodo) {
   if (periodo === "hora") return "Por Hora";
   if (periodo === "dia") return "Por Dia";
   if (periodo === "mes") return "Por Mês";
-  return "";
-}
-
-function obterRotuloDuracao(periodo, duracao) {
-  const quantidade = Number(duracao || 1);
-
-  if (periodo === "hora") {
-    return `${quantidade} hora${quantidade > 1 ? "s" : ""}`;
-  }
-
-  if (periodo === "mes") {
-    return `${quantidade} mês${quantidade > 1 ? "es" : ""}`;
-  }
-
-  return `${quantidade} dia${quantidade > 1 ? "s" : ""}`;
+  return "Não definido";
 }
 
 function obterValorPorPeriodo(equipamento, periodo) {
-  if (periodo === "hora") {
-    return Number(equipamento.valorHora || 0);
-  }
-
-  if (periodo === "dia") {
-    return Number(equipamento.valorDia || 0);
-  }
-
-  if (periodo === "mes") {
-    return Number(equipamento.valorMes || 0);
-  }
+  if (periodo === "hora") return Number(equipamento.valorHora || 0);
+  if (periodo === "dia") return Number(equipamento.valorDia || 0);
+  if (periodo === "mes") return Number(equipamento.valorMes || 0);
 
   return 0;
 }
@@ -202,34 +122,117 @@ function obterRotuloUnidadeCobranca(item) {
     unidade: "unid.",
     metro: "m",
     metro2: "m²",
+    m2: "m²",
     duzia: "dúzia",
     conjunto: "conj.",
     jogo: "jogo",
     quilo: "kg",
+    kg: "kg",
     dosagem: "200 ml",
   };
 
   return rotulos[unidade] || "unid.";
 }
 
-function quantidadeCobradaPadrao(equipamento, quantidadeEstoque) {
-  const unidade = equipamento.unidadeCobranca || "unidade";
+function calcularDuracaoRealLocal(dataInicio, dataFim, periodo) {
+  if (!dataInicio || !dataFim || !periodo) return 1;
 
-  if (["metro", "metro2", "quilo", "dosagem", "duzia"].includes(unidade)) {
+  const criarData = (valor) => {
+    const [ano, mes, dia] = String(valor || "")
+      .split("-")
+      .map(Number);
+    return new Date(ano, mes - 1, dia);
+  };
+
+  const inicio = criarData(dataInicio);
+  const fim = criarData(dataFim);
+
+  if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime())) {
     return 1;
   }
 
-  return quantidadeEstoque || 1;
+  const diffMs = Math.max(0, fim.getTime() - inicio.getTime());
+
+  if (periodo === "hora") {
+    return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60)));
+  }
+
+  if (periodo === "mes") {
+    let meses =
+      (fim.getFullYear() - inicio.getFullYear()) * 12 +
+      (fim.getMonth() - inicio.getMonth());
+
+    if (fim.getDate() > inicio.getDate()) meses += 1;
+
+    return Math.max(1, meses);
+  }
+
+  return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 }
 
-function possuiPrecoNoPeriodo(equipamento, periodo) {
-  return obterValorPorPeriodo(equipamento, periodo) > 0;
+function obterQuantidadeCobradaPadrao(item) {
+  const unidade = item.unidadeCobranca || "unidade";
+
+  if (["unidade", "conjunto", "jogo"].includes(unidade)) {
+    return Number(item.quantidadeEstoque || item.quantidade || 1);
+  }
+
+  return Number(item.quantidadeCobradaFinal || item.quantidadeCobrada || 1);
 }
 
-async function aguardarDependenciasAluguel() {
+function mostrarErroAluguel(titulo, mensagem) {
+  if (typeof mostrarMensagem === "function") {
+    mostrarMensagem(titulo, mensagem, "error");
+    return;
+  }
+
+  alert(`${titulo}: ${mensagem}`);
+}
+
+function mostrarAvisoAluguel(titulo, mensagem) {
+  if (typeof mostrarMensagem === "function") {
+    mostrarMensagem(titulo, mensagem, "warning");
+    return;
+  }
+
+  alert(`${titulo}: ${mensagem}`);
+}
+
+function mostrarSucessoAluguel(titulo, mensagem) {
+  if (typeof mostrarMensagem === "function") {
+    mostrarMensagem(titulo, mensagem, "success");
+    return;
+  }
+
+  alert(`${titulo}: ${mensagem}`);
+}
+
+async function aguardarFirebaseTelaAluguel() {
   if (window.firebaseReady) {
     await window.firebaseReady;
   }
+
+  if (!window.db || !window.auth) {
+    throw new Error("Firebase Auth ou Firestore não inicializado.");
+  }
+
+  await new Promise((resolve, reject) => {
+    const unsubscribe = window.auth.onAuthStateChanged((usuario) => {
+      unsubscribe();
+
+      if (usuario) {
+        resolve(usuario);
+      } else {
+        reject(new Error("Usuário não autenticado no Firebase Auth."));
+      }
+    });
+  });
+
+  return window.db;
+}
+
+async function aguardarDependenciasAluguel() {
+  await aguardarFirebaseTelaAluguel();
 
   if (!window.AluguelService) {
     throw new Error("AluguelService não foi carregado.");
@@ -237,87 +240,212 @@ async function aguardarDependenciasAluguel() {
 }
 
 // ============================================
-// INICIALIZAÇÃO
+// CARREGAMENTO DE DADOS
+// ============================================
+
+async function carregarClientesParaSelect() {
+  const select = document.getElementById("clienteSelect");
+
+  if (!select) return;
+
+  const db = await aguardarFirebaseTelaAluguel();
+
+  select.innerHTML = '<option value="">Carregando clientes...</option>';
+
+  const snapshot = await db.collection("clientes").orderBy("nome").get();
+
+  if (snapshot.empty) {
+    select.innerHTML = '<option value="">Nenhum cliente cadastrado</option>';
+    return;
+  }
+
+  select.innerHTML =
+    '<option value="">Clique para selecionar um cliente</option>' +
+    snapshot.docs
+      .map((doc) => {
+        const cliente = { id: doc.id, ...doc.data() };
+        const nome = escaparHTMLAluguel(cliente.nome || "Cliente sem nome");
+        const cpf = escaparHTMLAluguel(cliente.cpf || "");
+
+        return `<option value="${doc.id}">${nome}${cpf ? " - " + cpf : ""}</option>`;
+      })
+      .join("");
+}
+
+async function buscarClientePorId(clienteId) {
+  if (!clienteId) return null;
+
+  const db = await aguardarFirebaseTelaAluguel();
+  const doc = await db.collection("clientes").doc(clienteId).get();
+
+  if (!doc.exists) return null;
+
+  return {
+    id: doc.id,
+    ...doc.data(),
+  };
+}
+
+async function carregarEquipamentosParaSelect() {
+  const select = document.getElementById("equipamentoSelect");
+
+  if (!select) return;
+
+  const db = await aguardarFirebaseTelaAluguel();
+
+  select.innerHTML = '<option value="">Carregando equipamentos...</option>';
+
+  const snapshot = await db
+    .collection("equipamentos")
+    .orderBy("nomeEquipamento")
+    .get();
+
+  equipamentosDisponiveis = snapshot.docs
+    .map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }))
+    .filter((equipamento) => {
+      const quantidadeDisponivel = Number(
+        equipamento.quantidadeDisponivel || 0,
+      );
+      return (
+        equipamento.ativo !== false &&
+        equipamento.status === "disponivel" &&
+        quantidadeDisponivel > 0 &&
+        temAlgumPreco(equipamento)
+      );
+    });
+
+  if (!equipamentosDisponiveis.length) {
+    select.innerHTML =
+      '<option value="">Nenhum equipamento alugável disponível</option>';
+    return;
+  }
+
+  select.innerHTML =
+    '<option value="">Clique para selecionar um equipamento</option>' +
+    equipamentosDisponiveis
+      .map((equipamento) => {
+        const nome = escaparHTMLAluguel(
+          equipamento.nomeEquipamento || "Equipamento sem nome",
+        );
+        const quantidade = Number(equipamento.quantidadeDisponivel || 0);
+        const unidade = escaparHTMLAluguel(
+          obterRotuloUnidadeCobranca(equipamento),
+        );
+
+        return `<option value="${equipamento.id}">${nome} - Disp: ${quantidade} - Cobrança: ${unidade}</option>`;
+      })
+      .join("");
+}
+
+async function buscarEquipamentoPorId(equipamentoId) {
+  const equipamentoLocal = equipamentosDisponiveis.find(
+    (item) => item.id === equipamentoId,
+  );
+
+  if (equipamentoLocal) {
+    return equipamentoLocal;
+  }
+
+  const db = await aguardarFirebaseTelaAluguel();
+  const doc = await db.collection("equipamentos").doc(equipamentoId).get();
+
+  if (!doc.exists) return null;
+
+  return {
+    id: doc.id,
+    ...doc.data(),
+  };
+}
+
+// ============================================
+// CONFIGURAÇÃO DA TELA
 // ============================================
 
 function configurarFormularioAluguel() {
   const form = document.getElementById("aluguelForm");
+  const dataInicio = document.getElementById("dataInicio");
+  const clienteSelect = document.getElementById("clienteSelect");
+  const equipamentoSelect = document.getElementById("equipamentoSelect");
+  const btnAdicionar = document.getElementById("btnAdicionarEquipamento");
+  const btnLimpar = document.getElementById("btnLimparAluguel");
+  const btnImprimir = document.getElementById("btnImprimir");
+  const buscaAlugueis = document.getElementById("searchAlugueis");
 
   if (form) {
     form.addEventListener("submit", registrarAluguel);
   }
 
-  const dataInicio = document.getElementById("dataInicio");
-
   if (dataInicio) {
     dataInicio.value = dataHojeISO();
     dataInicio.min = dataHojeISO();
-    dataInicio.addEventListener("change", calcularResumoPrevisto);
   }
-
-  const periodo = document.getElementById("periodo");
-
-  if (periodo) {
-    periodo.addEventListener("change", () => {
-      popularEquipamentosSelect();
-      limparInfoEquipamento();
-      calcularResumoPrevisto();
-    });
-  }
-
-  const duracao = document.getElementById("duracaoPrevista");
-
-  if (duracao) {
-    duracao.value = duracao.value || 1;
-    duracao.addEventListener("input", calcularResumoPrevisto);
-  }
-
-  const clienteSelect = document.getElementById("clienteSelect");
 
   if (clienteSelect) {
     clienteSelect.addEventListener("change", atualizarInfoCliente);
   }
 
-  const equipamentoSelect = document.getElementById("equipamentoSelect");
-
   if (equipamentoSelect) {
     equipamentoSelect.addEventListener("change", atualizarInfoEquipamento);
   }
-
-  const quantidadeAlugar = document.getElementById("quantidadeAlugar");
-
-  if (quantidadeAlugar) {
-    quantidadeAlugar.addEventListener(
-      "input",
-      atualizarQuantidadeCobradaPadrao,
-    );
-  }
-
-  const quantidadeCobranca = document.getElementById("quantidadeCobranca");
-
-  if (quantidadeCobranca) {
-    quantidadeCobranca.addEventListener("input", calcularResumoPrevisto);
-  }
-
-  const btnAdicionar = document.getElementById("btnAdicionarEquipamento");
 
   if (btnAdicionar) {
     btnAdicionar.addEventListener("click", adicionarEquipamento);
   }
 
-  const btnLimpar = document.getElementById("btnLimparAluguel");
-
   if (btnLimpar) {
     btnLimpar.addEventListener("click", limparFormularioAluguel);
   }
 
-  const buscaAlugueis = document.getElementById("searchAlugueis");
+  if (btnImprimir) {
+    btnImprimir.disabled = true;
+    btnImprimir.style.display = "none";
+    btnImprimir.addEventListener("click", imprimirContrato);
+  }
 
   if (buscaAlugueis) {
-    buscaAlugueis.addEventListener("input", buscarAlugueis);
+    buscaAlugueis.addEventListener("keyup", buscarAlugueis);
   }
 
   configurarModalFechamento();
+}
+
+function configurarModalFechamento() {
+  const idsRecalculo = [
+    "dataDevolucaoReal",
+    "periodoFechamento",
+    "duracaoReal",
+    "descontoFechamento",
+    "acrescimoFechamento",
+    "valorPagoFechamento",
+  ];
+
+  idsRecalculo.forEach((id) => {
+    const campo = document.getElementById(id);
+
+    if (campo) {
+      campo.addEventListener("input", recalcularFechamento);
+      campo.addEventListener("change", recalcularFechamento);
+    }
+  });
+
+  const btnCancelarTopo = document.getElementById("btnCancelarFechamento");
+  const btnCancelarRodape = document.getElementById("btnFecharModalRodape");
+  const btnConfirmar = document.getElementById("btnConfirmarFechamento");
+
+  if (btnCancelarTopo) {
+    btnCancelarTopo.addEventListener("click", fecharModalFechamento);
+  }
+
+  if (btnCancelarRodape) {
+    btnCancelarRodape.addEventListener("click", fecharModalFechamento);
+  }
+
+  if (btnConfirmar) {
+    btnConfirmar.addEventListener("click", confirmarFechamentoAluguel);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", async function () {
@@ -326,21 +454,17 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     configurarFormularioAluguel();
 
-    await Promise.all([
-      carregarClientes(),
-      carregarEquipamentosDisponiveis(),
-      carregarAlugueis(),
-    ]);
+    await carregarClientesParaSelect();
+    await carregarEquipamentosParaSelect();
+    await carregarAlugueis();
 
     await aplicarPreSelecoes();
-    calcularResumoPrevisto();
   } catch (error) {
     console.error("Erro ao inicializar tela de aluguel:", error);
 
-    mostrarMensagemLocal(
+    mostrarErroAluguel(
       "Erro",
       "Não foi possível inicializar a tela de aluguéis: " + error.message,
-      "error",
     );
   }
 });
@@ -364,298 +488,154 @@ async function aplicarPreSelecoes() {
 }
 
 // ============================================
-// CLIENTES
+// CLIENTE E EQUIPAMENTO
 // ============================================
-
-async function carregarClientes() {
-  clientes = await AluguelService.listarClientes();
-
-  const select = document.getElementById("clienteSelect");
-
-  if (!select) {
-    return;
-  }
-
-  select.innerHTML = '<option value="">Selecione um cliente</option>';
-
-  clientes.forEach((cliente) => {
-    const option = document.createElement("option");
-    option.value = cliente.id;
-    option.textContent = cliente.nome || "Cliente sem nome";
-    select.appendChild(option);
-  });
-}
 
 async function atualizarInfoCliente() {
   const clienteId = valorCampo("clienteSelect");
   const infoCliente = document.getElementById("infoCliente");
 
   if (!clienteId) {
+    if (infoCliente) infoCliente.style.display = "none";
     clienteSelecionado = null;
-    if (infoCliente) infoCliente.style.display = "none";
     return;
-  }
-
-  clienteSelecionado = clientes.find((cliente) => cliente.id === clienteId);
-
-  if (!clienteSelecionado) {
-    clienteSelecionado = await AluguelService.obterClientePorId(clienteId);
-  }
-
-  if (!clienteSelecionado) {
-    mostrarMensagemLocal("Erro", "Cliente não encontrado.", "error");
-    if (infoCliente) infoCliente.style.display = "none";
-    return;
-  }
-
-  preencherCampo("clienteTelefone", clienteSelecionado.telefone || "");
-  preencherCampo("clienteCelular", clienteSelecionado.celular || "");
-  preencherCampo("clienteCPF", clienteSelecionado.cpf || "");
-  preencherCampo(
-    "clienteCidade",
-    `${clienteSelecionado.cidade || ""}${
-      clienteSelecionado.estado ? "/" + clienteSelecionado.estado : ""
-    }`,
-  );
-
-  if (infoCliente) {
-    infoCliente.style.display = "block";
-  }
-}
-
-// ============================================
-// EQUIPAMENTOS
-// ============================================
-
-async function carregarEquipamentosDisponiveis() {
-  equipamentosDisponiveis =
-    await AluguelService.listarEquipamentosDisponiveis();
-  popularEquipamentosSelect();
-}
-
-function popularEquipamentosSelect() {
-  const select = document.getElementById("equipamentoSelect");
-
-  if (!select) {
-    return;
-  }
-
-  const periodo = valorCampo("periodo");
-
-  select.innerHTML = '<option value="">Selecione um equipamento</option>';
-
-  if (!periodo) {
-    const option = document.createElement("option");
-    option.value = "";
-    option.textContent = "Selecione o período primeiro";
-    select.appendChild(option);
-    return;
-  }
-
-  const filtrados = equipamentosDisponiveis.filter((equipamento) =>
-    possuiPrecoNoPeriodo(equipamento, periodo),
-  );
-
-  filtrados.forEach((equipamento) => {
-    const option = document.createElement("option");
-    const valorUnitario = obterValorPorPeriodo(equipamento, periodo);
-    const rotuloUnidade = obterRotuloUnidadeCobranca(equipamento);
-
-    option.value = equipamento.id;
-    option.textContent = `${equipamento.nomeEquipamento} — ${formatarMoedaAluguel(
-      valorUnitario,
-    )}/${rotuloUnidade}`;
-    option.dataset.equipamento = JSON.stringify(equipamento);
-    select.appendChild(option);
-  });
-}
-
-function obterEquipamentoSelecionadoNoSelect() {
-  const select = document.getElementById("equipamentoSelect");
-
-  if (!select || !select.value) {
-    return null;
-  }
-
-  const option = select.options[select.selectedIndex];
-
-  if (!option || !option.dataset.equipamento) {
-    return null;
   }
 
   try {
-    return JSON.parse(option.dataset.equipamento);
+    const cliente = await buscarClientePorId(clienteId);
+
+    if (!cliente) {
+      mostrarErroAluguel("Erro", "Cliente não encontrado.");
+      clienteSelecionado = null;
+      return;
+    }
+
+    preencherCampo("clienteTelefone", cliente.telefone || "");
+    preencherCampo("clienteCelular", cliente.celular || "");
+    preencherCampo("clienteCPF", cliente.cpf || "");
+    preencherCampo(
+      "clienteCidade",
+      `${cliente.cidade || ""}${cliente.estado ? "/" + cliente.estado : ""}`,
+    );
+
+    if (infoCliente) {
+      infoCliente.style.display = "block";
+    }
+
+    clienteSelecionado = cliente;
   } catch (error) {
-    console.error("Erro ao ler dados do equipamento:", error);
-    return null;
+    console.error("Erro ao carregar informações do cliente:", error);
+    mostrarErroAluguel("Erro", "Erro ao carregar cliente.");
   }
 }
 
 async function atualizarInfoEquipamento() {
-  const equipamento = obterEquipamentoSelecionadoNoSelect();
+  const equipamentoId = valorCampo("equipamentoSelect");
   const infoEquipamento = document.getElementById("infoEquipamento");
 
-  if (!equipamento) {
-    limparInfoEquipamento();
+  if (!equipamentoId) {
+    if (infoEquipamento) infoEquipamento.style.display = "none";
     return;
   }
 
-  const periodo = valorCampo("periodo");
-  const quantidadeDisponivel = Number(equipamento.quantidadeDisponivel || 0);
-  const valorUnitario = obterValorPorPeriodo(equipamento, periodo);
-  const rotuloUnidade = obterRotuloUnidadeCobranca(equipamento);
+  try {
+    const equipamento = await buscarEquipamentoPorId(equipamentoId);
 
-  preencherCampo("equipamentoDisponivel", quantidadeDisponivel);
-  preencherCampo(
-    "equipamentoValorHora",
-    formatarMoedaAluguel(equipamento.valorHora || 0),
-  );
-  preencherCampo(
-    "equipamentoValorDia",
-    formatarMoedaAluguel(equipamento.valorDia || 0),
-  );
-  preencherCampo(
-    "equipamentoValorMes",
-    formatarMoedaAluguel(equipamento.valorMes || 0),
-  );
-  preencherCampo(
-    "equipamentoValorPeriodo",
-    formatarMoedaAluguel(valorUnitario),
-  );
+    if (!equipamento) {
+      mostrarErroAluguel("Erro", "Equipamento não encontrado.");
+      return;
+    }
 
-  const quantidadeInput = document.getElementById("quantidadeAlugar");
+    const quantidadeDisponivel = Number(equipamento.quantidadeDisponivel || 0);
+    const precos = [
+      Number(equipamento.valorHora || 0) > 0
+        ? `Hora: ${formatarMoedaAluguel(equipamento.valorHora)}`
+        : "",
+      Number(equipamento.valorDia || 0) > 0
+        ? `Dia: ${formatarMoedaAluguel(equipamento.valorDia)}`
+        : "",
+      Number(equipamento.valorMes || 0) > 0
+        ? `Mês: ${formatarMoedaAluguel(equipamento.valorMes)}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join(" | ");
 
-  if (quantidadeInput) {
-    quantidadeInput.max = quantidadeDisponivel;
-    quantidadeInput.value = quantidadeDisponivel > 0 ? 1 : 0;
-  }
-
-  const quantidadeCobrancaInput = document.getElementById("quantidadeCobranca");
-
-  if (quantidadeCobrancaInput) {
-    quantidadeCobrancaInput.value = quantidadeCobradaPadrao(equipamento, 1);
-    quantidadeCobrancaInput.step = equipamento.permiteQuantidadeDecimal
-      ? "0.01"
-      : "1";
-  }
-
-  setTexto("labelQuantidadeCobranca", `Quantidade cobrada (${rotuloUnidade})`);
-  setTexto(
-    "unidadeCobrancaInfo",
-    `Cobrança por ${rotuloUnidade}. O estoque continua sendo reservado por unidade física.`,
-  );
-
-  if (infoEquipamento) {
-    infoEquipamento.style.display = "block";
-  }
-
-  calcularResumoPrevisto();
-}
-
-function limparInfoEquipamento() {
-  const infoEquipamento = document.getElementById("infoEquipamento");
-
-  if (infoEquipamento) {
-    infoEquipamento.style.display = "none";
-  }
-
-  preencherCampo("equipamentoDisponivel", "");
-  preencherCampo("equipamentoValorHora", "");
-  preencherCampo("equipamentoValorDia", "");
-  preencherCampo("equipamentoValorMes", "");
-  preencherCampo("equipamentoValorPeriodo", "");
-  preencherCampo("quantidadeAlugar", 1);
-  preencherCampo("quantidadeCobranca", 1);
-  setTexto("unidadeCobrancaInfo", "");
-  setTexto("labelQuantidadeCobranca", "Quantidade cobrada");
-}
-
-function atualizarQuantidadeCobradaPadrao() {
-  const equipamento = obterEquipamentoSelecionadoNoSelect();
-
-  if (!equipamento) {
-    return;
-  }
-
-  const quantidadeEstoque = parseInt(valorCampo("quantidadeAlugar"), 10) || 1;
-  const quantidadeCobranca = document.getElementById("quantidadeCobranca");
-
-  if (quantidadeCobranca && !quantidadeCobranca.dataset.editadoManualmente) {
-    quantidadeCobranca.value = quantidadeCobradaPadrao(
-      equipamento,
-      quantidadeEstoque,
+    preencherCampo("equipamentoDisponivel", quantidadeDisponivel);
+    preencherCampo(
+      "equipamentoUnidade",
+      obterRotuloUnidadeCobranca(equipamento),
     );
-  }
+    preencherCampo("equipamentoPrecos", precos || "Sem preço configurado");
 
-  calcularResumoPrevisto();
+    const quantidadeInput = document.getElementById("quantidadeAlugar");
+
+    if (quantidadeInput) {
+      quantidadeInput.max = quantidadeDisponivel;
+      quantidadeInput.value = quantidadeDisponivel > 0 ? 1 : 0;
+    }
+
+    if (infoEquipamento) {
+      infoEquipamento.style.display = "block";
+    }
+
+    if (equipamento.status !== "disponivel" || quantidadeDisponivel <= 0) {
+      mostrarAvisoAluguel(
+        "Atenção",
+        "Este equipamento não possui estoque disponível para aluguel.",
+      );
+    }
+  } catch (error) {
+    console.error("Erro ao carregar informações do equipamento:", error);
+    mostrarErroAluguel("Erro", "Erro ao carregar equipamento.");
+  }
 }
 
 function adicionarEquipamento() {
-  const equipamento = obterEquipamentoSelecionadoNoSelect();
-  const periodo = valorCampo("periodo");
+  const equipamentoId = valorCampo("equipamentoSelect");
   const quantidadeEstoque = parseInt(valorCampo("quantidadeAlugar"), 10) || 0;
-  const quantidadeCobrada = parseNumeroBR(valorCampo("quantidadeCobranca"));
 
-  if (!periodo) {
-    mostrarMensagemLocal(
-      "Atenção",
-      "Selecione o período antes de adicionar equipamentos.",
-      "warning",
-    );
-    return;
-  }
-
-  if (!equipamento) {
-    mostrarMensagemLocal(
-      "Atenção",
-      "Selecione um equipamento primeiro.",
-      "warning",
-    );
+  if (!equipamentoId) {
+    mostrarAvisoAluguel("Atenção", "Selecione um equipamento primeiro.");
     return;
   }
 
   if (quantidadeEstoque <= 0) {
-    mostrarMensagemLocal(
+    mostrarErroAluguel(
       "Erro",
-      "A quantidade retirada do estoque deve ser maior que zero.",
-      "error",
+      "A quantidade retirada deve ser maior que zero.",
     );
     return;
   }
 
-  if (quantidadeCobrada <= 0) {
-    mostrarMensagemLocal(
-      "Erro",
-      "A quantidade cobrada deve ser maior que zero.",
-      "error",
-    );
-    return;
-  }
-
-  const quantidadeDisponivel = Number(equipamento.quantidadeDisponivel || 0);
-  const existente = equipamentosSelecionados.find(
-    (item) => item.id === equipamento.id,
+  const equipamentoData = equipamentosDisponiveis.find(
+    (item) => item.id === equipamentoId,
   );
+
+  if (!equipamentoData) {
+    mostrarErroAluguel(
+      "Erro",
+      "Não foi possível ler os dados do equipamento selecionado.",
+    );
+    return;
+  }
+
+  const quantidadeDisponivel = Number(
+    equipamentoData.quantidadeDisponivel || 0,
+  );
+
+  const existente = equipamentosSelecionados.find(
+    (item) => item.id === equipamentoId,
+  );
+
   const quantidadeJaSelecionada = existente
-    ? Number(existente.quantidadeEstoque || 0)
+    ? Number(existente.quantidadeEstoque || existente.quantidade || 0)
     : 0;
 
   if (quantidadeEstoque + quantidadeJaSelecionada > quantidadeDisponivel) {
-    mostrarMensagemLocal(
+    mostrarErroAluguel(
       "Erro",
       `Quantidade indisponível. Estoque disponível: ${quantidadeDisponivel}.`,
-      "error",
-    );
-    return;
-  }
-
-  const valorUnitario = obterValorPorPeriodo(equipamento, periodo);
-
-  if (valorUnitario <= 0) {
-    mostrarMensagemLocal(
-      "Erro",
-      `Este equipamento não possui valor configurado para ${obterTextoPeriodo(periodo).toLowerCase()}.`,
-      "error",
     );
     return;
   }
@@ -663,48 +643,43 @@ function adicionarEquipamento() {
   if (existente) {
     existente.quantidadeEstoque += quantidadeEstoque;
     existente.quantidade = existente.quantidadeEstoque;
-    existente.quantidadeCobrada += quantidadeCobrada;
-    existente.quantidadeCobradaPrevista = existente.quantidadeCobrada;
   } else {
-    equipamentosSelecionados.push({
-      id: equipamento.id,
-      equipamentoId: equipamento.id,
-      nome: equipamento.nomeEquipamento || equipamento.nome || "Equipamento",
-      nomeEquipamento:
-        equipamento.nomeEquipamento || equipamento.nome || "Equipamento",
+    const nomeEquipamento =
+      equipamentoData.nomeEquipamento || equipamentoData.nome || "Equipamento";
 
+    equipamentosSelecionados.push({
+      id: equipamentoId,
+      equipamentoId,
+      nome: nomeEquipamento,
+      nomeEquipamento,
       quantidade: quantidadeEstoque,
       quantidadeEstoque,
-
-      quantidadeCobrada,
-      quantidadeCobradaPrevista: quantidadeCobrada,
-
-      unidadeCobranca: equipamento.unidadeCobranca || "unidade",
+      unidadeCobranca: equipamentoData.unidadeCobranca || "unidade",
       rotuloUnidadeCobranca:
-        equipamento.rotuloUnidadeCobranca ||
-        obterRotuloUnidadeCobranca(equipamento),
-      permiteQuantidadeDecimal: Boolean(equipamento.permiteQuantidadeDecimal),
-
-      valorUnitario,
-      valorHora: Number(equipamento.valorHora || 0),
-      valorDia: Number(equipamento.valorDia || 0),
-      valorMes: Number(equipamento.valorMes || 0),
+        equipamentoData.rotuloUnidadeCobranca ||
+        obterRotuloUnidadeCobranca(equipamentoData),
+      permiteQuantidadeDecimal: Boolean(
+        equipamentoData.permiteQuantidadeDecimal,
+      ),
+      valorHora: Number(equipamentoData.valorHora || 0),
+      valorDia: Number(equipamentoData.valorDia || 0),
+      valorMes: Number(equipamentoData.valorMes || 0),
     });
   }
 
   atualizarListaEquipamentos();
-  calcularResumoPrevisto();
 
   preencherCampo("equipamentoSelect", "");
-  limparInfoEquipamento();
 
-  mostrarMensagemLocal("Sucesso", "Equipamento adicionado à lista!");
-}
+  const infoEquipamento = document.getElementById("infoEquipamento");
 
-function removerEquipamento(index) {
-  equipamentosSelecionados.splice(index, 1);
-  atualizarListaEquipamentos();
-  calcularResumoPrevisto();
+  if (infoEquipamento) {
+    infoEquipamento.style.display = "none";
+  }
+
+  preencherCampo("quantidadeAlugar", 1);
+
+  mostrarSucessoAluguel("Sucesso", "Equipamento reservado na lista!");
 }
 
 function atualizarListaEquipamentos() {
@@ -725,24 +700,33 @@ function atualizarListaEquipamentos() {
 
   lista.innerHTML = equipamentosSelecionados
     .map((item, index) => {
-      const rotulo = obterRotuloUnidadeCobranca(item);
-      const subtotal =
-        Number(item.valorUnitario || 0) * Number(item.quantidadeCobrada || 0);
+      const unidade = obterRotuloUnidadeCobranca(item);
 
       return `
         <tr>
           <td>
             <strong>${escaparHTMLAluguel(item.nomeEquipamento)}</strong>
-            <small style="display:block; color:#666;">
-              Cobrança por ${escaparHTMLAluguel(rotulo)}
-            </small>
           </td>
-          <td>${item.quantidadeEstoque} unid.</td>
-          <td>${item.quantidadeCobrada} ${escaparHTMLAluguel(rotulo)}</td>
-          <td>${formatarMoedaAluguel(item.valorUnitario)}</td>
-          <td>${formatarMoedaAluguel(subtotal)}</td>
+
           <td>
-            <button type="button" class="btn btn-small btn-danger" onclick="removerEquipamento(${index})">
+            <strong>${Number(item.quantidadeEstoque || item.quantidade || 0)}</strong>
+            <span class="linha-secundaria">unid. físicas</span>
+          </td>
+
+          <td>${escaparHTMLAluguel(unidade)}</td>
+
+          <td>
+            <span class="status-badge status-warning">
+              A calcular na devolução
+            </span>
+          </td>
+
+          <td>
+            <button
+              type="button"
+              class="btn btn-small btn-danger"
+              onclick="removerEquipamento(${index})"
+            >
               <i class="fas fa-trash"></i>
             </button>
           </td>
@@ -752,65 +736,25 @@ function atualizarListaEquipamentos() {
     .join("");
 }
 
-function calcularResumoPrevisto() {
-  const periodo = valorCampo("periodo");
-  const dataInicio = valorCampo("dataInicio") || dataHojeISO();
-  const duracaoPrevista = parseInt(valorCampo("duracaoPrevista"), 10) || 1;
-  const resumo = document.getElementById("resumoAluguel");
-
-  let subtotal = 0;
-
-  equipamentosSelecionados.forEach((item) => {
-    subtotal +=
-      Number(item.valorUnitario || 0) * Number(item.quantidadeCobrada || 0);
-  });
-
-  const valorPrevisto = subtotal * duracaoPrevista;
-  const dataDevolucaoPrevista = periodo
-    ? calcularDataDevolucaoLocal(dataInicio, periodo, duracaoPrevista)
-    : "";
-
-  preencherCampo("subtotalPrevisto", formatarMoedaAluguel(subtotal));
-  preencherCampo("periodoTexto", obterTextoPeriodo(periodo));
-  preencherCampo(
-    "duracaoTexto",
-    periodo ? obterRotuloDuracao(periodo, duracaoPrevista) : "",
-  );
-  preencherCampo(
-    "dataDevolucaoPrevista",
-    dataDevolucaoPrevista ? formatarDataAluguel(dataDevolucaoPrevista) : "",
-  );
-  preencherCampo("valorPrevisto", formatarMoedaAluguel(valorPrevisto));
-
-  if (resumo) {
-    resumo.style.display = equipamentosSelecionados.length ? "block" : "none";
-  }
+function removerEquipamento(index) {
+  equipamentosSelecionados.splice(index, 1);
+  atualizarListaEquipamentos();
 }
 
 // ============================================
-// REGISTRO DO ALUGUEL
+// REGISTRO DE ALUGUEL
 // ============================================
 
 function validarFormularioAluguel() {
   const clienteId = valorCampo("clienteSelect");
   const dataInicio = valorCampo("dataInicio");
-  const periodo = valorCampo("periodo");
-  const duracaoPrevista = parseInt(valorCampo("duracaoPrevista"), 10) || 0;
 
   if (!clienteId) {
     return "Selecione um cliente.";
   }
 
   if (!dataInicio) {
-    return "Informe a data de início.";
-  }
-
-  if (!periodo) {
-    return "Selecione o período de cobrança.";
-  }
-
-  if (duracaoPrevista <= 0) {
-    return "A duração prevista deve ser maior que zero.";
+    return "Informe a data de retirada.";
   }
 
   if (equipamentosSelecionados.length === 0) {
@@ -823,10 +767,10 @@ function validarFormularioAluguel() {
 async function registrarAluguel(event) {
   event.preventDefault();
 
-  const erroValidacao = validarFormularioAluguel();
+  const erro = validarFormularioAluguel();
 
-  if (erroValidacao) {
-    mostrarMensagemLocal("Erro", erroValidacao, "error");
+  if (erro) {
+    mostrarErroAluguel("Erro", erro);
     return;
   }
 
@@ -841,9 +785,11 @@ async function registrarAluguel(event) {
 
   try {
     const clienteId = valorCampo("clienteSelect");
+    const dataInicio = valorCampo("dataInicio");
+    const observacoes = valorCampo("observacoesAluguel");
 
     if (!clienteSelecionado || clienteSelecionado.id !== clienteId) {
-      clienteSelecionado = await AluguelService.obterClientePorId(clienteId);
+      clienteSelecionado = await buscarClientePorId(clienteId);
     }
 
     if (!clienteSelecionado) {
@@ -853,20 +799,18 @@ async function registrarAluguel(event) {
     const aluguelId = await AluguelService.registrar({
       clienteId,
       cliente: clienteSelecionado,
-      dataInicio: valorCampo("dataInicio"),
-      periodo: valorCampo("periodo"),
-      duracaoPrevista: parseInt(valorCampo("duracaoPrevista"), 10) || 1,
-      observacoes: valorCampo("observacoesAluguel"),
+      dataInicio,
+      observacoes,
       equipamentos: equipamentosSelecionados,
     });
 
-    mostrarMensagemLocal(
+    mostrarSucessoAluguel(
       "Sucesso",
-      "Aluguel registrado e estoque reservado com sucesso!",
+      "Retirada registrada. O valor será calculado na devolução.",
     );
 
     limparFormularioAluguel();
-    await carregarEquipamentosDisponiveis();
+    await carregarEquipamentosParaSelect();
     await carregarAlugueis();
 
     const btnImprimir = document.getElementById("btnImprimir");
@@ -878,11 +822,8 @@ async function registrarAluguel(event) {
     }
   } catch (error) {
     console.error("Erro ao registrar aluguel:", error);
-    mostrarMensagemLocal(
-      "Erro",
-      "Erro ao registrar aluguel: " + error.message,
-      "error",
-    );
+
+    mostrarErroAluguel("Erro", "Erro ao registrar aluguel: " + error.message);
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
@@ -892,21 +833,21 @@ async function registrarAluguel(event) {
 }
 
 // ============================================
-// LISTAGEM
+// LISTAGEM DE ALUGUÉIS
 // ============================================
 
 async function carregarAlugueis() {
-  const lista = document.getElementById("alugueisList");
+  const alugueisList = document.getElementById("alugueisList");
 
-  if (!lista) {
+  if (!alugueisList) {
     return;
   }
 
   try {
-    lista.innerHTML = `
+    alugueisList.innerHTML = `
       <tr>
-        <td colspan="8" style="text-align:center; padding:40px;">
-          <i class="fas fa-spinner fa-spin" style="font-size:24px; color:#3498db;"></i>
+        <td colspan="8" style="text-align: center; padding: 40px;">
+          <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #3498db;"></i>
           <p>Carregando aluguéis...</p>
         </td>
       </tr>
@@ -915,7 +856,7 @@ async function carregarAlugueis() {
     alugueis = await AluguelService.listar();
 
     if (!alugueis.length) {
-      lista.innerHTML = `
+      alugueisList.innerHTML = `
         <tr>
           <td colspan="8" class="empty-message">
             <i class="fas fa-file-contract"></i>
@@ -926,13 +867,15 @@ async function carregarAlugueis() {
       return;
     }
 
-    lista.innerHTML = alugueis.map(renderizarLinhaAluguel).join("");
+    alugueisList.innerHTML = alugueis
+      .map((aluguel) => montarLinhaAluguel(aluguel))
+      .join("");
   } catch (error) {
     console.error("Erro ao carregar aluguéis:", error);
 
-    lista.innerHTML = `
+    alugueisList.innerHTML = `
       <tr>
-        <td colspan="8" style="text-align:center; padding:40px; color:#e74c3c;">
+        <td colspan="8" style="text-align: center; padding: 40px; color: #e74c3c;">
           <i class="fas fa-exclamation-triangle"></i>
           <p>Erro ao carregar aluguéis</p>
           <small>${escaparHTMLAluguel(error.message)}</small>
@@ -942,21 +885,23 @@ async function carregarAlugueis() {
   }
 }
 
-function renderizarLinhaAluguel(aluguel) {
+function montarLinhaAluguel(aluguel) {
   const equipamentos =
     aluguel.equipamentosDetalhes || aluguel.equipamentos || [];
-  const equipamentosResumo = equipamentos
-    .map((item) => {
-      const nome = item.nomeEquipamento || item.nome || "Equipamento";
-      const quantidade = item.quantidadeEstoque || item.quantidade || 0;
+
+  const equipamentosLista = equipamentos
+    .map((e) => {
+      const quantidade = Number(e.quantidadeEstoque || e.quantidade || 0);
+      const nome = e.nomeEquipamento || e.nome || "Equipamento";
       return `${quantidade}x ${nome}`;
     })
     .join(", ");
 
-  const resumoCurto =
-    equipamentosResumo.length > 70
-      ? equipamentosResumo.substring(0, 70) + "..."
-      : equipamentosResumo;
+  const equipamentosTexto = escaparHTMLAluguel(equipamentosLista);
+  const equipamentosResumo =
+    equipamentosTexto.length > 55
+      ? equipamentosTexto.substring(0, 55) + "..."
+      : equipamentosTexto;
 
   let statusClass = "status-available";
   let statusText = "Ativo";
@@ -967,72 +912,102 @@ function renderizarLinhaAluguel(aluguel) {
   } else if (aluguel.status === "cancelado") {
     statusClass = "status-unavailable";
     statusText = "Cancelado";
-  } else if (
-    aluguel.status === "ativo" &&
-    aluguel.dataDevolucaoPrevista &&
-    new Date(aluguel.dataDevolucaoPrevista) < new Date(dataHojeISO())
-  ) {
-    statusClass = "status-warning";
-    statusText = "Atrasado";
   }
 
-  const valor =
+  const pagamentoTexto =
+    aluguel.status === "finalizado" ? obterTextoPagamento(aluguel) : "Pendente";
+
+  const valorTexto =
     aluguel.status === "finalizado"
       ? formatarMoedaAluguel(aluguel.valorTotal || 0)
-      : "A calcular na devolução";
+      : "<small>A calcular na devolução</small>";
 
-  const pagamento =
+  const botaoFinalizar =
     aluguel.status === "finalizado"
-      ? aluguel.statusPagamento || "pendente"
-      : "pendente";
+      ? `
+        <button class="btn btn-small btn-secondary" disabled>
+          <i class="fas fa-check"></i>
+        </button>
+      `
+      : `
+        <button
+          class="btn btn-small btn-danger"
+          onclick="abrirModalFechamento('${aluguel.id}')"
+          title="Finalizar e calcular cobrança"
+        >
+          <i class="fas fa-clipboard-check"></i>
+        </button>
+      `;
 
   return `
     <tr>
       <td>
         <strong>${escaparHTMLAluguel(aluguel.clienteNome || "")}</strong>
-        <small style="display:block; color:#666;">
-          ${escaparHTMLAluguel(aluguel.clienteCelular || aluguel.clienteTelefone || "")}
-        </small>
+        <br><small>${escaparHTMLAluguel(aluguel.clienteCelular || "")}</small>
       </td>
-      <td><small>${escaparHTMLAluguel(resumoCurto)}</small></td>
+
+      <td>
+        <small>${equipamentosResumo}</small>
+      </td>
+
       <td>${formatarDataAluguel(aluguel.dataInicio)}</td>
-      <td>${formatarDataAluguel(aluguel.dataDevolucaoReal || aluguel.dataDevolucaoPrevista)}</td>
-      <td>${obterTextoPeriodo(aluguel.periodo)}</td>
-      <td>${valor}</td>
+
+      <td>${formatarDataAluguel(aluguel.dataDevolucaoReal)}</td>
+
+      <td>${valorTexto}</td>
+
+      <td>${pagamentoTexto}</td>
+
       <td>
-        <span class="status-badge ${statusClass}">${statusText}</span>
-        <small style="display:block; color:#666; margin-top:4px;">Pgto: ${escaparHTMLAluguel(pagamento)}</small>
+        <span class="status-badge ${statusClass}">
+          ${statusText}
+        </span>
       </td>
+
       <td>
-        <div style="display:flex; gap:5px; flex-wrap:wrap;">
-          <button type="button" class="btn btn-small btn-primary" onclick="visualizarAluguel('${aluguel.id}')" title="Visualizar">
+        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+          <button
+            class="btn btn-small btn-primary"
+            onclick="visualizarAluguel('${aluguel.id}')"
+            title="Visualizar"
+          >
             <i class="fas fa-eye"></i>
           </button>
-          <button type="button" class="btn btn-small btn-success" onclick="imprimirAluguel('${aluguel.id}')" title="Imprimir">
+
+          <button
+            class="btn btn-small btn-success"
+            onclick="imprimirAluguel('${aluguel.id}')"
+            title="Imprimir"
+          >
             <i class="fas fa-print"></i>
           </button>
-          <button
-            type="button"
-            class="btn btn-small btn-danger"
-            onclick="abrirFechamentoAluguel('${aluguel.id}')"
-            title="Finalizar/devolver"
-            ${aluguel.status !== "ativo" ? "disabled" : ""}
-          >
-            <i class="fas fa-check"></i>
-          </button>
+
+          ${botaoFinalizar}
         </div>
       </td>
     </tr>
   `;
 }
 
+function obterTextoPagamento(aluguel) {
+  if (aluguel.statusPagamento === "pago") {
+    return '<span class="status-badge status-success">Pago</span>';
+  }
+
+  if (aluguel.statusPagamento === "parcial") {
+    return `<span class="status-badge status-warning">Parcial</span><br><small>Saldo: ${formatarMoedaAluguel(aluguel.saldo || 0)}</small>`;
+  }
+
+  return `<span class="status-badge status-unavailable">Pendente</span><br><small>Saldo: ${formatarMoedaAluguel(aluguel.saldo || aluguel.valorTotal || 0)}</small>`;
+}
+
 function buscarAlugueis() {
-  const termo = valorCampo("searchAlugueis").toLowerCase();
+  const termo = normalizarTextoBusca(valorCampo("searchAlugueis"));
   const linhas = document.querySelectorAll("#alugueisList tr");
 
   linhas.forEach((linha) => {
-    const texto = linha.textContent.toLowerCase();
-    linha.style.display = texto.includes(termo) ? "" : "none";
+    const textoLinha = normalizarTextoBusca(linha.textContent);
+    linha.style.display = textoLinha.includes(termo) ? "" : "none";
   });
 }
 
@@ -1040,251 +1015,300 @@ function buscarAlugueis() {
 // FECHAMENTO / DEVOLUÇÃO
 // ============================================
 
-function configurarModalFechamento() {
-  const modal = document.getElementById("modalFechamento");
-  const btnCancelar = document.getElementById("btnCancelarFechamento");
-  const btnConfirmar = document.getElementById("btnConfirmarFechamento");
-
-  if (btnCancelar) {
-    btnCancelar.addEventListener("click", fecharModalFechamento);
-  }
-
-  if (btnConfirmar) {
-    btnConfirmar.addEventListener("click", confirmarFechamentoAluguel);
-  }
-
-  [
-    "dataDevolucaoReal",
-    "descontoFechamento",
-    "acrescimoFechamento",
-    "valorPagoFechamento",
-  ].forEach((id) => {
-    const campo = document.getElementById(id);
-    if (campo) campo.addEventListener("input", recalcularFechamento);
-  });
-
-  if (modal) {
-    modal.addEventListener("click", (event) => {
-      if (event.target === modal) {
-        fecharModalFechamento();
-      }
-    });
-  }
-}
-
-function abrirFechamentoAluguel(aluguelId) {
+function abrirModalFechamento(aluguelId) {
   const aluguel = alugueis.find((item) => item.id === aluguelId);
 
   if (!aluguel) {
-    mostrarMensagemLocal("Erro", "Aluguel não encontrado.", "error");
+    mostrarErroAluguel("Erro", "Aluguel não encontrado na lista.");
     return;
   }
 
-  aluguelEmFechamento = aluguel;
+  if (aluguel.status === "finalizado") {
+    mostrarAvisoAluguel("Atenção", "Este aluguel já está finalizado.");
+    return;
+  }
 
+  aluguelFechando = aluguel;
+
+  preencherCampo("fechamentoCliente", aluguel.clienteNome || "-");
+  preencherCampo(
+    "fechamentoDataInicio",
+    formatarDataAluguel(aluguel.dataInicio),
+  );
   preencherCampo("dataDevolucaoReal", dataHojeISO());
+  preencherCampo("periodoFechamento", "");
+  preencherCampo("duracaoReal", 1);
   preencherCampo("descontoFechamento", "0,00");
   preencherCampo("acrescimoFechamento", "0,00");
   preencherCampo("valorPagoFechamento", "");
-  preencherCampo("formaPagamentoFechamento", "Dinheiro");
+  preencherCampo("formaPagamentoFechamento", "");
   preencherCampo("observacoesFechamento", "");
 
-  setTexto("fechamentoCliente", aluguel.clienteNome || "");
-  setTexto("fechamentoPeriodo", obterTextoPeriodo(aluguel.periodo));
-  setTexto("fechamentoDataInicio", formatarDataAluguel(aluguel.dataInicio));
-
-  renderizarItensFechamento();
-  recalcularFechamento();
+  montarItensFechamento();
 
   const modal = document.getElementById("modalFechamento");
-  if (modal) modal.style.display = "flex";
+
+  if (modal) {
+    modal.style.display = "flex";
+  }
+
+  recalcularFechamento();
 }
 
 function fecharModalFechamento() {
-  aluguelEmFechamento = null;
-
   const modal = document.getElementById("modalFechamento");
-  if (modal) modal.style.display = "none";
 
-  const lista = document.getElementById("fechamentoItens");
-  if (lista) lista.innerHTML = "";
-}
-
-function renderizarItensFechamento() {
-  const lista = document.getElementById("fechamentoItens");
-
-  if (!lista || !aluguelEmFechamento) {
-    return;
+  if (modal) {
+    modal.style.display = "none";
   }
 
-  const equipamentos =
-    aluguelEmFechamento.equipamentosDetalhes ||
-    aluguelEmFechamento.equipamentos ||
-    [];
+  aluguelFechando = null;
+}
 
-  lista.innerHTML = equipamentos
+function montarItensFechamento() {
+  const tbody = document.getElementById("fechamentoItens");
+
+  if (!tbody || !aluguelFechando) return;
+
+  const equipamentos =
+    aluguelFechando.equipamentosDetalhes || aluguelFechando.equipamentos || [];
+
+  tbody.innerHTML = equipamentos
     .map((item, index) => {
-      const rotulo = obterRotuloUnidadeCobranca(item);
-      const quantidadeCobrada = Number(
-        item.quantidadeCobradaFinal ||
-          item.quantidadeCobrada ||
-          item.quantidadeCobradaPrevista ||
-          item.quantidade ||
-          1,
+      const quantidadeEstoque = Number(
+        item.quantidadeEstoque || item.quantidade || 0,
       );
-      const valorUnitario = Number(
-        item.valorUnitarioFinal || item.valorUnitario || 0,
-      );
+      const unidade = obterRotuloUnidadeCobranca(item);
+      const quantidadeCobradaPadrao = obterQuantidadeCobradaPadrao(item);
 
       return `
         <tr data-index="${index}">
           <td>
             <strong>${escaparHTMLAluguel(item.nomeEquipamento || item.nome)}</strong>
-            <small style="display:block; color:#666;">
-              Estoque reservado: ${item.quantidadeEstoque || item.quantidade || 0} unid.
-            </small>
+            <small class="linha-secundaria">Cobrança por ${escaparHTMLAluguel(unidade)}</small>
           </td>
+
+          <td>
+            <strong>${quantidadeEstoque}</strong>
+            <small class="linha-secundaria">unid. físicas</small>
+          </td>
+
           <td>
             <input
               type="text"
-              class="fechamento-qtd-cobrada"
-              value="${String(quantidadeCobrada).replace(".", ",")}"
-              data-equipamento-id="${item.equipamentoId || item.id}"
-              data-rotulo="${escaparHTMLAluguel(rotulo)}"
-            >
-            <small style="display:block; color:#666;">${escaparHTMLAluguel(rotulo)}</small>
+              class="fechamento-quantidade"
+              data-index="${index}"
+              value="${String(quantidadeCobradaPadrao).replace(".", ",")}"
+            />
           </td>
+
           <td>
             <input
               type="text"
               class="fechamento-valor-unitario"
-              value="${formatarMoedaInput(valorUnitario)}"
-              data-equipamento-id="${item.equipamentoId || item.id}"
-            >
+              data-index="${index}"
+              value="0,00"
+            />
           </td>
-          <td class="fechamento-subtotal-item">${formatarMoedaAluguel(0)}</td>
+
+          <td>
+            <strong class="fechamento-subtotal-item" data-index="${index}">
+              R$ 0,00
+            </strong>
+          </td>
         </tr>
       `;
     })
     .join("");
 
-  document
-    .querySelectorAll(".fechamento-qtd-cobrada, .fechamento-valor-unitario")
-    .forEach((campo) => {
-      campo.addEventListener("input", recalcularFechamento);
+  tbody
+    .querySelectorAll(".fechamento-quantidade, .fechamento-valor-unitario")
+    .forEach((input) => {
+      input.addEventListener("input", recalcularFechamento);
+      input.addEventListener("change", recalcularFechamento);
     });
+
+  preencherValoresUnitariosPorPeriodo();
 }
 
-function obterItensFechamentoDaTela() {
-  const linhas = document.querySelectorAll("#fechamentoItens tr");
-  const itens = [];
+function preencherValoresUnitariosPorPeriodo() {
+  if (!aluguelFechando) return;
 
-  linhas.forEach((linha) => {
-    const inputQuantidade = linha.querySelector(".fechamento-qtd-cobrada");
-    const inputValor = linha.querySelector(".fechamento-valor-unitario");
+  const periodo = valorCampo("periodoFechamento");
+  const equipamentos =
+    aluguelFechando.equipamentosDetalhes || aluguelFechando.equipamentos || [];
 
-    if (!inputQuantidade || !inputValor) {
+  document.querySelectorAll(".fechamento-valor-unitario").forEach((input) => {
+    const index = Number(input.dataset.index);
+    const item = equipamentos[index];
+
+    if (!item || !periodo) {
+      input.value = "0,00";
       return;
     }
 
-    itens.push({
-      equipamentoId: inputQuantidade.dataset.equipamentoId,
-      quantidadeCobradaFinal: parseNumeroBR(inputQuantidade.value),
-      valorUnitarioFinal: parseNumeroBR(inputValor.value),
-      linha,
-    });
+    const valor = obterValorPorPeriodo(item, periodo);
+    input.value = valor.toFixed(2).replace(".", ",");
   });
-
-  return itens;
 }
 
 function recalcularFechamento() {
-  if (!aluguelEmFechamento) {
-    return;
+  if (!aluguelFechando) return;
+
+  const periodo = valorCampo("periodoFechamento");
+  const dataDevolucaoReal = valorCampo("dataDevolucaoReal");
+
+  if (periodo && dataDevolucaoReal) {
+    const duracaoCalculada = calcularDuracaoRealLocal(
+      aluguelFechando.dataInicio,
+      dataDevolucaoReal,
+      periodo,
+    );
+
+    const duracaoInput = document.getElementById("duracaoReal");
+
+    if (
+      duracaoInput &&
+      (!duracaoInput.dataset.editadoManual ||
+        duracaoInput.dataset.periodoAtual !== periodo ||
+        duracaoInput.dataset.dataAtual !== dataDevolucaoReal)
+    ) {
+      duracaoInput.value = duracaoCalculada;
+      duracaoInput.dataset.periodoAtual = periodo;
+      duracaoInput.dataset.dataAtual = dataDevolucaoReal;
+    }
   }
 
-  const dataDevolucaoReal = valorCampo("dataDevolucaoReal") || dataHojeISO();
-  const duracaoReal = calcularDuracaoRealLocal(
-    aluguelEmFechamento.dataInicio,
-    dataDevolucaoReal,
-    aluguelEmFechamento.periodo,
-  );
+  const duracao = Math.max(1, parseInt(valorCampo("duracaoReal"), 10) || 1);
 
-  const itens = obterItensFechamentoDaTela();
   let subtotal = 0;
 
-  itens.forEach((item) => {
-    const subtotalItem =
-      item.quantidadeCobradaFinal * item.valorUnitarioFinal * duracaoReal;
+  document.querySelectorAll("#fechamentoItens tr").forEach((linha) => {
+    const index = linha.dataset.index;
+    const quantidadeInput = linha.querySelector(".fechamento-quantidade");
+    const valorInput = linha.querySelector(".fechamento-valor-unitario");
+    const subtotalEl = linha.querySelector(".fechamento-subtotal-item");
+
+    const quantidade = parseNumeroBR(quantidadeInput?.value || "0");
+    const valorUnitario = parseNumeroBR(valorInput?.value || "0");
+    const subtotalItem = quantidade * valorUnitario * duracao;
+
     subtotal += subtotalItem;
 
-    const celulaSubtotal = item.linha.querySelector(
-      ".fechamento-subtotal-item",
-    );
-    if (celulaSubtotal)
-      celulaSubtotal.textContent = formatarMoedaAluguel(subtotalItem);
+    if (subtotalEl) {
+      subtotalEl.textContent = formatarMoedaAluguel(subtotalItem);
+    }
   });
 
   const desconto = parseNumeroBR(valorCampo("descontoFechamento"));
   const acrescimo = parseNumeroBR(valorCampo("acrescimoFechamento"));
   const valorTotal = Math.max(0, subtotal + acrescimo - desconto);
+
   const valorPagoTexto = valorCampo("valorPagoFechamento");
-  const valorPago = valorPagoTexto ? parseNumeroBR(valorPagoTexto) : valorTotal;
+  const valorPago =
+    valorPagoTexto === "" ? valorTotal : parseNumeroBR(valorPagoTexto);
+
   const saldo = Math.max(0, valorTotal - valorPago);
 
-  setTexto(
-    "duracaoRealTexto",
-    obterRotuloDuracao(aluguelEmFechamento.periodo, duracaoReal),
-  );
-  setTexto("subtotalFinalTexto", formatarMoedaAluguel(subtotal));
-  setTexto("valorTotalFinalTexto", formatarMoedaAluguel(valorTotal));
-  setTexto("saldoFinalTexto", formatarMoedaAluguel(saldo));
+  let statusPagamento = "Pendente";
+
+  if (saldo <= 0) {
+    statusPagamento = "Pago";
+  } else if (valorPago > 0) {
+    statusPagamento = "Parcial";
+  }
+
+  preencherCampo("subtotalFinalTexto", formatarMoedaAluguel(subtotal));
+  preencherCampo("valorTotalFinalTexto", formatarMoedaAluguel(valorTotal));
+  preencherCampo("saldoFinalTexto", formatarMoedaAluguel(saldo));
+  preencherCampo("statusPagamentoTexto", statusPagamento);
 }
 
+document.addEventListener("input", function (event) {
+  if (event.target && event.target.id === "duracaoReal") {
+    event.target.dataset.editadoManual = "true";
+  }
+});
+
+document.addEventListener("change", function (event) {
+  if (event.target && event.target.id === "periodoFechamento") {
+    const duracaoInput = document.getElementById("duracaoReal");
+
+    if (duracaoInput) {
+      delete duracaoInput.dataset.editadoManual;
+    }
+
+    preencherValoresUnitariosPorPeriodo();
+    recalcularFechamento();
+  }
+});
+
 async function confirmarFechamentoAluguel() {
-  if (!aluguelEmFechamento) {
-    mostrarMensagemLocal(
-      "Erro",
-      "Nenhum aluguel selecionado para fechamento.",
-      "error",
-    );
+  if (!aluguelFechando) {
+    mostrarErroAluguel("Erro", "Nenhum aluguel selecionado para fechamento.");
     return;
   }
 
   const dataDevolucaoReal = valorCampo("dataDevolucaoReal");
+  const periodo = valorCampo("periodoFechamento");
+  const duracaoReal = parseInt(valorCampo("duracaoReal"), 10) || 0;
 
   if (!dataDevolucaoReal) {
-    mostrarMensagemLocal("Erro", "Informe a data real de devolução.", "error");
+    mostrarErroAluguel("Erro", "Informe a data real de devolução.");
     return;
   }
 
-  const itens = obterItensFechamentoDaTela();
-
-  for (const item of itens) {
-    if (item.quantidadeCobradaFinal <= 0) {
-      mostrarMensagemLocal(
-        "Erro",
-        "Todas as quantidades cobradas devem ser maiores que zero.",
-        "error",
-      );
-      return;
-    }
-
-    if (item.valorUnitarioFinal <= 0) {
-      mostrarMensagemLocal(
-        "Erro",
-        "Todos os valores unitários devem ser maiores que zero.",
-        "error",
-      );
-      return;
-    }
+  if (!periodo) {
+    mostrarErroAluguel("Erro", "Selecione o tipo de cobrança no fechamento.");
+    return;
   }
 
-  const confirmar = confirm(
-    "Confirmar devolução e fechamento financeiro deste aluguel?\n\nEsta ação devolverá os equipamentos ao estoque.",
-  );
+  if (duracaoReal <= 0) {
+    mostrarErroAluguel("Erro", "Informe uma duração real válida.");
+    return;
+  }
 
-  if (!confirmar) {
+  const equipamentos =
+    aluguelFechando.equipamentosDetalhes || aluguelFechando.equipamentos || [];
+  const itensFechamento = [];
+
+  let erroItem = null;
+
+  document.querySelectorAll("#fechamentoItens tr").forEach((linha) => {
+    if (erroItem) return;
+
+    const index = Number(linha.dataset.index);
+    const item = equipamentos[index];
+    const quantidadeInput = linha.querySelector(".fechamento-quantidade");
+    const valorInput = linha.querySelector(".fechamento-valor-unitario");
+
+    const quantidadeCobradaFinal = parseNumeroBR(quantidadeInput?.value || "0");
+    const valorUnitarioFinal = parseNumeroBR(valorInput?.value || "0");
+
+    if (!item) {
+      erroItem = "Item de fechamento inválido.";
+      return;
+    }
+
+    if (quantidadeCobradaFinal <= 0) {
+      erroItem = `Quantidade cobrada inválida para "${item.nomeEquipamento || item.nome}".`;
+      return;
+    }
+
+    if (valorUnitarioFinal <= 0) {
+      erroItem = `Valor unitário inválido para "${item.nomeEquipamento || item.nome}".`;
+      return;
+    }
+
+    itensFechamento.push({
+      equipamentoId: item.equipamentoId || item.id,
+      quantidadeCobradaFinal,
+      valorUnitarioFinal,
+    });
+  });
+
+  if (erroItem) {
+    mostrarErroAluguel("Erro", erroItem);
     return;
   }
 
@@ -1294,46 +1318,37 @@ async function confirmarFechamentoAluguel() {
   if (btnConfirmar) {
     btnConfirmar.disabled = true;
     btnConfirmar.innerHTML =
-      '<i class="fas fa-spinner fa-spin"></i> Finalizando...';
+      '<i class="fas fa-spinner fa-spin"></i> Fechando...';
   }
 
   try {
-    const valorPagoTexto = valorCampo("valorPagoFechamento");
-
-    const fechamento = {
+    await AluguelService.finalizar(aluguelFechando.id, {
       dataDevolucaoReal,
-      itensFechamento: itens.map((item) => ({
-        equipamentoId: item.equipamentoId,
-        quantidadeCobradaFinal: item.quantidadeCobradaFinal,
-        valorUnitarioFinal: item.valorUnitarioFinal,
-      })),
+      periodo,
+      duracaoReal,
+      itensFechamento,
       desconto: parseNumeroBR(valorCampo("descontoFechamento")),
       acrescimo: parseNumeroBR(valorCampo("acrescimoFechamento")),
+      valorPago:
+        valorCampo("valorPagoFechamento") === ""
+          ? undefined
+          : parseNumeroBR(valorCampo("valorPagoFechamento")),
       formaPagamento: valorCampo("formaPagamentoFechamento"),
       observacoesFechamento: valorCampo("observacoesFechamento"),
-    };
+    });
 
-    if (valorPagoTexto) {
-      fechamento.valorPago = parseNumeroBR(valorPagoTexto);
-    }
-
-    await AluguelService.finalizar(aluguelEmFechamento.id, fechamento);
-
-    mostrarMensagemLocal(
+    mostrarSucessoAluguel(
       "Sucesso",
-      "Aluguel finalizado, cobrança calculada e estoque devolvido!",
+      "Aluguel finalizado, estoque devolvido e cobrança calculada.",
     );
 
     fecharModalFechamento();
-    await carregarEquipamentosDisponiveis();
+    await carregarEquipamentosParaSelect();
     await carregarAlugueis();
   } catch (error) {
     console.error("Erro ao finalizar aluguel:", error);
-    mostrarMensagemLocal(
-      "Erro",
-      "Erro ao finalizar aluguel: " + error.message,
-      "error",
-    );
+
+    mostrarErroAluguel("Erro", "Erro ao finalizar aluguel: " + error.message);
   } finally {
     if (btnConfirmar) {
       btnConfirmar.disabled = false;
@@ -1350,39 +1365,41 @@ function visualizarAluguel(aluguelId) {
   const aluguel = alugueis.find((item) => item.id === aluguelId);
 
   if (!aluguel) {
-    mostrarMensagemLocal("Erro", "Aluguel não encontrado na lista.", "error");
+    mostrarErroAluguel("Erro", "Aluguel não encontrado na lista.");
     return;
   }
 
   const equipamentos =
     aluguel.equipamentosDetalhes || aluguel.equipamentos || [];
+
   const listaEquipamentos = equipamentos
     .map((item) => {
-      const rotulo = obterRotuloUnidadeCobranca(item);
       const quantidadeEstoque = item.quantidadeEstoque || item.quantidade || 0;
       const quantidadeCobrada =
-        item.quantidadeCobradaFinal ||
-        item.quantidadeCobrada ||
-        item.quantidade ||
-        0;
+        item.quantidadeCobradaFinal || item.quantidadeCobrada || "-";
+      const unidade = obterRotuloUnidadeCobranca(item);
 
-      return `${quantidadeEstoque} unid. estoque | ${quantidadeCobrada} ${rotulo} — ${item.nomeEquipamento || item.nome}`;
+      return (
+        `${quantidadeEstoque}x ${item.nomeEquipamento || item.nome}` +
+        ` | Cobrança: ${quantidadeCobrada} ${unidade}`
+      );
     })
     .join("\n");
 
-  const valorTexto =
-    aluguel.status === "finalizado"
-      ? formatarMoedaAluguel(aluguel.valorTotal || 0)
-      : "A calcular na devolução";
-
   alert(
-    `Cliente: ${aluguel.clienteNome}\n` +
-      `Data de início: ${formatarDataAluguel(aluguel.dataInicio)}\n` +
-      `Devolução prevista: ${formatarDataAluguel(aluguel.dataDevolucaoPrevista)}\n` +
-      `Devolução real: ${formatarDataAluguel(aluguel.dataDevolucaoReal)}\n` +
-      `Período: ${obterTextoPeriodo(aluguel.periodo)}\n` +
-      `Valor: ${valorTexto}\n` +
-      `Pagamento: ${aluguel.statusPagamento || "pendente"}\n\n` +
+    `Cliente: ${aluguel.clienteNome || ""}\n` +
+      `Retirada: ${formatarDataAluguel(aluguel.dataInicio)}\n` +
+      `Devolução: ${formatarDataAluguel(aluguel.dataDevolucaoReal)}\n` +
+      `Status: ${aluguel.status || ""}\n` +
+      `Período final: ${obterTextoPeriodo(aluguel.periodo || aluguel.periodoFinal)}\n` +
+      `Duração real: ${aluguel.duracaoReal || "-"}\n` +
+      `Valor total: ${
+        aluguel.status === "finalizado"
+          ? formatarMoedaAluguel(aluguel.valorTotal || 0)
+          : "A calcular na devolução"
+      }\n` +
+      `Valor pago: ${formatarMoedaAluguel(aluguel.valorPago || 0)}\n` +
+      `Saldo: ${formatarMoedaAluguel(aluguel.saldo || 0)}\n\n` +
       `Equipamentos:\n${listaEquipamentos}`,
   );
 }
@@ -1390,6 +1407,18 @@ function visualizarAluguel(aluguelId) {
 function imprimirAluguel(aluguelId) {
   localStorage.setItem("aluguelParaImprimir", aluguelId);
   window.open("imprimir.html?id=" + aluguelId, "_blank");
+}
+
+function imprimirContrato() {
+  const btnImprimir = document.getElementById("btnImprimir");
+  const aluguelId = btnImprimir?.dataset?.aluguelId;
+
+  if (!aluguelId) {
+    alert("Registre um aluguel primeiro para poder imprimir o contrato.");
+    return;
+  }
+
+  imprimirAluguel(aluguelId);
 }
 
 function limparFormularioAluguel() {
@@ -1403,26 +1432,34 @@ function limparFormularioAluguel() {
   clienteSelecionado = null;
 
   preencherCampo("dataInicio", dataHojeISO());
-  preencherCampo("duracaoPrevista", 1);
-  preencherCampo("subtotalPrevisto", formatarMoedaAluguel(0));
-  preencherCampo("periodoTexto", "");
-  preencherCampo("duracaoTexto", "");
-  preencherCampo("dataDevolucaoPrevista", "");
-  preencherCampo("valorPrevisto", formatarMoedaAluguel(0));
+  preencherCampo("quantidadeAlugar", 1);
+  preencherCampo("observacoesAluguel", "");
 
-  limparInfoEquipamento();
+  const secoesParaOcultar = [
+    "infoCliente",
+    "infoEquipamento",
+    "listaEquipamentosContainer",
+  ];
 
-  const infoCliente = document.getElementById("infoCliente");
-  if (infoCliente) infoCliente.style.display = "none";
+  secoesParaOcultar.forEach((id) => {
+    const elemento = document.getElementById(id);
+    if (elemento) elemento.style.display = "none";
+  });
 
-  const containerLista = document.getElementById("listaEquipamentosContainer");
-  if (containerLista) containerLista.style.display = "none";
+  const listaEquipamentos = document.getElementById("listaEquipamentos");
 
-  const lista = document.getElementById("listaEquipamentos");
-  if (lista) lista.innerHTML = "";
+  if (listaEquipamentos) {
+    listaEquipamentos.innerHTML = "";
+  }
 
-  const resumo = document.getElementById("resumoAluguel");
-  if (resumo) resumo.style.display = "none";
+  const btnImprimir = document.getElementById("btnImprimir");
 
-  popularEquipamentosSelect();
+  if (btnImprimir) {
+    btnImprimir.disabled = true;
+    btnImprimir.style.display = "none";
+    delete btnImprimir.dataset.aluguelId;
+  }
+
+  carregarClientesParaSelect();
+  carregarEquipamentosParaSelect();
 }
