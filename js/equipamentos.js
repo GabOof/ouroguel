@@ -56,6 +56,16 @@ function formatarMoedaTabela(valor) {
   }).format(valor || 0);
 }
 
+function formatarValorTabelaEquipamento(valor) {
+  const numero = Number(valor || 0);
+
+  if (!Number.isFinite(numero) || numero <= 0) {
+    return "";
+  }
+
+  return formatarMoedaTabela(numero);
+}
+
 function obterStatusSelecionado() {
   const statusSelecionado = document.querySelector(
     'input[name="status"]:checked',
@@ -104,8 +114,8 @@ function validarEquipamento(dados) {
     return "Valor por hora não pode ser negativo.";
   }
 
-  if (dados.valorDia <= 0) {
-    return "Valor por dia deve ser maior que zero.";
+  if (dados.valorDia < 0) {
+    return "Valor por dia não pode ser negativo.";
   }
 
   if (dados.valorMes < 0) {
@@ -313,7 +323,7 @@ async function carregarEquipamentos() {
               </small>
             </td>
 
-            <td class="col-valor">${formatarMoedaTabela(equipamento.valorDia || 0)}</td>
+            <td class="col-valor">${formatarValorTabelaEquipamento(equipamento.valorDia)}</td>
 
             <td class="col-status">
               <span class="status-badge ${status.classe}">
