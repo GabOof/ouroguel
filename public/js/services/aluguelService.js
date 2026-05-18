@@ -29,6 +29,37 @@
     return hoje.toISOString().split("T")[0];
   }
 
+  function calcularDuracaoPorDatas(dataInicio, dataFim, periodo) {
+    const criarData = (valor) => {
+      const [ano, mes, dia] = String(valor || "")
+        .split("-")
+        .map(Number);
+      return new Date(ano, mes - 1, dia);
+    };
+
+    const inicio = criarData(dataInicio);
+    const fim = criarData(dataFim);
+    const diffMs = Math.max(0, fim.getTime() - inicio.getTime());
+
+    if (periodo === "hora") {
+      return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60)));
+    }
+
+    if (periodo === "mes") {
+      let meses =
+        (fim.getFullYear() - inicio.getFullYear()) * 12 +
+        (fim.getMonth() - inicio.getMonth());
+
+      if (fim.getDate() > inicio.getDate()) {
+        meses += 1;
+      }
+
+      return Math.max(1, meses);
+    }
+
+    return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  }
+
   function obterValorPorPeriodo(equipamento, periodo) {
     if (periodo === "hora") {
       return Number(equipamento.valorHora || 0);
@@ -45,7 +76,7 @@
     return 0;
   }
 
-  function validarDadosRegistro(dados) {
+  function validarDadosAbertura(dados) {
     if (!dados.clienteId) {
       throw new Error("Cliente não informado.");
     }
@@ -55,7 +86,7 @@
     }
 
     if (!dados.dataInicio) {
-      throw new Error("Data de retirada não informada.");
+      throw new Error("Data de início não informada.");
     }
 
     if (!Array.isArray(dados.equipamentos) || dados.equipamentos.length === 0) {
@@ -63,25 +94,14 @@
     }
   }
 
-  function validarDadosFechamento(fechamento) {
-    if (!fechamento.dataDevolucaoReal) {
-      throw new Error("Data real de devolução não informada.");
-    }
-
-    if (!["hora", "dia", "mes"].includes(fechamento.periodo)) {
-      throw new Error("Tipo de cobrança inválido.");
-    }
-
-    if (!fechamento.duracaoReal || Number(fechamento.duracaoReal) <= 0) {
-      throw new Error("Duração real inválida.");
-    }
-
-    if (
-      !Array.isArray(fechamento.itensFechamento) ||
-      fechamento.itensFechamento.length === 0
-    ) {
-      throw new Error("Itens de fechamento não informados.");
-    }
+  function normalizarItemFechamento(item) {
+    return {
+      equipamentoId: item.equipamentoId || item.id,
+      quantidadeCobradaFinal: Number(item.quantidadeCobradaFinal || 0),
+      valorUnitarioFinal: Number(
+        item.valorUnitarioFinal || item.valorUnitario || 0,
+      ),
+    };
   }
 
   window.AluguelService = {
@@ -115,7 +135,7 @@
     },
 
     async registrar(dados) {
-      validarDadosRegistro(dados);
+      validarDadosAbertura(dados);
 
       const db = await aguardarFirebase();
       const aluguelRef = db.collection("alugueis").doc();
@@ -177,24 +197,18 @@
             );
           }
 
-          if (
-            obterValorPorPeriodo(equipamentoAtual, "hora") <= 0 &&
-            obterValorPorPeriodo(equipamentoAtual, "dia") <= 0 &&
-            obterValorPorPeriodo(equipamentoAtual, "mes") <= 0
-          ) {
-            throw new Error(
-              `Equipamento "${equipamentoAtual.nomeEquipamento}" não possui preço de aluguel configurado.`,
-            );
-          }
+          const equipamentoId =
+            itemSelecionado.id || itemSelecionado.equipamentoId;
+          const nomeEquipamento =
+            equipamentoAtual.nomeEquipamento ||
+            itemSelecionado.nomeEquipamento ||
+            itemSelecionado.nome ||
+            "Equipamento";
 
           equipamentosDetalhes.push({
-            equipamentoId: itemSelecionado.id || itemSelecionado.equipamentoId,
-
-            nome: equipamentoAtual.nomeEquipamento || itemSelecionado.nome,
-            nomeEquipamento:
-              equipamentoAtual.nomeEquipamento ||
-              itemSelecionado.nomeEquipamento ||
-              itemSelecionado.nome,
+            equipamentoId,
+            nome: nomeEquipamento,
+            nomeEquipamento,
 
             quantidade: quantidadeSolicitada,
             quantidadeEstoque: quantidadeSolicitada,
@@ -203,12 +217,10 @@
               itemSelecionado.unidadeCobranca ||
               equipamentoAtual.unidadeCobranca ||
               "unidade",
-
             rotuloUnidadeCobranca:
               itemSelecionado.rotuloUnidadeCobranca ||
               equipamentoAtual.rotuloUnidadeCobranca ||
               "unid.",
-
             permiteQuantidadeDecimal: Boolean(
               itemSelecionado.permiteQuantidadeDecimal ||
               equipamentoAtual.permiteQuantidadeDecimal,
@@ -231,16 +243,11 @@
           clienteNome: dados.cliente.nome || "",
           clienteCpf: dados.cliente.cpf || "",
           clienteCelular: dados.cliente.celular || "",
+          clienteTelefone: dados.cliente.telefone || "",
 
           dataInicio: dados.dataInicio,
           dataRetirada: dados.dataInicio,
-
-          // Estes campos só são definidos no fechamento.
-          dataDevolucao: null,
-          dataDevolucaoReal: null,
-          periodo: null,
-          duracao: null,
-          duracaoReal: null,
+          dataDevolucaoPrevista: dados.dataDevolucaoPrevista || "",
 
           equipamentosIds: equipamentosDetalhes.map(
             (item) => item.equipamentoId,
@@ -248,21 +255,18 @@
           equipamentos: equipamentosDetalhes,
           equipamentosDetalhes,
 
-          subtotal: null,
+          observacoes: dados.observacoes || "",
+
+          subtotal: 0,
           desconto: 0,
           acrescimo: 0,
-          valorTotal: null,
+          valorTotal: 0,
           valorPago: 0,
           saldo: 0,
-          formaPagamento: "",
-          statusPagamento: "pendente",
-
-          observacoes: dados.observacoes || "",
-          observacoesFechamento: "",
-
-          status: "ativo",
+          statusPagamento: "nao_calculado",
           cobrancaCalculada: false,
 
+          status: "ativo",
           dataRegistro: new Date().toISOString(),
           criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
           atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
@@ -274,8 +278,6 @@
     },
 
     async finalizar(aluguelId, fechamento = {}) {
-      validarDadosFechamento(fechamento);
-
       const db = await aguardarFirebase();
       const aluguelRef = db.collection("alugueis").doc(aluguelId);
 
@@ -296,18 +298,35 @@
           throw new Error("Este aluguel está cancelado.");
         }
 
+        const periodoCobranca =
+          fechamento.periodoCobranca || fechamento.periodo;
+
+        if (!["hora", "dia", "mes"].includes(periodoCobranca)) {
+          throw new Error("Informe o tipo de cobrança: hora, dia ou mês.");
+        }
+
+        const dataDevolucaoReal = fechamento.dataDevolucaoReal || dataHojeISO();
+        const duracaoCobranca = Number(
+          fechamento.duracaoCobranca ||
+            fechamento.duracaoReal ||
+            calcularDuracaoPorDatas(
+              aluguel.dataInicio,
+              dataDevolucaoReal,
+              periodoCobranca,
+            ),
+        );
+
+        if (duracaoCobranca <= 0) {
+          throw new Error("Duração de cobrança inválida.");
+        }
+
         const equipamentos =
           aluguel.equipamentosDetalhes || aluguel.equipamentos || [];
 
-        if (!equipamentos.length) {
-          throw new Error("Este aluguel não possui equipamentos vinculados.");
-        }
-
         const itensFechamentoMap = new Map(
-          fechamento.itensFechamento.map((item) => [
-            item.equipamentoId || item.id,
-            item,
-          ]),
+          (fechamento.itensFechamento || fechamento.itens || [])
+            .map(normalizarItemFechamento)
+            .map((item) => [item.equipamentoId, item]),
         );
 
         const equipamentoRefs = equipamentos.map((item) =>
@@ -320,8 +339,6 @@
           equipamentoDocs.push(await transaction.get(ref));
         }
 
-        const duracaoReal = Number(fechamento.duracaoReal || 0);
-        const periodo = fechamento.periodo;
         let subtotalFinal = 0;
         const equipamentosFechamento = [];
 
@@ -337,33 +354,15 @@
 
           const equipamento = equipamentoDoc.data();
           const equipamentoId = item.equipamentoId || item.id;
-          const itemFechamento = itensFechamentoMap.get(equipamentoId);
-
-          if (!itemFechamento) {
-            throw new Error(
-              `Fechamento não informado para "${
-                item.nomeEquipamento || item.nome || "equipamento"
-              }".`,
-            );
-          }
+          const itemFechamento = itensFechamentoMap.get(equipamentoId) || {};
 
           const quantidadeEstoque = Number(
             item.quantidadeEstoque || item.quantidade || 0,
           );
-          const quantidadeCobradaFinal = Number(
-            itemFechamento.quantidadeCobradaFinal || 0,
-          );
-          const valorUnitarioFinal = Number(
-            itemFechamento.valorUnitarioFinal || 0,
-          );
 
-          if (quantidadeEstoque <= 0) {
-            throw new Error(
-              `Quantidade de estoque inválida para "${
-                item.nomeEquipamento || item.nome
-              }".`,
-            );
-          }
+          const quantidadeCobradaFinal = Number(
+            itemFechamento.quantidadeCobradaFinal || quantidadeEstoque || 1,
+          );
 
           if (quantidadeCobradaFinal <= 0) {
             throw new Error(
@@ -373,16 +372,22 @@
             );
           }
 
+          const valorUnitarioFinal = Number(
+            itemFechamento.valorUnitarioFinal ||
+              obterValorPorPeriodo(equipamento, periodoCobranca) ||
+              0,
+          );
+
           if (valorUnitarioFinal <= 0) {
             throw new Error(
-              `Valor unitário final inválido para "${
+              `Valor unitário inválido para "${
                 item.nomeEquipamento || item.nome
               }".`,
             );
           }
 
           const subtotalItem =
-            quantidadeCobradaFinal * valorUnitarioFinal * duracaoReal;
+            valorUnitarioFinal * quantidadeCobradaFinal * duracaoCobranca;
 
           subtotalFinal += subtotalItem;
 
@@ -390,16 +395,16 @@
             ...item,
             quantidadeEstoque,
             quantidadeCobradaFinal,
-            valorUnitarioFinal,
-            periodoFinal: periodo,
-            duracaoReal,
-            subtotalFinal: subtotalItem,
             unidadeCobranca:
               item.unidadeCobranca || equipamento.unidadeCobranca || "unidade",
             rotuloUnidadeCobranca:
               item.rotuloUnidadeCobranca ||
               equipamento.rotuloUnidadeCobranca ||
               "unid.",
+            periodoCobranca,
+            duracaoCobranca,
+            valorUnitarioFinal,
+            subtotalFinal: subtotalItem,
           });
 
           const quantidadeTotal = Number(equipamento.quantidadeTotal || 0);
@@ -427,7 +432,7 @@
 
         const valorPago =
           fechamento.valorPago === null || fechamento.valorPago === undefined
-            ? valorTotal
+            ? 0
             : Number(fechamento.valorPago || 0);
 
         const saldo = Math.max(0, valorTotal - valorPago);
@@ -442,18 +447,14 @@
 
         transaction.update(aluguelRef, {
           status: "finalizado",
+          dataDevolucaoReal,
 
-          dataDevolucao: fechamento.dataDevolucaoReal,
-          dataDevolucaoReal: fechamento.dataDevolucaoReal,
-
-          periodo,
-          periodoFinal: periodo,
-          duracao: duracaoReal,
-          duracaoReal,
+          periodoCobranca,
+          duracaoCobranca,
+          duracaoReal: duracaoCobranca,
 
           equipamentosFechamento,
           equipamentosDetalhes: equipamentosFechamento,
-          equipamentos: equipamentosFechamento,
 
           subtotal: subtotalFinal,
           desconto,
@@ -463,8 +464,6 @@
           saldo,
           formaPagamento: fechamento.formaPagamento || "",
           statusPagamento,
-
-          observacoesFechamento: fechamento.observacoesFechamento || "",
 
           cobrancaCalculada: true,
           fechadoEm: new Date().toISOString(),
