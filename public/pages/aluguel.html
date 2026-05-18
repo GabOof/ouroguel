@@ -1,57 +1,33 @@
 <!doctype html>
 <html lang="pt-BR">
   <head>
+    <script>
+      (function () {
+        const userLoggedIn = localStorage.getItem("userLoggedIn");
+
+        if (userLoggedIn !== "true") {
+          window.location.replace("/pages/login.html");
+        }
+      })();
+    </script>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Aluguéis - Ouroguel</title>
+    <link rel="icon" type="image/x-icon" href="../images/favicon.ico" />
+    <title>Registro de Aluguéis - Sistema Ouroguel</title>
 
+    <link rel="stylesheet" href="../css/style.css" />
     <link
       rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="style.css" />
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
     <style>
-      .grid-2 {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 16px;
-      }
-
-      .grid-3 {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 16px;
-      }
-
-      .grid-4 {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 16px;
-      }
-
-      .info-box {
-        background: #f8fafc;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 14px;
-        margin-top: 12px;
-      }
-
-      .help-text {
-        display: block;
-        margin-top: 5px;
-        color: #666;
-        font-size: 12px;
-        line-height: 1.4;
-      }
-
-      .table-responsive {
-        width: 100%;
-        overflow-x: auto;
-      }
-
-      .modal-backdrop {
+      .fechamento-overlay {
         position: fixed;
         inset: 0;
         z-index: 9999;
@@ -62,17 +38,13 @@
         padding: 20px;
       }
 
-      .modal-card {
-        width: min(1100px, 100%);
+      .fechamento-modal {
+        width: min(1150px, 100%);
         max-height: 92vh;
         overflow: auto;
-        background: #fff;
-        border-radius: 14px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
-        padding: 22px;
       }
 
-      .modal-header {
+      .fechamento-header {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
@@ -80,373 +52,398 @@
         margin-bottom: 16px;
       }
 
-      .modal-header h2 {
-        margin: 0;
+      .fechamento-header h3 {
+        margin-bottom: 4px;
       }
 
-      .modal-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        margin-top: 18px;
+      .field-help {
+        display: block;
+        margin-top: 5px;
+        color: #666;
+        font-size: 0.88rem;
+        line-height: 1.35;
       }
 
-      #fechamentoItens input {
-        width: 110px;
-        max-width: 100%;
+      .valor-destaque {
+        font-size: 1.35rem;
+        font-weight: 700;
       }
 
-      @media (max-width: 900px) {
-        .grid-2,
-        .grid-3,
-        .grid-4 {
-          grid-template-columns: 1fr;
+      .linha-secundaria {
+        display: block;
+        color: #666;
+        font-size: 0.88rem;
+        margin-top: 4px;
+      }
+
+      .form-buttons.space-between {
+        justify-content: space-between;
+      }
+
+      @media (max-width: 768px) {
+        .fechamento-overlay {
+          align-items: flex-start;
+          padding: 10px;
+        }
+
+        .fechamento-modal {
+          max-height: calc(100vh - 20px);
         }
       }
     </style>
   </head>
+
   <body>
+    <header class="header">
+      <div class="container">
+        <div class="logo">
+          <img
+            src="../images/logo.png"
+            alt="Logo Ouroguel"
+            style="width: 425px"
+          />
+        </div>
+
+        <nav class="nav">
+          <ul>
+            <li>
+              <a href="../index.html"><i class="fas fa-home"></i> Início</a>
+            </li>
+            <li>
+              <a href="./clientes.html"
+                ><i class="fas fa-users"></i> Clientes</a
+              >
+            </li>
+            <li>
+              <a href="./equipamentos.html">
+                <i class="fas fa-box"></i> Equipamentos
+              </a>
+            </li>
+            <li>
+              <a href="./aluguel.html" class="active" aria-current="page">
+                <i class="fas fa-handshake"></i> Aluguel
+              </a>
+            </li>
+            <li>
+              <a href="./estoque.html">
+                <i class="fas fa-clipboard-list"></i> Estoque
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
     <main class="main-content">
-      <section class="page-header">
-        <h1><i class="fas fa-file-contract"></i> Aluguéis</h1>
-        <p>
-          Abra aluguéis reservando estoque e calcule o valor final somente na
-          devolução.
-        </p>
-      </section>
+      <div class="container">
+        <h2 class="page-title">
+          <i class="fas fa-file-contract"></i> Registro de Aluguéis
+        </h2>
 
-      <section class="form-section card">
-        <h2>Novo aluguel</h2>
-
-        <form id="aluguelForm">
-          <h3>1. Cliente</h3>
-
-          <div class="form-group">
-            <label for="clienteSelect">Cliente</label>
-            <select id="clienteSelect" required>
-              <option value="">Carregando clientes...</option>
-            </select>
+        <div class="alert alert-info" role="alert">
+          <div>
+            <i class="fas fa-info-circle" aria-hidden="true"></i>
+            <strong>Fluxo correto:</strong>
+            <ol class="instructions-list">
+              <li>Na abertura do aluguel, o sistema apenas reserva estoque.</li>
+              <li>
+                Não existe valor definitivo, período ou pagamento na abertura.
+              </li>
+              <li>
+                Na devolução, informe período real, duração real e cobrança
+                final.
+              </li>
+              <li>
+                O sistema devolve o estoque e calcula pagamento, saldo e status.
+              </li>
+            </ol>
           </div>
+        </div>
 
-          <div id="infoCliente" class="info-box" style="display: none">
-            <div class="grid-4">
+        <section class="form-section">
+          <div class="form-card">
+            <h3>Novo Aluguel</h3>
+
+            <form id="aluguelForm">
               <div class="form-group">
-                <label>Telefone</label>
-                <input type="text" id="clienteTelefone" readonly />
+                <label for="clienteSelect">
+                  <i class="fas fa-user"></i> Cliente *
+                </label>
+                <select id="clienteSelect" required>
+                  <option value="">Carregando clientes...</option>
+                </select>
+              </div>
+
+              <div id="infoCliente" style="display: none">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label for="clienteTelefone">Telefone</label>
+                    <input type="text" id="clienteTelefone" readonly />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="clienteCelular">Celular</label>
+                    <input type="text" id="clienteCelular" readonly />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="clienteCPF">CPF/CNPJ</label>
+                    <input type="text" id="clienteCPF" readonly />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="clienteCidade">Cidade</label>
+                    <input type="text" id="clienteCidade" readonly />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="dataInicio">
+                    <i class="fas fa-calendar-plus"></i> Data de Retirada *
+                  </label>
+                  <input type="date" id="dataInicio" required />
+                </div>
+
+                <div class="form-group">
+                  <label>
+                    <i class="fas fa-money-bill-wave"></i> Valor do Aluguel
+                  </label>
+                  <input
+                    type="text"
+                    value="Será calculado somente na devolução"
+                    readonly
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label>
+                    <i class="fas fa-clock"></i> Período de Cobrança
+                  </label>
+                  <input type="text" value="Definido no fechamento" readonly />
+                </div>
               </div>
 
               <div class="form-group">
-                <label>Celular</label>
-                <input type="text" id="clienteCelular" readonly />
+                <label for="equipamentoSelect">
+                  <i class="fas fa-box"></i> Equipamento *
+                </label>
+
+                <div class="equipamento-selecao">
+                  <select id="equipamentoSelect">
+                    <option value="">Carregando equipamentos...</option>
+                  </select>
+
+                  <button
+                    type="button"
+                    id="btnAdicionarEquipamento"
+                    class="btn btn-primary"
+                  >
+                    <i class="fas fa-plus" aria-hidden="true"></i> Adicionar
+                  </button>
+                </div>
               </div>
 
-              <div class="form-group">
-                <label>CPF/CNPJ</label>
-                <input type="text" id="clienteCPF" readonly />
+              <div id="infoEquipamento" style="display: none">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label for="equipamentoDisponivel">Disponível</label>
+                    <input type="text" id="equipamentoDisponivel" readonly />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="equipamentoUnidade">Unidade de cobrança</label>
+                    <input type="text" id="equipamentoUnidade" readonly />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="equipamentoPrecos">Preços cadastrados</label>
+                    <input type="text" id="equipamentoPrecos" readonly />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="quantidadeAlugar">Quantidade retirada *</label>
+                    <input
+                      type="number"
+                      id="quantidadeAlugar"
+                      min="1"
+                      step="1"
+                      value="1"
+                    />
+                    <small class="field-help">
+                      Controla somente o estoque físico reservado.
+                    </small>
+                  </div>
+                </div>
               </div>
 
-              <div class="form-group">
-                <label>Cidade/UF</label>
-                <input type="text" id="clienteCidade" readonly />
-              </div>
-            </div>
-          </div>
-
-          <hr />
-
-          <h3>2. Período de cobrança</h3>
-
-          <div class="grid-3">
-            <div class="form-group">
-              <label for="dataInicio">Data de início</label>
-              <input type="date" id="dataInicio" required />
-            </div>
-
-            <div class="form-group">
-              <label for="periodo">Tipo de cobrança</label>
-              <select id="periodo" required>
-                <option value="">Selecione</option>
-                <option value="hora">Por hora</option>
-                <option value="dia">Por dia</option>
-                <option value="mes">Por mês</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="duracaoPrevista">Duração prevista</label>
-              <input
-                type="number"
-                id="duracaoPrevista"
-                min="1"
-                step="1"
-                value="1"
-                required
-              />
-              <small class="help-text"
-                >A duração definitiva será recalculada na devolução.</small
+              <div
+                class="list-section"
+                id="listaEquipamentosContainer"
+                style="display: none"
               >
-            </div>
-          </div>
+                <h4><i class="fas fa-list"></i> Equipamentos Reservados</h4>
 
-          <hr />
-
-          <h3>3. Equipamentos</h3>
-
-          <div class="grid-2">
-            <div class="form-group">
-              <label for="equipamentoSelect">Equipamento</label>
-              <select id="equipamentoSelect">
-                <option value="">Selecione o período primeiro</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="equipamentoValorPeriodo"
-                >Valor no período escolhido</label
-              >
-              <input type="text" id="equipamentoValorPeriodo" readonly />
-            </div>
-          </div>
-
-          <div id="infoEquipamento" class="info-box" style="display: none">
-            <div class="grid-4">
-              <div class="form-group">
-                <label>Disponível em estoque</label>
-                <input type="text" id="equipamentoDisponivel" readonly />
+                <div class="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th scope="col">Equipamento</th>
+                        <th scope="col">Estoque reservado</th>
+                        <th scope="col">Unidade de cobrança</th>
+                        <th scope="col">Cobrança</th>
+                        <th scope="col">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="listaEquipamentos"></tbody>
+                  </table>
+                </div>
               </div>
 
-              <div class="form-group">
-                <label>Valor por hora</label>
-                <input type="text" id="equipamentoValorHora" readonly />
+              <div class="form-group full-width">
+                <label for="observacoesAluguel">
+                  <i class="fas fa-sticky-note"></i> Observações da retirada
+                </label>
+                <textarea
+                  id="observacoesAluguel"
+                  rows="3"
+                  placeholder="Ex.: local de entrega, responsável pela retirada, estado visual do equipamento..."
+                ></textarea>
               </div>
 
-              <div class="form-group">
-                <label>Valor por dia</label>
-                <input type="text" id="equipamentoValorDia" readonly />
-              </div>
+              <div class="form-buttons">
+                <button type="submit" class="btn btn-secondary btn-lg">
+                  <i class="fas fa-check-circle" aria-hidden="true"></i>
+                  Registrar Retirada
+                </button>
 
-              <div class="form-group">
-                <label>Valor por mês</label>
-                <input type="text" id="equipamentoValorMes" readonly />
-              </div>
-            </div>
-
-            <div class="grid-3">
-              <div class="form-group">
-                <label for="quantidadeAlugar"
-                  >Quantidade retirada do estoque</label
-                >
-                <input
-                  type="number"
-                  id="quantidadeAlugar"
-                  min="1"
-                  step="1"
-                  value="1"
-                />
-                <small class="help-text"
-                  >Controla quantas unidades físicas saem do estoque.</small
-                >
-              </div>
-
-              <div class="form-group">
-                <label id="labelQuantidadeCobranca" for="quantidadeCobranca"
-                  >Quantidade cobrada</label
-                >
-                <input type="text" id="quantidadeCobranca" value="1" />
-                <small id="unidadeCobrancaInfo" class="help-text"></small>
-              </div>
-
-              <div class="form-group" style="display: flex; align-items: end">
                 <button
                   type="button"
-                  id="btnAdicionarEquipamento"
-                  class="btn btn-primary"
-                  style="width: 100%"
+                  class="btn btn-danger"
+                  id="btnLimparAluguel"
                 >
-                  <i class="fas fa-plus"></i> Adicionar equipamento
+                  <i class="fas fa-eraser" aria-hidden="true"></i> Limpar Tudo
+                </button>
+
+                <button
+                  type="button"
+                  class="btn btn-success"
+                  id="btnImprimir"
+                  disabled
+                  style="display: none"
+                >
+                  <i class="fas fa-print" aria-hidden="true"></i>
+                  Imprimir Contrato
                 </button>
               </div>
-            </div>
+            </form>
           </div>
+        </section>
 
-          <div
-            id="listaEquipamentosContainer"
-            class="table-responsive"
-            style="display: none; margin-top: 16px"
-          >
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Equipamento</th>
-                  <th>Estoque reservado</th>
-                  <th>Quantidade cobrada</th>
-                  <th>Valor unitário</th>
-                  <th>Subtotal base</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody id="listaEquipamentos"></tbody>
-            </table>
-          </div>
+        <section class="list-section">
+          <div class="list-card">
+            <h3>Histórico de Aluguéis</h3>
 
-          <div id="resumoAluguel" class="info-box" style="display: none">
-            <h3>Prévia do aluguel</h3>
-            <p class="help-text">
-              Este valor é apenas estimativo. O valor total e o pagamento
-              definitivo serão calculados na devolução.
-            </p>
-
-            <div class="grid-4">
-              <div class="form-group">
-                <label>Subtotal base</label>
-                <input type="text" id="subtotalPrevisto" readonly />
-              </div>
-
-              <div class="form-group">
-                <label>Período</label>
-                <input type="text" id="periodoTexto" readonly />
-              </div>
-
-              <div class="form-group">
-                <label>Duração prevista</label>
-                <input type="text" id="duracaoTexto" readonly />
-              </div>
-
-              <div class="form-group">
-                <label>Devolução prevista</label>
-                <input type="text" id="dataDevolucaoPrevista" readonly />
-              </div>
+            <div class="search-box">
+              <input
+                type="text"
+                id="searchAlugueis"
+                placeholder="Buscar por cliente, equipamento ou status..."
+              />
+              <i class="fas fa-search"></i>
             </div>
 
-            <div class="form-group">
-              <label>Valor previsto</label>
-              <input type="text" id="valorPrevisto" readonly />
+            <div class="table-container">
+              <table id="alugueisTable">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Equipamentos</th>
+                    <th>Retirada</th>
+                    <th>Devolução</th>
+                    <th>Valor</th>
+                    <th>Pagamento</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+
+                <tbody id="alugueisList">
+                  <tr>
+                    <td colspan="8" class="empty-message">
+                      <i class="fas fa-file-contract"></i>
+                      <p>Nenhum aluguel registrado ainda</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
-
-          <div class="form-group">
-            <label for="observacoesAluguel">Observações do aluguel</label>
-            <textarea
-              id="observacoesAluguel"
-              rows="3"
-              placeholder="Ex.: local de entrega, responsável pela retirada, condições combinadas..."
-            ></textarea>
-          </div>
-
-          <div class="form-actions">
-            <button type="submit" class="btn btn-success">
-              <i class="fas fa-save"></i> Registrar aluguel
-            </button>
-
-            <button
-              type="button"
-              id="btnLimparAluguel"
-              class="btn btn-secondary"
-            >
-              <i class="fas fa-eraser"></i> Limpar
-            </button>
-
-            <button
-              type="button"
-              id="btnImprimir"
-              class="btn btn-primary"
-              style="display: none"
-              disabled
-            >
-              <i class="fas fa-print"></i> Imprimir contrato
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section class="list-section card">
-        <div class="section-header">
-          <h2>Aluguéis registrados</h2>
-          <div class="search-box">
-            <i class="fas fa-search"></i>
-            <input
-              type="text"
-              id="searchAlugueis"
-              placeholder="Buscar por cliente, equipamento ou status..."
-            />
-          </div>
-        </div>
-
-        <div class="table-responsive">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Cliente</th>
-                <th>Equipamentos</th>
-                <th>Início</th>
-                <th>Devolução</th>
-                <th>Período</th>
-                <th>Valor</th>
-                <th>Status</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="alugueisList"></tbody>
-          </table>
-        </div>
-      </section>
+        </section>
+      </div>
     </main>
 
-    <div id="modalFechamento" class="modal-backdrop">
-      <div class="modal-card">
-        <div class="modal-header">
+    <div id="modalFechamento" class="fechamento-overlay">
+      <div class="form-card fechamento-modal">
+        <div class="fechamento-header">
           <div>
-            <h2>
-              <i class="fas fa-clipboard-check"></i> Fechamento do aluguel
-            </h2>
-            <p class="help-text">
-              Cliente: <strong id="fechamentoCliente"></strong> | Início:
-              <strong id="fechamentoDataInicio"></strong> | Cobrança:
-              <strong id="fechamentoPeriodo"></strong>
+            <h3>
+              <i class="fas fa-clipboard-check"></i> Fechamento do Aluguel
+            </h3>
+            <p class="field-help">
+              Cliente: <strong id="fechamentoCliente">-</strong> | Retirada:
+              <strong id="fechamentoDataInicio">-</strong>
             </p>
           </div>
 
           <button
             type="button"
+            class="btn btn-danger"
             id="btnCancelarFechamento"
-            class="btn btn-secondary"
           >
             <i class="fas fa-times"></i>
           </button>
         </div>
 
-        <div class="grid-3">
+        <div class="form-grid">
           <div class="form-group">
-            <label for="dataDevolucaoReal">Data real de devolução</label>
+            <label for="dataDevolucaoReal">
+              <i class="fas fa-calendar-check"></i> Data real de devolução *
+            </label>
             <input type="date" id="dataDevolucaoReal" />
           </div>
 
           <div class="form-group">
-            <label>Duração real calculada</label>
-            <div class="info-box" style="margin-top: 0">
-              <strong id="duracaoRealTexto">-</strong>
-            </div>
+            <label for="periodoFechamento">
+              <i class="fas fa-clock"></i> Tipo de cobrança *
+            </label>
+            <select id="periodoFechamento">
+              <option value="">Selecione no fechamento</option>
+              <option value="hora">Por Hora</option>
+              <option value="dia">Por Dia</option>
+              <option value="mes">Por Mês</option>
+            </select>
           </div>
 
           <div class="form-group">
-            <label for="formaPagamentoFechamento">Forma de pagamento</label>
-            <select id="formaPagamentoFechamento">
-              <option value="Dinheiro">Dinheiro</option>
-              <option value="Pix">Pix</option>
-              <option value="Cartão de Débito">Cartão de Débito</option>
-              <option value="Cartão de Crédito">Cartão de Crédito</option>
-              <option value="Boleto">Boleto</option>
-              <option value="Outro">Outro</option>
-            </select>
+            <label for="duracaoReal">
+              <i class="fas fa-hourglass-end"></i> Duração real *
+            </label>
+            <input type="number" id="duracaoReal" min="1" step="1" value="1" />
+            <small class="field-help">
+              Pode ser ajustada manualmente antes de confirmar.
+            </small>
           </div>
         </div>
 
-        <div class="table-responsive">
-          <table class="data-table">
+        <div class="table-container">
+          <table>
             <thead>
               <tr>
                 <th>Equipamento</th>
-                <th>Quantidade cobrada final</th>
+                <th>Estoque devolvido</th>
+                <th>Qtd. cobrada final</th>
                 <th>Valor unitário final</th>
                 <th>Subtotal final</th>
               </tr>
@@ -455,12 +452,15 @@
           </table>
         </div>
 
-        <div class="grid-4" style="margin-top: 16px">
+        <div class="form-grid">
           <div class="form-group">
-            <label>Subtotal</label>
-            <div class="info-box" style="margin-top: 0">
-              <strong id="subtotalFinalTexto">R$ 0,00</strong>
-            </div>
+            <label>Subtotal final</label>
+            <input
+              type="text"
+              id="subtotalFinalTexto"
+              readonly
+              value="R$ 0,00"
+            />
           </div>
 
           <div class="form-group">
@@ -475,53 +475,90 @@
 
           <div class="form-group">
             <label>Valor total</label>
-            <div class="info-box" style="margin-top: 0">
-              <strong id="valorTotalFinalTexto">R$ 0,00</strong>
-            </div>
+            <input
+              type="text"
+              id="valorTotalFinalTexto"
+              class="valor-destaque"
+              readonly
+              value="R$ 0,00"
+            />
           </div>
-        </div>
 
-        <div class="grid-2">
           <div class="form-group">
             <label for="valorPagoFechamento">Valor pago R$</label>
             <input
               type="text"
               id="valorPagoFechamento"
-              placeholder="Deixe vazio para considerar pagamento total"
+              placeholder="Deixe vazio para pagamento total"
             />
           </div>
 
           <div class="form-group">
+            <label for="formaPagamentoFechamento">Forma de pagamento</label>
+            <select id="formaPagamentoFechamento">
+              <option value="">Selecione</option>
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Pix">Pix</option>
+              <option value="Cartão de Débito">Cartão de Débito</option>
+              <option value="Cartão de Crédito">Cartão de Crédito</option>
+              <option value="Boleto">Boleto</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+
+          <div class="form-group">
             <label>Saldo</label>
-            <div class="info-box" style="margin-top: 0">
-              <strong id="saldoFinalTexto">R$ 0,00</strong>
-            </div>
+            <input type="text" id="saldoFinalTexto" readonly value="R$ 0,00" />
+          </div>
+
+          <div class="form-group">
+            <label>Status pagamento</label>
+            <input type="text" id="statusPagamentoTexto" readonly value="-" />
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="observacoesFechamento">Observações do fechamento</label>
+        <div class="form-group full-width">
+          <label for="observacoesFechamento">
+            <i class="fas fa-sticky-note"></i> Observações do fechamento
+          </label>
           <textarea
             id="observacoesFechamento"
             rows="3"
-            placeholder="Ex.: avaria, desconto combinado, pagamento parcial..."
+            placeholder="Ex.: avaria, pagamento parcial, desconto combinado..."
           ></textarea>
         </div>
 
-        <div class="modal-actions">
+        <div class="form-buttons space-between">
           <button
             type="button"
-            id="btnConfirmarFechamento"
-            class="btn btn-success"
+            class="btn btn-danger"
+            id="btnFecharModalRodape"
           >
-            <i class="fas fa-check"></i> Confirmar devolução e calcular cobrança
+            <i class="fas fa-times"></i> Cancelar
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-success"
+            id="btnConfirmarFechamento"
+          >
+            <i class="fas fa-check"></i> Confirmar Devolução e Calcular
           </button>
         </div>
       </div>
     </div>
 
-    <script src="firebase-config.js"></script>
-    <script src="aluguelService.js"></script>
-    <script src="aluguel.js"></script>
+    <footer class="footer">
+      <div class="container">
+        <p>Sistema desenvolvido para Ouroguel LTDA - TCC em IHC</p>
+        <p class="footer-small">Foco em usabilidade para pessoas idosas</p>
+      </div>
+    </footer>
+
+    <script src="/js/firebase-config.js"></script>
+    <script src="/js/main.js"></script>
+    <script src="/js/aluguelService.js"></script>
+    <script src="/js/aluguel.js"></script>
+    <script src="/js/auth.js"></script>
   </body>
 </html>
