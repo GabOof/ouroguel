@@ -408,6 +408,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--font-size-sm);
+  table-layout: auto;
 }
 
 thead {
@@ -443,6 +444,49 @@ td {
 .empty-message i {
   font-size: 3rem;
   margin-bottom: var(--spacing-sm);
+}
+
+.col-nome-observacoes {
+  width: 55%;
+  min-width: 300px;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
+.texto-observacoes {
+  display: block;
+  margin-top: 4px;
+  color: #666;
+  line-height: 1.4;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.col-quantidade {
+  width: 13%;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.col-valor {
+  width: 12%;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.col-status {
+  width: 12%;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.col-acoes {
+  width: 8%;
+  white-space: nowrap;
+  vertical-align: top;
 }
 
 /* ============================================
