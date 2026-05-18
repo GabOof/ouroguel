@@ -200,12 +200,38 @@
 
           equipamentosDetalhes.push({
             equipamentoId: itemSelecionado.id || itemSelecionado.equipamentoId,
+
             nome: equipamentoAtual.nomeEquipamento || itemSelecionado.nome,
             nomeEquipamento:
               equipamentoAtual.nomeEquipamento ||
               itemSelecionado.nomeEquipamento ||
               itemSelecionado.nome,
+
             quantidade: quantidadeSolicitada,
+            quantidadeEstoque: quantidadeSolicitada,
+
+            quantidadeCobrada: Number(
+              itemSelecionado.quantidadeCobrada ||
+                itemSelecionado.quantidade ||
+                quantidadeSolicitada ||
+                1,
+            ),
+
+            unidadeCobranca:
+              itemSelecionado.unidadeCobranca ||
+              equipamentoAtual.unidadeCobranca ||
+              "unidade",
+
+            rotuloUnidadeCobranca:
+              itemSelecionado.rotuloUnidadeCobranca ||
+              equipamentoAtual.rotuloUnidadeCobranca ||
+              "unid.",
+
+            permiteQuantidadeDecimal: Boolean(
+              itemSelecionado.permiteQuantidadeDecimal ||
+              equipamentoAtual.permiteQuantidadeDecimal,
+            ),
+
             valorUnitario,
             valorHora: Number(equipamentoAtual.valorHora || 0),
             valorDia: Number(equipamentoAtual.valorDia || 0),
@@ -253,7 +279,7 @@
       return aluguelRef.id;
     },
 
-    async finalizar(aluguelId) {
+    async finalizar(aluguelId, fechamento = {}) {
       const db = await aguardarFirebase();
 
       const aluguelRef = db.collection("alugueis").doc(aluguelId);
@@ -275,8 +301,23 @@
           throw new Error("Este aluguel está cancelado.");
         }
 
+        const dataDevolucaoReal = fechamento.dataDevolucaoReal || dataHojeISO();
+
+        const duracaoReal = calcularDuracaoReal(
+          aluguel.dataInicio,
+          dataDevolucaoReal,
+          aluguel.periodo,
+        );
+
         const equipamentos =
           aluguel.equipamentosDetalhes || aluguel.equipamentos || [];
+
+        const itensFechamentoMap = new Map(
+          (fechamento.itensFechamento || fechamento.itens || []).map((item) => [
+            item.equipamentoId || item.id,
+            item,
+          ]),
+        );
 
         const equipamentoRefs = equipamentos.map((item) =>
           db.collection("equipamentos").doc(item.equipamentoId || item.id),
@@ -288,11 +329,8 @@
           equipamentoDocs.push(await transaction.get(ref));
         }
 
-        transaction.update(aluguelRef, {
-          status: "finalizado",
-          dataDevolucaoReal: dataHojeISO(),
-          atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-        });
+        let subtotalFinal = 0;
+        const equipamentosFechamento = [];
 
         for (let i = 0; i < equipamentos.length; i++) {
           const item = equipamentos[i];
@@ -305,8 +343,59 @@
           }
 
           const equipamento = equipamentoDoc.data();
+          const equipamentoId = item.equipamentoId || item.id;
+          const itemFechamento = itensFechamentoMap.get(equipamentoId) || {};
 
-          const quantidade = Number(item.quantidade || 0);
+          const quantidadeEstoque = Number(
+            item.quantidadeEstoque || item.quantidade || 0,
+          );
+
+          const quantidadeCobradaFinal = Number(
+            itemFechamento.quantidadeCobradaFinal ||
+              itemFechamento.quantidadeCobrada ||
+              item.quantidadeCobrada ||
+              item.quantidade ||
+              1,
+          );
+
+          if (quantidadeCobradaFinal <= 0) {
+            throw new Error(
+              `Quantidade cobrada inválida para "${item.nomeEquipamento || item.nome}".`,
+            );
+          }
+
+          const valorUnitario = Number(
+            item.valorUnitario ||
+              obterValorPorPeriodo(equipamento, aluguel.periodo) ||
+              0,
+          );
+
+          if (valorUnitario <= 0) {
+            throw new Error(
+              `Valor do período não configurado para "${item.nomeEquipamento || item.nome}".`,
+            );
+          }
+
+          const subtotalItem =
+            valorUnitario * quantidadeCobradaFinal * duracaoReal;
+
+          subtotalFinal += subtotalItem;
+
+          equipamentosFechamento.push({
+            ...item,
+            quantidadeEstoque,
+            quantidadeCobradaFinal,
+            unidadeCobranca:
+              item.unidadeCobranca || equipamento.unidadeCobranca || "unidade",
+            rotuloUnidadeCobranca:
+              item.rotuloUnidadeCobranca ||
+              equipamento.rotuloUnidadeCobranca ||
+              "unid.",
+            valorUnitario,
+            duracaoReal,
+            subtotalFinal: subtotalItem,
+          });
+
           const quantidadeTotal = Number(equipamento.quantidadeTotal || 0);
           const quantidadeDisponivel = Number(
             equipamento.quantidadeDisponivel || 0,
@@ -316,12 +405,57 @@
           transaction.update(equipamentoRefs[i], {
             quantidadeDisponivel: Math.min(
               quantidadeTotal,
-              quantidadeDisponivel + quantidade,
+              quantidadeDisponivel + quantidadeEstoque,
             ),
-            quantidadeAlugada: Math.max(0, quantidadeAlugada - quantidade),
+            quantidadeAlugada: Math.max(
+              0,
+              quantidadeAlugada - quantidadeEstoque,
+            ),
             atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
           });
         }
+
+        const desconto = Number(fechamento.desconto || 0);
+        const acrescimo = Number(fechamento.acrescimo || 0);
+
+        const valorTotal = Math.max(0, subtotalFinal + acrescimo - desconto);
+
+        const valorPago =
+          fechamento.valorPago === null || fechamento.valorPago === undefined
+            ? valorTotal
+            : Number(fechamento.valorPago || 0);
+
+        const saldo = Math.max(0, valorTotal - valorPago);
+
+        let statusPagamento = "pendente";
+
+        if (saldo <= 0) {
+          statusPagamento = "pago";
+        } else if (valorPago > 0) {
+          statusPagamento = "parcial";
+        }
+
+        transaction.update(aluguelRef, {
+          status: "finalizado",
+          dataDevolucaoReal,
+          duracaoReal,
+
+          equipamentosFechamento,
+          equipamentosDetalhes: equipamentosFechamento,
+
+          subtotal: subtotalFinal,
+          desconto,
+          acrescimo,
+          valorTotal,
+          valorPago,
+          saldo,
+          formaPagamento: fechamento.formaPagamento || "",
+          statusPagamento,
+
+          cobrancaCalculada: true,
+          fechadoEm: new Date().toISOString(),
+          atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+        });
       });
 
       return true;
