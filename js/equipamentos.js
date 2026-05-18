@@ -311,8 +311,6 @@ async function carregarEquipamentos() {
               }
             </td>
 
-            <td>${categoria}</td>
-
             <td>
               <strong>${equipamento.quantidadeTotal || 0}</strong>
               <small style="display: block; color: #666;">
