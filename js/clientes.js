@@ -29,10 +29,28 @@ function configurarFormularioCliente() {
     dataNascimento.max = new Date().toISOString().split("T")[0];
   }
 
+  const dataAbertura = document.getElementById("dataAbertura");
+
+  if (dataAbertura) {
+    dataAbertura.max = new Date().toISOString().split("T")[0];
+  }
+
   const cpfInput = document.getElementById("cpf");
 
   if (cpfInput) {
     cpfInput.addEventListener("input", aplicarMascaraCpfCnpj);
+  }
+
+  const cnpjInput = document.getElementById("cnpj");
+
+  if (cnpjInput) {
+    cnpjInput.addEventListener("input", aplicarMascaraCpfCnpj);
+  }
+
+  const cpfProprietarioInput = document.getElementById("cpfProprietario");
+
+  if (cpfProprietarioInput) {
+    cpfProprietarioInput.addEventListener("input", aplicarMascaraCpfCnpj);
   }
 
   const cepInput = document.getElementById("cep");
@@ -40,6 +58,8 @@ function configurarFormularioCliente() {
   if (cepInput) {
     cepInput.addEventListener("blur", buscarCEP);
   }
+
+  alternarTipoCliente("fisica");
 }
 
 function aplicarMascaraCpfCnpj(event) {
@@ -91,45 +111,78 @@ function escaparHTML(valor) {
 }
 
 function coletarDadosCliente() {
+  const tipoCliente = valorCampo("tipoCliente") || "fisica";
   const cpf = valorCampo("cpf");
+  const cnpj = valorCampo("cnpj");
   const clienteSpc = document.getElementById("clienteSpc");
 
   return {
+    tipoCliente,
+
     nome: valorCampo("nome"),
     dataNascimento: valorCampo("dataNascimento"),
     cpf,
     cpfLimpo: somenteNumeros(cpf),
     identidade: valorCampo("identidade"),
+
+    razaoSocial: valorCampo("razaoSocial"),
+    nomeFantasia: valorCampo("nomeFantasia"),
+    cnpj,
+    cnpjLimpo: somenteNumeros(cnpj),
+    dataAbertura: valorCampo("dataAbertura"),
+    inscricaoEstadual: valorCampo("inscricaoEstadual"),
+    inscricaoMunicipal: valorCampo("inscricaoMunicipal"),
+    proprietario: valorCampo("proprietario"),
+    cpfProprietario: valorCampo("cpfProprietario"),
+
     telefone: valorCampo("telefone"),
     celular: valorCampo("celular"),
     email: valorCampo("email"),
+
     cep: valorCampo("cep"),
     endereco: valorCampo("endereco"),
     bairro: valorCampo("bairro"),
     cidade: valorCampo("cidade"),
     estado: valorCampo("estado"),
+
     naturalidade: valorCampo("naturalidade"),
     nomePai: valorCampo("nomePai"),
     nomeMae: valorCampo("nomeMae"),
+
     estaNoSpc: clienteSpc ? clienteSpc.checked : false,
+    observacaoRestricao: valorCampo("observacaoRestricao"),
   };
 }
 
 function validarCliente(dadosCliente) {
-  if (!dadosCliente.nome) {
-    return "Nome é obrigatório.";
+  if (dadosCliente.tipoCliente === "juridica") {
+    if (!dadosCliente.razaoSocial) {
+      return "Razão Social é obrigatória.";
+    }
+
+    if (!dadosCliente.cnpj) {
+      return "CNPJ é obrigatório.";
+    }
+
+    if (dadosCliente.cnpjLimpo.length !== 14) {
+      return "CNPJ deve ter 14 dígitos.";
+    }
+  } else {
+    if (!dadosCliente.nome) {
+      return "Nome é obrigatório.";
+    }
+
+    if (!dadosCliente.cpf) {
+      return "CPF é obrigatório.";
+    }
+
+    if (dadosCliente.cpfLimpo.length !== 11) {
+      return "CPF deve ter 11 dígitos.";
+    }
   }
 
-  if (!dadosCliente.celular) {
-    return "Celular é obrigatório.";
-  }
-
-  if (!dadosCliente.cpf) {
-    return "CPF/CNPJ é obrigatório.";
-  }
-
-  if (![11, 14].includes(dadosCliente.cpfLimpo.length)) {
-    return "CPF deve ter 11 dígitos ou CNPJ deve ter 14 dígitos.";
+  if (!dadosCliente.celular && !dadosCliente.telefone) {
+    return "Informe pelo menos um telefone ou celular.";
   }
 
   if (
@@ -155,18 +208,26 @@ async function salvarCliente(event) {
   }
 
   try {
-    const cpfDuplicado = await clientesService.cpfJaExiste(
-      dadosCliente.cpfLimpo,
+    const documentoLimpo = obterDocumentoCliente(dadosCliente);
+
+    const documentoDuplicado = await clientesService.documentoJaExiste(
+      documentoLimpo,
       clienteEditando,
     );
 
-    if (cpfDuplicado) {
+    if (documentoDuplicado) {
       mostrarMensagem(
         "Erro",
         "Já existe um cliente cadastrado com este CPF/CNPJ.",
         "error",
       );
-      document.getElementById("cpf").focus();
+
+      if (dadosCliente.tipoCliente === "juridica") {
+        document.getElementById("cnpj")?.focus();
+      } else {
+        document.getElementById("cpf")?.focus();
+      }
+
       return;
     }
 
@@ -224,33 +285,57 @@ async function carregarClientes() {
 
     clientesList.innerHTML = clientes
       .map((cliente) => {
-        const nome = escaparHTML(cliente.nome);
+        const tipoCliente = cliente.tipoCliente || "fisica";
+        const nomeExibicao = escaparHTML(
+          cliente.nomeExibicao ||
+            cliente.nomeFantasia ||
+            cliente.razaoSocial ||
+            cliente.nome,
+        );
         const email = escaparHTML(cliente.email);
-        const cpf = escaparHTML(cliente.cpf);
+        const documento = escaparHTML(
+          tipoCliente === "juridica" ? cliente.cnpj : cliente.cpf,
+        );
         const celular = escaparHTML(cliente.celular);
         const cidade = escaparHTML(cliente.cidade);
         const estado = escaparHTML(cliente.estado);
+        const tipoTexto = tipoCliente === "juridica" ? "PJ" : "PF";
+        const observacaoRestricao = escaparHTML(cliente.observacaoRestricao);
 
         return `
           <tr class="${cliente.estaNoSpc ? "cliente-spc-row" : ""}">
             <td>
+              <span class="badge-tipo-cliente">${tipoTexto}</span>
+
               <strong class="${cliente.estaNoSpc ? "cliente-nome-spc" : ""}">
-                ${nome}
+                ${nomeExibicao}
               </strong>
 
               ${
                 cliente.estaNoSpc
                   ? `<span class="badge-spc">
-                      <i class="fas fa-ban"></i> SPC
+                      <i class="fas fa-ban"></i> Restrição
                     </span>`
                   : ""
               }
 
+              ${
+                tipoCliente === "juridica" && cliente.razaoSocial
+                  ? `<br><small>Razão Social: ${escaparHTML(cliente.razaoSocial)}</small>`
+                  : ""
+              }
+
               ${email ? `<br><small>${email}</small>` : ""}
+
+              ${
+                observacaoRestricao
+                  ? `<br><small class="texto-restricao">${observacaoRestricao}</small>`
+                  : ""
+              }
             </td>
 
-            <td>${cpf}</td>
-            <td>${celular}</td>
+            <td>${documento}</td>
+            <td>${celular || escaparHTML(cliente.telefone)}</td>
             <td>${cidade}${estado ? "/" + estado : ""}</td>
 
             <td>
@@ -312,22 +397,42 @@ async function editarCliente(clienteId) {
 
     clienteEditando = clienteId;
 
+    const tipoCliente = cliente.tipoCliente || "fisica";
+
+    alternarTipoCliente(tipoCliente);
+
+    preencherCampo("tipoCliente", tipoCliente);
+
     preencherCampo("nome", cliente.nome);
     preencherCampo("dataNascimento", cliente.dataNascimento);
     preencherCampo("cpf", cliente.cpf);
     preencherCampo("identidade", cliente.identidade);
+
+    preencherCampo("razaoSocial", cliente.razaoSocial);
+    preencherCampo("nomeFantasia", cliente.nomeFantasia);
+    preencherCampo("cnpj", cliente.cnpj);
+    preencherCampo("dataAbertura", cliente.dataAbertura);
+    preencherCampo("inscricaoEstadual", cliente.inscricaoEstadual);
+    preencherCampo("inscricaoMunicipal", cliente.inscricaoMunicipal);
+    preencherCampo("proprietario", cliente.proprietario);
+    preencherCampo("cpfProprietario", cliente.cpfProprietario);
+
     preencherCampo("telefone", cliente.telefone);
     preencherCampo("celular", cliente.celular);
     preencherCampo("email", cliente.email);
+
     preencherCampo("cep", cliente.cep);
     preencherCampo("endereco", cliente.endereco);
     preencherCampo("bairro", cliente.bairro);
     preencherCampo("cidade", cliente.cidade);
     preencherCampo("estado", cliente.estado);
+
     preencherCampo("naturalidade", cliente.naturalidade);
     preencherCampo("nomePai", cliente.nomePai);
     preencherCampo("nomeMae", cliente.nomeMae);
+
     preencherCheckbox("clienteSpc", cliente.estaNoSpc);
+    preencherCampo("observacaoRestricao", cliente.observacaoRestricao);
 
     const botaoSalvar = document.querySelector(
       '#clienteForm button[type="submit"]',
