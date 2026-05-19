@@ -1401,7 +1401,7 @@ td {
 }
 
 .tipo-cliente-btn {
-  border: 2px solid #3498db;
+  border: 2px solid #356aab;
   background-color: #ffffff;
   color: #2c3e50;
   padding: 14px 22px;
@@ -1417,7 +1417,7 @@ td {
 }
 
 .tipo-cliente-btn.active {
-  background-color: #3498db;
+  background-color: #356aab;
   color: #ffffff;
 }
 
