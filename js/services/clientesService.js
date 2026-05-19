@@ -24,17 +24,48 @@
   }
 
   function prepararDadosCliente(dados) {
+    const tipoCliente =
+      dados.tipoCliente === "juridica" ? "juridica" : "fisica";
+
     const cpfLimpo = somenteNumeros(dados.cpf);
+    const cnpjLimpo = somenteNumeros(dados.cnpj);
+    const documentoLimpo = tipoCliente === "juridica" ? cnpjLimpo : cpfLimpo;
+
+    const nomePrincipal =
+      tipoCliente === "juridica"
+        ? String(dados.razaoSocial || "").trim()
+        : String(dados.nome || "").trim();
+
+    const nomeSecundario =
+      tipoCliente === "juridica" ? String(dados.nomeFantasia || "").trim() : "";
 
     return {
-      nome: String(dados.nome || "").trim(),
-      nomeBusca: normalizarTexto(dados.nome),
+      tipoCliente,
+
+      nome: tipoCliente === "fisica" ? nomePrincipal : "",
+      razaoSocial: tipoCliente === "juridica" ? nomePrincipal : "",
+      nomeFantasia: nomeSecundario,
+
+      nomeExibicao: nomeSecundario || nomePrincipal,
+      nomeBusca: normalizarTexto(`${nomePrincipal} ${nomeSecundario}`),
 
       dataNascimento: dados.dataNascimento || "",
-      cpf: dados.cpf || "",
+      dataAbertura: dados.dataAbertura || "",
+
+      cpf: tipoCliente === "fisica" ? dados.cpf || "" : "",
+      cnpj: tipoCliente === "juridica" ? dados.cnpj || "" : "",
+
       cpfLimpo,
+      cnpjLimpo,
+      documentoLimpo,
 
       identidade: dados.identidade || "",
+
+      inscricaoEstadual: dados.inscricaoEstadual || "",
+      inscricaoMunicipal: dados.inscricaoMunicipal || "",
+      proprietario: dados.proprietario || "",
+      cpfProprietario: dados.cpfProprietario || "",
+
       telefone: dados.telefone || "",
       celular: dados.celular || "",
       email: normalizarTexto(dados.email),
@@ -50,6 +81,7 @@
       nomeMae: dados.nomeMae || "",
 
       estaNoSpc: Boolean(dados.estaNoSpc),
+      observacaoRestricao: dados.observacaoRestricao || "",
 
       atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
     };
@@ -82,24 +114,40 @@
       };
     },
 
-    async cpfJaExiste(cpfLimpo, ignorarClienteId = null) {
+    async documentoJaExiste(documentoLimpo, ignorarClienteId = null) {
       const db = await getDb();
 
-      if (!cpfLimpo) {
+      if (!documentoLimpo) {
         return false;
       }
 
-      const snapshot = await db
-        .collection("clientes")
-        .where("cpfLimpo", "==", cpfLimpo)
-        .limit(1)
-        .get();
+      const consultas = [
+        db
+          .collection("clientes")
+          .where("documentoLimpo", "==", documentoLimpo)
+          .limit(1)
+          .get(),
+        db
+          .collection("clientes")
+          .where("cpfLimpo", "==", documentoLimpo)
+          .limit(1)
+          .get(),
+        db
+          .collection("clientes")
+          .where("cnpjLimpo", "==", documentoLimpo)
+          .limit(1)
+          .get(),
+      ];
 
-      if (snapshot.empty) {
-        return false;
-      }
+      const snapshots = await Promise.all(consultas);
 
-      return snapshot.docs.some((doc) => doc.id !== ignorarClienteId);
+      return snapshots.some((snapshot) => {
+        if (snapshot.empty) {
+          return false;
+        }
+
+        return snapshot.docs.some((doc) => doc.id !== ignorarClienteId);
+      });
     },
 
     async criar(dados) {
@@ -135,4 +183,48 @@
       return true;
     },
   };
+
+  function alternarTipoCliente(tipo) {
+    const tipoCliente = tipo === "juridica" ? "juridica" : "fisica";
+
+    preencherCampo("tipoCliente", tipoCliente);
+
+    const camposPF = document.getElementById("camposPessoaFisica");
+    const camposPJ = document.getElementById("camposPessoaJuridica");
+
+    if (camposPF) {
+      camposPF.style.display = tipoCliente === "fisica" ? "" : "none";
+    }
+
+    if (camposPJ) {
+      camposPJ.style.display = tipoCliente === "juridica" ? "" : "none";
+    }
+
+    document.querySelectorAll(".tipo-cliente-btn").forEach((botao) => {
+      botao.classList.toggle(
+        "active",
+        botao.dataset.tipoCliente === tipoCliente,
+      );
+    });
+
+    if (tipoCliente === "fisica") {
+      document.getElementById("nome")?.focus();
+    } else {
+      document.getElementById("razaoSocial")?.focus();
+    }
+  }
+
+  function preencherCheckbox(id, valor) {
+    const campo = document.getElementById(id);
+
+    if (campo) {
+      campo.checked = Boolean(valor);
+    }
+  }
+
+  function obterDocumentoCliente(dadosCliente) {
+    return dadosCliente.tipoCliente === "juridica"
+      ? dadosCliente.cnpjLimpo
+      : dadosCliente.cpfLimpo;
+  }
 })();
