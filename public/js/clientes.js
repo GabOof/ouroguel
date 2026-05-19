@@ -2,6 +2,44 @@
 let clientes = [];
 let clienteEditando = null;
 
+function alternarTipoCliente(tipo) {
+  const tipoCliente = tipo === "juridica" ? "juridica" : "fisica";
+
+  const inputTipoCliente = document.getElementById("tipoCliente");
+  const camposPessoaFisica = document.getElementById("camposPessoaFisica");
+  const camposPessoaJuridica = document.getElementById("camposPessoaJuridica");
+
+  if (inputTipoCliente) {
+    inputTipoCliente.value = tipoCliente;
+  }
+
+  if (camposPessoaFisica) {
+    camposPessoaFisica.style.display =
+      tipoCliente === "fisica" ? "block" : "none";
+  }
+
+  if (camposPessoaJuridica) {
+    camposPessoaJuridica.style.display =
+      tipoCliente === "juridica" ? "block" : "none";
+  }
+
+  document.querySelectorAll(".tipo-cliente-btn").forEach((botao) => {
+    botao.classList.remove("active");
+
+    if (botao.dataset.tipoCliente === tipoCliente) {
+      botao.classList.add("active");
+    }
+  });
+
+  if (tipoCliente === "fisica") {
+    document.getElementById("nome")?.focus();
+  } else {
+    document.getElementById("razaoSocial")?.focus();
+  }
+}
+
+window.alternarTipoCliente = alternarTipoCliente;
+
 document.addEventListener("DOMContentLoaded", async function () {
   try {
     if (window.firebaseReady) {
