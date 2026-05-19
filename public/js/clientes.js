@@ -76,6 +76,14 @@ function preencherCampo(id, valor) {
   }
 }
 
+function preencherCheckbox(id, valor) {
+  const campo = document.getElementById(id);
+
+  if (campo) {
+    campo.checked = Boolean(valor);
+  }
+}
+
 function escaparHTML(valor) {
   const div = document.createElement("div");
   div.textContent = valor || "";
@@ -84,6 +92,7 @@ function escaparHTML(valor) {
 
 function coletarDadosCliente() {
   const cpf = valorCampo("cpf");
+  const clienteSpc = document.getElementById("clienteSpc");
 
   return {
     nome: valorCampo("nome"),
@@ -102,6 +111,7 @@ function coletarDadosCliente() {
     naturalidade: valorCampo("naturalidade"),
     nomePai: valorCampo("nomePai"),
     nomeMae: valorCampo("nomeMae"),
+    estaNoSpc: clienteSpc ? clienteSpc.checked : false,
   };
 }
 
@@ -222,22 +232,37 @@ async function carregarClientes() {
         const estado = escaparHTML(cliente.estado);
 
         return `
-          <tr>
+          <tr class="${cliente.estaNoSpc ? "cliente-spc-row" : ""}">
             <td>
-              <strong>${nome}</strong>
+              <strong class="${cliente.estaNoSpc ? "cliente-nome-spc" : ""}">
+                ${nome}
+              </strong>
+
+              ${
+                cliente.estaNoSpc
+                  ? `<span class="badge-spc">
+                      <i class="fas fa-ban"></i> SPC
+                    </span>`
+                  : ""
+              }
+
               ${email ? `<br><small>${email}</small>` : ""}
             </td>
+
             <td>${cpf}</td>
             <td>${celular}</td>
             <td>${cidade}${estado ? "/" + estado : ""}</td>
+
             <td>
               <div style="display: flex; gap: 5px; flex-wrap: wrap;">
                 <button class="btn btn-small btn-primary" onclick="editarCliente('${cliente.id}')">
                   <i class="fas fa-edit"></i>
                 </button>
+
                 <button class="btn btn-small btn-success" onclick="selecionarClienteParaAluguel('${cliente.id}')">
                   <i class="fas fa-handshake"></i>
                 </button>
+
                 <button class="btn btn-small btn-danger" onclick="excluirCliente('${cliente.id}')">
                   <i class="fas fa-trash"></i>
                 </button>
@@ -302,6 +327,7 @@ async function editarCliente(clienteId) {
     preencherCampo("naturalidade", cliente.naturalidade);
     preencherCampo("nomePai", cliente.nomePai);
     preencherCampo("nomeMae", cliente.nomeMae);
+    preencherCheckbox("clienteSpc", cliente.estaNoSpc);
 
     const botaoSalvar = document.querySelector(
       '#clienteForm button[type="submit"]',
