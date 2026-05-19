@@ -1370,17 +1370,6 @@ td {
   accent-color: #c0392b;
 }
 
-.checkbox-spc-label span {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.spc-help {
-  color: #c0392b;
-  font-weight: 600;
-}
-
 .cliente-spc-row {
   background-color: #fff5f5;
 }
@@ -1402,4 +1391,52 @@ td {
   font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
+}
+
+.tipo-cliente-box {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.tipo-cliente-btn {
+  border: 2px solid #3498db;
+  background-color: #ffffff;
+  color: #2c3e50;
+  padding: 14px 22px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tipo-cliente-btn:hover {
+  background-color: #ecf6fd;
+}
+
+.tipo-cliente-btn.active {
+  background-color: #3498db;
+  color: #ffffff;
+}
+
+.badge-tipo-cliente {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background-color: #34495e;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.texto-restricao {
+  display: inline-block;
+  margin-top: 4px;
+  color: #c0392b;
+  font-weight: 700;
 }
