@@ -49,6 +49,8 @@
       nomePai: dados.nomePai || "",
       nomeMae: dados.nomeMae || "",
 
+      estaNoSpc: Boolean(dados.estaNoSpc),
+
       atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
     };
   }
