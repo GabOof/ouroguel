@@ -121,6 +121,14 @@ function somenteNumeros(valor) {
   return String(valor || "").replace(/\D/g, "");
 }
 
+function obterDocumentoCliente(dadosCliente) {
+  if (dadosCliente.tipoCliente === "juridica") {
+    return dadosCliente.cnpjLimpo || somenteNumeros(dadosCliente.cnpj);
+  }
+
+  return dadosCliente.cpfLimpo || somenteNumeros(dadosCliente.cpf);
+}
+
 function valorCampo(id) {
   const campo = document.getElementById(id);
   return campo ? campo.value.trim() : "";
