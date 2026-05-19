@@ -1344,3 +1344,62 @@ td {
 .radio-maintenance input:checked + .radio-content i {
   color: var(--warning-color);
 }
+
+/* ============================================
+   PÁGINA DE CLIENTES - CAMPOS ESPECÍFICOS
+   ============================================ */
+
+.checkbox-spc-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  padding: 12px 14px;
+  border: 2px solid #e74c3c;
+  border-radius: 10px;
+  background-color: #fff5f5;
+  color: #c0392b;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.checkbox-spc-label input {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  accent-color: #c0392b;
+}
+
+.checkbox-spc-label span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spc-help {
+  color: #c0392b;
+  font-weight: 600;
+}
+
+.cliente-spc-row {
+  background-color: #fff5f5;
+}
+
+.cliente-nome-spc {
+  color: #c0392b;
+  font-weight: 800;
+}
+
+.badge-spc {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 8px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background-color: #c0392b;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
