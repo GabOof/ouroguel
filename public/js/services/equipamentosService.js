@@ -176,12 +176,14 @@
     async obterEstatisticas() {
       const equipamentos = await this.listarTodosSemOrdenacao();
 
+      const equipamentosAlugaveis = equipamentos.filter(equipamentoEhAlugavel);
+
       let totalEquipamentos = 0;
       let totalDisponivel = 0;
       let totalIndisponivel = 0;
       let totalManutencao = 0;
 
-      equipamentos.forEach((equipamento) => {
+      equipamentosAlugaveis.forEach((equipamento) => {
         const quantidadeTotal = Number(equipamento.quantidadeTotal || 0);
         const quantidadeDisponivel = Number(
           equipamento.quantidadeDisponivel || 0,
@@ -194,6 +196,7 @@
 
         if (equipamento.status === "disponivel") {
           totalDisponivel += quantidadeDisponivel;
+          totalManutencao += quantidadeManutencao;
         }
 
         if (equipamento.status === "indisponivel") {
@@ -202,8 +205,6 @@
 
         if (equipamento.status === "manutencao") {
           totalManutencao += quantidadeTotal;
-        } else {
-          totalManutencao += quantidadeManutencao;
         }
       });
 
