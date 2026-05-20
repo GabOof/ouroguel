@@ -44,6 +44,14 @@
     };
   }
 
+  function equipamentoEhAlugavel(equipamento) {
+    const valorHora = Number(equipamento.valorHora || 0);
+    const valorDia = Number(equipamento.valorDia || 0);
+    const valorMes = Number(equipamento.valorMes || 0);
+
+    return valorHora > 0 || valorDia > 0 || valorMes > 0;
+  }
+
   window.equipamentosService = {
     async listar() {
       const db = await aguardarFirebase();
