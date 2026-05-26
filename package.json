@@ -3,5 +3,24 @@
     "firebase": "^12.13.0",
     "firebase-admin": "^13.10.0",
     "xlsx": "^0.18.5"
-  }
+  },
+  "name": "ouroguel",
+  "version": "1.0.0",
+  "description": "Sistema web desenvolvido como Trabalho de Conclusão de Curso (TCC) em Interação Humano-Computador (IHC) com foco em usabilidade para pessoas idosas. Digitaliza o processo de locação de equipamentos da empresa **Ouroguel LTDA**, substituindo o sistema físico por papel.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GabOof/ouroguel.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/GabOof/ouroguel/issues"
+  },
+  "homepage": "https://github.com/GabOof/ouroguel#readme"
 }
