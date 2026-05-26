@@ -1,0 +1,30 @@
+services:
+    ouroguel-web:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: ouroguel-web
+        ports:
+            - "3000:80"
+        volumes:
+            - ./public:/usr/share/nginx/html:ro
+        depends_on:
+            - firebase-emulator
+
+    firebase-emulator:
+        build:
+            context: .
+            dockerfile: docker/firebase.Dockerfile
+        container_name: ouroguel-firebase
+        working_dir: /workspace
+        volumes:
+            - ./:/workspace
+            - firebase-cache:/root/.cache/firebase
+        ports:
+            - "4000:4000" # Emulator UI
+            - "8080:8080" # Firestore
+            - "9099:9099" # Auth
+            - "9199:9199" # Storage
+
+volumes:
+    firebase-cache:
