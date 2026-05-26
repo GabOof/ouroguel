@@ -1,144 +1,141 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head>
-    <script>
-      // Verificação IMEDIATA de autenticação
-      (function () {
-        const userLoggedIn = localStorage.getItem("userLoggedIn");
-        const userEmail = localStorage.getItem("userEmail");
+    <head>
+        <script>
+            // Verificação IMEDIATA de autenticação
+            (function () {
+                const userLoggedIn = localStorage.getItem("userLoggedIn");
+                const userEmail = localStorage.getItem("userEmail");
 
-        if (userLoggedIn !== "true" || !userEmail) {
-          document.write = function () {};
-          window.location.replace("./pages/login.html");
-          throw new Error("Redirecionando para login");
-        }
-      })();
-    </script>
+                if (userLoggedIn !== "true" || !userEmail) {
+                    document.write = function () {};
+                    window.location.replace("./pages/login.html");
+                    throw new Error("Redirecionando para login");
+                }
+            })();
+        </script>
 
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/x-icon" href="./images/favicon.ico" />
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="icon" type="image/x-icon" href="./images/favicon.ico" />
 
-    <title>Sistema Ouroguel - Locação de Equipamentos</title>
+        <title>Sistema Ouroguel - Locação de Equipamentos</title>
 
-    <!-- CSS do Sistema -->
-    <link rel="stylesheet" href="css/style.css" />
+        <!-- CSS do Sistema -->
+        <link rel="stylesheet" href="css/style.css" />
 
-    <!-- Fontes -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
+        <!-- Fontes -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap"
+            rel="stylesheet"
+        />
 
-    <!-- Ícones -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
+        <!-- Ícones -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
 
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-  </head>
-  <body>
-    <!-- Cabeçalho com navegação -->
-    <header class="header">
-      <div class="container">
-        <div class="logo">
-          <img src="images/logo.png" alt="Logo Ouroguel" style="width: 425px" />
+        <!-- Firebase SDKs -->
+        <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+    </head>
+    <body>
+        <!-- Cabeçalho com navegação -->
+        <header class="header">
+            <div class="container">
+                <div class="logo">
+                    <img src="images/logo.png" alt="Logo Ouroguel" style="width: 425px" />
+                </div>
+
+                <nav class="nav">
+                    <ul>
+                        <li>
+                            <a href="./index.html" class="active" aria-current="page"
+                                ><i class="fas fa-home"></i> Início</a
+                            >
+                        </li>
+                        <li>
+                            <a href="./pages/clientes.html"
+                                ><i class="fas fa-users"></i> Clientes</a
+                            >
+                        </li>
+                        <li>
+                            <a href="./pages/equipamentos.html"
+                                ><i class="fas fa-box"></i> Equipamentos</a
+                            >
+                        </li>
+                        <li>
+                            <a href="./pages/aluguel.html"
+                                ><i class="fas fa-handshake"></i> Aluguel</a
+                            >
+                        </li>
+                        <li>
+                            <a href="./pages/estoque.html"
+                                ><i class="fas fa-clipboard-list"></i> Estoque</a
+                            >
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <!-- BARRA DO USUÁRIO - Abaixo do menu -->
+        <div class="user-bar" id="userBar">
+            <div class="container">
+                <div class="user-bar-welcome">
+                    <i class="fas fa-user-circle"></i>
+                    <div class="user-bar-info">
+                        <span class="user-bar-name" id="userBarName">Carregando...</span>
+                    </div>
+                </div>
+
+                <div class="user-bar-actions">
+                    <div class="user-bar-role" id="userBarRole">
+                        <i class="fas fa-shield-alt"></i>
+                        <span id="userRoleText">Usuário</span>
+                    </div>
+                    <button class="btn-logout" id="logoutBtn" aria-label="Sair do sistema">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <nav class="nav">
-          <ul>
-            <li>
-              <a href="./index.html" class="active" aria-current="page"
-                ><i class="fas fa-home"></i> Início</a
-              >
-            </li>
-            <li>
-              <a href="./pages/clientes.html"
-                ><i class="fas fa-users"></i> Clientes</a
-              >
-            </li>
-            <li>
-              <a href="./pages/equipamentos.html"
-                ><i class="fas fa-box"></i> Equipamentos</a
-              >
-            </li>
-            <li>
-              <a href="./pages/aluguel.html"
-                ><i class="fas fa-handshake"></i> Aluguel</a
-              >
-            </li>
-            <li>
-              <a href="./pages/estoque.html"
-                ><i class="fas fa-clipboard-list"></i> Estoque</a
-              >
-            </li>
-          </ul>
-        </nav>
-      </div>
-    </header>
+        <!-- Conteúdo principal -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Tela de boas-vindas -->
+                <section class="welcome-section">
+                    <div class="welcome-card">
+                        <i class="fas fa-user-circle welcome-icon"></i>
+                        <h2>Bem-vindo ao Sistema Ouroguel</h2>
+                        <p class="subtitle">
+                            Escolha uma opção no menu para começar a gerenciar seus clientes,
+                            equipamentos e aluguéis.
+                        </p>
+                    </div>
+                </section>
+            </div>
+        </main>
 
-    <!-- BARRA DO USUÁRIO - Abaixo do menu -->
-    <div class="user-bar" id="userBar">
-      <div class="container">
-        <div class="user-bar-welcome">
-          <i class="fas fa-user-circle"></i>
-          <div class="user-bar-info">
-            <span class="user-bar-name" id="userBarName">Carregando...</span>
-          </div>
-        </div>
+        <!-- Rodapé -->
+        <footer class="footer">
+            <div class="container">
+                <p>Sistema desenvolvido para Ouroguel LTDA</p>
+                <p class="footer-small">
+                    Este sistema foi desenvolvido como Trabalho de Conclusão de Curso (TCC) com foco
+                    em Interação Humano-Computador (IHC).
+                </p>
+            </div>
+        </footer>
 
-        <div class="user-bar-actions">
-          <div class="user-bar-role" id="userBarRole">
-            <i class="fas fa-shield-alt"></i>
-            <span id="userRoleText">Usuário</span>
-          </div>
-          <button
-            class="btn-logout"
-            id="logoutBtn"
-            aria-label="Sair do sistema"
-          >
-            <i class="fas fa-sign-out-alt"></i> Sair
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Conteúdo principal -->
-    <main class="main-content">
-      <div class="container">
-        <!-- Tela de boas-vindas -->
-        <section class="welcome-section">
-          <div class="welcome-card">
-            <i class="fas fa-user-circle welcome-icon"></i>
-            <h2>Bem-vindo ao Sistema Ouroguel</h2>
-            <p class="subtitle">
-              Escolha uma opção no menu para começar a gerenciar seus clientes,
-              equipamentos e aluguéis.
-            </p>
-          </div>
-        </section>
-      </div>
-    </main>
-
-    <!-- Rodapé -->
-    <footer class="footer">
-      <div class="container">
-        <p>Sistema desenvolvido para Ouroguel LTDA</p>
-        <p class="footer-small">
-          Este sistema foi desenvolvido como Trabalho de Conclusão de Curso
-          (TCC) com foco em Interação Humano-Computador (IHC).
-        </p>
-      </div>
-    </footer>
-
-    <script src="./js/firebase-config.js"></script>
-    <script src="./js/main.js"></script>
-    <script src="./js/auth.js"></script>
-  </body>
+        <script src="./js/firebase-config.js"></script>
+        <script src="./js/main.js"></script>
+        <script src="./js/auth.js"></script>
+    </body>
 </html>
