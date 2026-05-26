@@ -1,191 +1,175 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/x-icon" href="../images/favicon.ico" />
-    <title>Ouroguel LTDA - Login</title>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="icon" type="image/x-icon" href="../images/favicon.ico" />
+        <title>Ouroguel LTDA - Login</title>
 
-    <meta
-      http-equiv="Cache-Control"
-      content="no-cache, no-store, must-revalidate"
-    />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
 
-    <link rel="stylesheet" href="../css/style.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
+        <link rel="stylesheet" href="../css/style.css" />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
 
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-  </head>
-  <body class="login-page">
-    <div class="container login-container">
-      <!-- Card de Login -->
-      <div class="login-card">
-        <div class="logo text-center">
-          <img
-            src="../images/logo.png"
-            alt="Logo Ouroguel"
-            style="width: 300px"
-          />
-        </div>
+        <!-- Firebase SDKs -->
+        <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+    </head>
+    <body class="login-page">
+        <div class="container login-container">
+            <!-- Card de Login -->
+            <div class="login-card">
+                <div class="logo text-center">
+                    <img src="../images/logo.png" alt="Logo Ouroguel" style="width: 300px" />
+                </div>
 
-        <div class="welcome-message">
-          <h3>Bem vindo de volta! Faça login para acessar o sistema.</h3>
-        </div>
+                <div class="welcome-message">
+                    <h3>Bem vindo de volta! Faça login para acessar o sistema.</h3>
+                </div>
 
-        <form id="loginForm" class="form-section">
-          <div class="form-group">
-            <label for="email"><i class="fas fa-envelope"></i> E-mail</label>
-            <input
-              type="email"
-              id="email"
-              required
-              placeholder="Digite seu email"
-              autocomplete="email"
-              class="no-capslock"
-            />
-          </div>
+                <form id="loginForm" class="form-section">
+                    <div class="form-group">
+                        <label for="email"><i class="fas fa-envelope"></i> E-mail</label>
+                        <input
+                            type="email"
+                            id="email"
+                            required
+                            placeholder="Digite seu email"
+                            autocomplete="email"
+                            class="no-capslock"
+                        />
+                    </div>
 
-          <br />
+                    <br />
 
-          <div class="form-group">
-            <label for="password"><i class="fas fa-lock"></i> Senha</label>
-            <div class="password-input">
-              <input
-                type="password"
-                id="password"
-                required
-                placeholder="Digite sua senha"
-                autocomplete="current-password"
-                style="width: 100%; height: 50px"
-                class="no-capslock"
-              />
-              <button
-                type="button"
-                class="show-password"
-                id="togglePasswordBtn"
-                aria-label="Mostrar/ocultar senha"
-              >
-                <i class="fas fa-eye"></i>
-              </button>
+                    <div class="form-group">
+                        <label for="password"><i class="fas fa-lock"></i> Senha</label>
+                        <div class="password-input">
+                            <input
+                                type="password"
+                                id="password"
+                                required
+                                placeholder="Digite sua senha"
+                                autocomplete="current-password"
+                                style="width: 100%; height: 50px"
+                                class="no-capslock"
+                            />
+                            <button
+                                type="button"
+                                class="show-password"
+                                id="togglePasswordBtn"
+                                aria-label="Mostrar/ocultar senha"
+                            >
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="remember-me">
+                        <input type="checkbox" id="remember" />
+                        <label for="remember">Lembrar de mim</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-sign-in-alt"></i> Entrar no Sistema
+                    </button>
+
+                    <div class="forgot-password text-center">
+                        <a href="#" id="forgotPasswordLink">Esqueceu sua senha?</a>
+                    </div>
+                </form>
+
+                <div class="first-access text-center">
+                    <p>
+                        É a sua primeira vez no sistema Ouroguel?
+                        <a href="#" id="showRegisterLink">Crie uma conta</a>
+                    </p>
+                </div>
             </div>
-          </div>
 
-          <div class="remember-me">
-            <input type="checkbox" id="remember" />
-            <label for="remember">Lembrar de mim</label>
-          </div>
+            <!-- Card de Registro (inicialmente oculto) -->
+            <div class="login-card" id="registerCard" style="display: none">
+                <div class="logo text-center">
+                    <img src="../images/logo.png" alt="Logo Ouroguel" style="width: 425px" />
+                    <h3 class="welcome-message">Crie sua conta no sistema</h3>
+                </div>
 
-          <button type="submit" class="btn btn-primary btn-block">
-            <i class="fas fa-sign-in-alt"></i> Entrar no Sistema
-          </button>
+                <form id="registerForm" class="form-section">
+                    <div class="form-group">
+                        <label for="registerName"><i class="fas fa-user"></i> Nome Completo</label>
+                        <input
+                            type="text"
+                            id="registerName"
+                            required
+                            placeholder="Digite seu nome completo"
+                        />
+                    </div>
 
-          <div class="forgot-password text-center">
-            <a href="#" id="forgotPasswordLink">Esqueceu sua senha?</a>
-          </div>
-        </form>
+                    <div class="form-group">
+                        <label for="registerEmail"><i class="fas fa-envelope"></i> E-mail</label>
+                        <input
+                            type="email"
+                            id="registerEmail"
+                            required
+                            placeholder="Digite seu email"
+                        />
+                    </div>
 
-        <div class="first-access text-center">
-          <p>
-            É a sua primeira vez no sistema Ouroguel?
-            <a href="#" id="showRegisterLink">Crie uma conta</a>
-          </p>
-        </div>
-      </div>
+                    <div class="form-group">
+                        <label for="registerPassword"><i class="fas fa-lock"></i> Senha</label>
+                        <div class="password-input">
+                            <input
+                                type="password"
+                                id="registerPassword"
+                                required
+                                placeholder="Digite uma senha com ao menos 6 caracteres"
+                                style="width: 100%; height: 50px"
+                            />
+                            <button
+                                type="button"
+                                class="show-password"
+                                id="toggleRegisterPasswordBtn"
+                                aria-label="Mostrar/ocultar senha"
+                            >
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
 
-      <!-- Card de Registro (inicialmente oculto) -->
-      <div class="login-card" id="registerCard" style="display: none">
-        <div class="logo text-center">
-          <img
-            src="../images/logo.png"
-            alt="Logo Ouroguel"
-            style="width: 425px"
-          />
-          <h3 class="welcome-message">Crie sua conta no sistema</h3>
-        </div>
+                    <div class="form-group">
+                        <label for="registerConfirmPassword"
+                            ><i class="fas fa-lock"></i> Confirmar Senha</label
+                        >
+                        <input
+                            type="password"
+                            id="registerConfirmPassword"
+                            required
+                            placeholder="Digite a senha novamente para confirmar"
+                        />
+                    </div>
 
-        <form id="registerForm" class="form-section">
-          <div class="form-group">
-            <label for="registerName"
-              ><i class="fas fa-user"></i> Nome Completo</label
-            >
-            <input
-              type="text"
-              id="registerName"
-              required
-              placeholder="Digite seu nome completo"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="registerEmail"
-              ><i class="fas fa-envelope"></i> E-mail</label
-            >
-            <input
-              type="email"
-              id="registerEmail"
-              required
-              placeholder="Digite seu email"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="registerPassword"
-              ><i class="fas fa-lock"></i> Senha</label
-            >
-            <div class="password-input">
-              <input
-                type="password"
-                id="registerPassword"
-                required
-                placeholder="Digite uma senha com ao menos 6 caracteres"
-                style="width: 100%; height: 50px"
-              />
-              <button
-                type="button"
-                class="show-password"
-                id="toggleRegisterPasswordBtn"
-                aria-label="Mostrar/ocultar senha"
-              >
-                <i class="fas fa-eye"></i>
-              </button>
+                    <div class="form-buttons">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> Criar Conta
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="showLoginBtn">
+                            <i class="fas fa-arrow-left"></i> Voltar para Login
+                        </button>
+                    </div>
+                </form>
             </div>
-          </div>
+        </div>
 
-          <div class="form-group">
-            <label for="registerConfirmPassword"
-              ><i class="fas fa-lock"></i> Confirmar Senha</label
-            >
-            <input
-              type="password"
-              id="registerConfirmPassword"
-              required
-              placeholder="Digite a senha novamente para confirmar"
-            />
-          </div>
-
-          <div class="form-buttons">
-            <button type="submit" class="btn btn-primary">
-              <i class="fas fa-user-plus"></i> Criar Conta
-            </button>
-            <button type="button" class="btn btn-secondary" id="showLoginBtn">
-              <i class="fas fa-arrow-left"></i> Voltar para Login
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <script src="/js/firebase-config.js"></script>
-    <script src="/js/auth.js"></script>
-    <script src="/js/login.js"></script>
-    <script src="/js/main.js"></script>
-  </body>
+        <script src="/js/firebase-config.js"></script>
+        <script src="/js/auth.js"></script>
+        <script src="/js/login.js"></script>
+        <script src="/js/main.js"></script>
+    </body>
 </html>
