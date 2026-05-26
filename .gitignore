@@ -4,3 +4,7 @@ node_modules/
 serviceAccountKey.json
 import.js
 *.xlsx
+.firebase-data/
+.DS_Store
+.env
+seed/
