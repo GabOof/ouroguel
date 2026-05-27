@@ -1,410 +1,444 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head>
-    <script>
-      (function () {
-        const userLoggedIn = localStorage.getItem("userLoggedIn");
+    <head>
+        <script>
+            (function () {
+                const userLoggedIn = localStorage.getItem("userLoggedIn");
 
-        if (userLoggedIn !== "true") {
-          window.location.replace("/pages/login.html");
-        }
-      })();
-    </script>
+                if (userLoggedIn !== "true") {
+                    window.location.replace("/pages/login.html");
+                }
+            })();
+        </script>
 
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/x-icon" href="../images/favicon.ico" />
-    <title>Cadastro de Equipamentos - Sistema Ouroguel</title>
-    <link rel="stylesheet" href="../css/style.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="icon" type="image/x-icon" href="../images/favicon.ico" />
+        <title>Cadastro de Equipamentos - Sistema Ouroguel</title>
+        <link rel="stylesheet" href="../css/style.css" />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-  </head>
-  <body>
-    <header class="header">
-      <div class="container">
-        <div class="logo">
-          <img
-            src="../images/logo.png"
-            alt="Logo Ouroguel"
-            style="width: 425px"
-          />
-        </div>
-        <nav class="nav">
-          <ul>
-            <li>
-              <a href="../index.html"><i class="fas fa-home"></i> Início</a>
-            </li>
-            <li>
-              <a href="./clientes.html"
-                ><i class="fas fa-users"></i> Clientes</a
-              >
-            </li>
-            <li>
-              <a href="./equipamentos.html" class="active"
-                ><i class="fas fa-box"></i> Equipamentos</a
-              >
-            </li>
-            <li>
-              <a href="./aluguel.html"
-                ><i class="fas fa-handshake"></i> Aluguel</a
-              >
-            </li>
-            <li>
-              <a href="./estoque.html"
-                ><i class="fas fa-clipboard-list"></i> Estoque</a
-              >
-            </li>
-          </ul>
-        </nav>
-      </div>
-    </header>
-
-    <main class="main-content">
-      <div class="container">
-        <h2 class="page-title">
-          <i class="fas fa-box-open"></i> Cadastro de Equipamentos
-        </h2>
-
-        <!-- Formulário de Cadastro -->
-        <section class="form-section">
-          <div class="form-card">
-            <h3>Novo Equipamento</h3>
-            <form id="equipamentoForm">
-              <div class="form-grid">
-                <!-- Dados Básicos -->
-                <div class="form-group">
-                  <label for="nomeEquipamento"
-                    ><i class="fas fa-tag"></i> Nome do Equipamento *</label
-                  >
-                  <input
-                    type="text"
-                    id="nomeEquipamento"
-                    required
-                    placeholder="Ex: Andaime tubular"
-                  />
+        <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    </head>
+    <body>
+        <header class="header">
+            <div class="container">
+                <div class="logo">
+                    <img src="../images/logo.png" alt="Logo Ouroguel" style="width: 425px" />
                 </div>
+                <nav class="nav">
+                    <ul>
+                        <li>
+                            <a href="../index.html"><i class="fas fa-home"></i> Início</a>
+                        </li>
+                        <li>
+                            <a href="./clientes.html"><i class="fas fa-users"></i> Clientes</a>
+                        </li>
+                        <li>
+                            <a href="./equipamentos.html" class="active"
+                                ><i class="fas fa-box"></i> Equipamentos</a
+                            >
+                        </li>
+                        <li>
+                            <a href="./aluguel.html"><i class="fas fa-handshake"></i> Aluguel</a>
+                        </li>
+                        <li>
+                            <a href="./estoque.html"
+                                ><i class="fas fa-clipboard-list"></i> Estoque</a
+                            >
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
 
-                <!-- Categoria -->
-                <div class="form-group">
-                  <label for="categoria"
-                    ><i class="fas fa-list"></i> Categoria *</label
-                  >
-                  <select
-                    id="categoria"
-                    required
-                    aria-label="Selecione a categoria do equipamento"
-                  >
-                    <option value="">Selecione uma categoria</option>
+        <main class="main-content">
+            <div class="container">
+                <h2 class="page-title"><i class="fas fa-box-open"></i> Cadastro de Equipamentos</h2>
 
-                    <optgroup label="Estruturas">
-                      <option value="andaime">Andaime</option>
-                      <option value="escada">Escada</option>
-                      <option value="extensao">Extensão</option>
-                    </optgroup>
-
-                    <optgroup label="Equipamentos de Proteção">
-                      <option value="seguranca">
-                        Equipamentos de Segurança (EPI)
-                      </option>
-                    </optgroup>
-
-                    <optgroup label="Ferramentas">
-                      <option value="ferramentas">Ferramentas Manuais</option>
-                      <option value="ferramentas_eletricas">
-                        Ferramentas Elétricas (furadeira, etc.)
-                      </option>
-                    </optgroup>
-
-                    <optgroup label="Máquinas">
-                      <option value="maquinas_eletricas">
-                        Máquinas Elétricas (betoneira, etc.)
-                      </option>
-                      <option value="maquinas_combustivel">
-                        Máquinas a Combustível (gerador, etc.)
-                      </option>
-                    </optgroup>
-
-                    <optgroup label="Outros">
-                      <option value="outros">Outros Equipamentos</option>
-                    </optgroup>
-                  </select>
-                </div>
-
-                <!-- Quantidade -->
-                <div class="form-group">
-                  <label for="quantidadeTotal">
-                    <i class="fas fa-layer-group" aria-hidden="true"></i>
-                    Quantidade Total *
-                  </label>
-                  <input
-                    type="number"
-                    id="quantidadeTotal"
-                    required
-                    min="0"
-                    step="1"
-                    placeholder="Ex: 5"
-                    aria-describedby="quantidadeHelp"
-                  />
-                  <small id="quantidadeHelp" class="field-help">
-                    <i class="fas fa-info-circle" aria-hidden="true"></i>
-                    Número total de unidades deste equipamento disponíveis para
-                    locação
-                  </small>
-                </div>
-
-                <!-- Valores -->
-                <div class="form-group">
-                  <label for="valorHora">
-                    <i class="fas fa-clock" aria-hidden="true"></i>
-                    Valor por Hora *
-                  </label>
-                  <div class="input-money-wrapper">
-                    <span class="money-prefix" aria-hidden="true">R$</span>
-                    <input
-                      type="text"
-                      id="valorHora"
-                      required
-                      placeholder="0,00"
-                      inputmode="decimal"
-                      aria-describedby="valorHoraHelp"
-                      class="money-input"
-                      class="no-capslock"
-                    />
-                  </div>
-                  <small id="valorHoraHelp" class="field-help">
-                    Use vírgula para centavos. Ex: 15,50
-                  </small>
-                </div>
-
-                <div class="form-group">
-                  <label for="valorDia"
-                    ><i class="fas fa-calendar-day" aria-hidden="true"></i>
-                    Valor por Dia (R$) *</label
-                  >
-                  <div class="input-money-wrapper">
-                    <span class="money-prefix" aria-hidden="true">R$</span>
-                    <input
-                      type="text"
-                      id="valorDia"
-                      required
-                      placeholder="0,00"
-                      inputmode="decimal"
-                      aria-describedby="valorDiaHelp"
-                      class="money-input"
-                      class="no-capslock"
-                    />
-                  </div>
-                  <small id="valorDiaHelp" class="field-help">
-                    Use vírgula para centavos. Ex: 15,50
-                  </small>
-                </div>
-
-                <div class="form-group">
-                  <label for="valorMes"
-                    ><i class="fas fa-calendar-alt" aria-hidden="true"></i>
-                    Valor por Mês (R$) *</label
-                  >
-                  <input
-                    type="text"
-                    id="valorMes"
-                    required
-                    placeholder="0,00"
-                    inputmode="decimal"
-                    aria-describedby="valorMesHelp"
-                    class="money-input"
-                    class="no-capslock"
-                  />
-                  <small id="valorMesHelp" class="field-help">
-                    Use vírgula para centavos. Ex: 15,50
-                  </small>
-                </div>
-
-                <!-- Status -->
-                <div class="form-group">
-                  <label>
-                    <i class="fas fa-check-circle" aria-hidden="true"></i>
-                    Status do Equipamento *
-                  </label>
-
-                  <div class="radio-group-vertical">
-                    <label class="radio-card radio-available">
-                      <input
-                        type="radio"
-                        name="status"
-                        value="disponivel"
-                        required
-                        checked
-                        aria-describedby="statusDisponivelDesc"
-                      />
-                      <span class="radio-content">
-                        <i class="fas fa-check-circle" aria-hidden="true"></i>
-                        <span class="radio-text">
-                          <strong>Disponível</strong>
-                          <small id="statusDisponivelDesc"
-                            >Pode ser alugado normalmente</small
-                          >
-                        </span>
-                      </span>
-                    </label>
-
-                    <label class="radio-card radio-unavailable">
-                      <input
-                        type="radio"
-                        name="status"
-                        value="indisponivel"
-                        aria-describedby="statusIndisponivelDesc"
-                      />
-                      <span class="radio-content">
-                        <i class="fas fa-times-circle" aria-hidden="true"></i>
-                        <span class="radio-text">
-                          <strong>Indisponível</strong>
-                          <small id="statusIndisponivelDesc"
-                            >Já está alugado</small
-                          >
-                        </span>
-                      </span>
-                    </label>
-
-                    <label class="radio-card radio-maintenance">
-                      <input
-                        type="radio"
-                        name="status"
-                        value="manutencao"
-                        aria-describedby="statusManutencaoDesc"
-                      />
-                      <span class="radio-content">
-                        <i class="fas fa-wrench" aria-hidden="true"></i>
-                        <span class="radio-text">
-                          <strong>Em Manutenção</strong>
-                          <small id="statusManutencaoDesc"
-                            >Precisa de reparos</small
-                          >
-                        </span>
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
-                <!-- Observações -->
-                <div class="form-group full-width">
-                  <label for="observacoes"
-                    ><i class="fas fa-sticky-note"></i> Observações</label
-                  >
-                  <textarea
-                    id="observacoes"
-                    rows="3"
-                    placeholder="Detalhes do equipamento, condições especiais, etc."
-                  ></textarea>
-                </div>
-              </div>
-
-              <div class="form-buttons">
-                <button type="submit" class="btn btn-primary">
-                  <i class="fas fa-save"></i> Salvar Equipamento
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  onclick="limparFormularioEquipamento()"
+                <!-- Formulário de Cadastro -->
+                <!-- Modal de Cadastro/Edição de Equipamento -->
+                <div
+                    id="equipamentoModal"
+                    class="modal-overlay"
+                    aria-hidden="true"
+                    style="display: none"
                 >
-                  <i class="fas fa-eraser"></i> Limpar
-                </button>
-              </div>
-            </form>
-          </div>
-        </section>
+                    <div
+                        class="modal-card"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="modalEquipamentoTitulo"
+                    >
+                        <div class="modal-header">
+                            <h3 id="modalEquipamentoTitulo">Novo Equipamento</h3>
 
-        <!-- Lista de Equipamentos Cadastrados -->
-        <section class="list-section">
-          <div class="list-card">
-            <h3>Equipamentos Cadastrados</h3>
-            <div class="search-box">
-              <input
-                type="text"
-                id="searchEquipamentos"
-                placeholder="Buscar equipamento por nome..."
-                onkeyup="buscarEquipamentos()"
-              />
-              <i class="fas fa-search"></i>
-            </div>
-            <div class="table-container">
-              <table
-                id="equipamentosTable"
-                aria-label="Lista de equipamentos cadastrados"
-              >
-                <caption class="sr-only">
-                  Tabela de equipamentos - mostra nome, quantidade, valor e
-                  status
-                </caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Equipamento</th>
-                    <th scope="col">Quantidade</th>
-                    <th scope="col">Valor/Dia</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Ações</th>
-                  </tr>
-                </thead>
-                <tbody id="equipamentosList">
-                  <!-- Lista de equipamentos será carregada aqui -->
-                  <tr>
-                    <td colspan="5" class="empty-message">
-                      <i class="fas fa-box"></i>
-                      <p>Nenhum equipamento cadastrado ainda</p>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
+                            <button
+                                type="button"
+                                class="modal-close"
+                                onclick="fecharModalEquipamento()"
+                                aria-label="Fechar modal"
+                            >
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
 
-        <!-- Estatísticas Rápidas -->
-        <section class="info-section">
-          <div class="features-grid">
-            <div class="feature-card">
-              <i class="fas fa-check-circle"></i>
-              <h3 id="totalDisponivel">0</h3>
-              <p>Equipamentos Disponíveis</p>
-            </div>
-            <div class="feature-card">
-              <i class="fas fa-times-circle"></i>
-              <h3 id="totalIndisponivel">0</h3>
-              <p>Equipamentos Indisponíveis</p>
-            </div>
-            <div class="feature-card">
-              <i class="fas fa-wrench"></i>
-              <h3 id="totalManutencao">0</h3>
-              <p>Em Manutenção</p>
-            </div>
-            <div class="feature-card">
-              <i class="fas fa-boxes"></i>
-              <h3 id="totalEquipamentos">0</h3>
-              <p>Total de Equipamentos</p>
-            </div>
-          </div>
-        </section>
-      </div>
-    </main>
+                        <form id="equipamentoForm">
+                            <div class="form-grid">
+                                <!-- Dados Básicos -->
+                                <div class="form-group">
+                                    <label for="nomeEquipamento"
+                                        ><i class="fas fa-tag"></i> Nome do Equipamento *</label
+                                    >
+                                    <input
+                                        type="text"
+                                        id="nomeEquipamento"
+                                        required
+                                        placeholder="Ex: Andaime tubular"
+                                    />
+                                </div>
 
-    <footer class="footer">
-      <div class="container">
-        <p>Sistema desenvolvido para Ouroguel LTDA - TCC em IHC</p>
-        <p class="footer-small">Foco em usabilidade para pessoas idosas</p>
-      </div>
-    </footer>
+                                <!-- Categoria -->
+                                <div class="form-group">
+                                    <label for="categoria"
+                                        ><i class="fas fa-list"></i> Categoria *</label
+                                    >
+                                    <select
+                                        id="categoria"
+                                        required
+                                        aria-label="Selecione a categoria do equipamento"
+                                    >
+                                        <option value="">Selecione uma categoria</option>
 
-    <script src="/js/firebase-config.js"></script>
-    <script src="/js/auth.js"></script>
-    <script src="/js/main.js"></script>
-    <script src="/js/services/equipamentosService.js"></script>
-    <script src="/js/equipamentos.js"></script>
-  </body>
+                                        <optgroup label="Estruturas">
+                                            <option value="andaime">Andaime</option>
+                                            <option value="escada">Escada</option>
+                                            <option value="extensao">Extensão</option>
+                                        </optgroup>
+
+                                        <optgroup label="Equipamentos de Proteção">
+                                            <option value="seguranca">
+                                                Equipamentos de Segurança (EPI)
+                                            </option>
+                                        </optgroup>
+
+                                        <optgroup label="Ferramentas">
+                                            <option value="ferramentas">Ferramentas Manuais</option>
+                                            <option value="ferramentas_eletricas">
+                                                Ferramentas Elétricas (furadeira, etc.)
+                                            </option>
+                                        </optgroup>
+
+                                        <optgroup label="Máquinas">
+                                            <option value="maquinas_eletricas">
+                                                Máquinas Elétricas (betoneira, etc.)
+                                            </option>
+                                            <option value="maquinas_combustivel">
+                                                Máquinas a Combustível (gerador, etc.)
+                                            </option>
+                                        </optgroup>
+
+                                        <optgroup label="Outros">
+                                            <option value="outros">Outros Equipamentos</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+
+                                <!-- Quantidade -->
+                                <div class="form-group">
+                                    <label for="quantidadeTotal">
+                                        <i class="fas fa-layer-group" aria-hidden="true"></i>
+                                        Quantidade Total *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="quantidadeTotal"
+                                        required
+                                        min="0"
+                                        step="1"
+                                        placeholder="Ex: 5"
+                                        aria-describedby="quantidadeHelp"
+                                    />
+                                    <small id="quantidadeHelp" class="field-help">
+                                        <i class="fas fa-info-circle" aria-hidden="true"></i>
+                                        Número total de unidades deste equipamento disponíveis para
+                                        locação
+                                    </small>
+                                </div>
+
+                                <!-- Valores -->
+                                <div class="form-group">
+                                    <label for="valorHora">
+                                        <i class="fas fa-clock" aria-hidden="true"></i>
+                                        Valor por Hora *
+                                    </label>
+                                    <div class="input-money-wrapper">
+                                        <span class="money-prefix" aria-hidden="true">R$</span>
+                                        <input
+                                            type="text"
+                                            id="valorHora"
+                                            required
+                                            placeholder="0,00"
+                                            inputmode="decimal"
+                                            aria-describedby="valorHoraHelp"
+                                            class="money-input"
+                                            class="no-capslock"
+                                        />
+                                    </div>
+                                    <small id="valorHoraHelp" class="field-help">
+                                        Use vírgula para centavos. Ex: 15,50
+                                    </small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="valorDia"
+                                        ><i class="fas fa-calendar-day" aria-hidden="true"></i>
+                                        Valor por Dia (R$) *</label
+                                    >
+                                    <div class="input-money-wrapper">
+                                        <span class="money-prefix" aria-hidden="true">R$</span>
+                                        <input
+                                            type="text"
+                                            id="valorDia"
+                                            required
+                                            placeholder="0,00"
+                                            inputmode="decimal"
+                                            aria-describedby="valorDiaHelp"
+                                            class="money-input"
+                                            class="no-capslock"
+                                        />
+                                    </div>
+                                    <small id="valorDiaHelp" class="field-help">
+                                        Use vírgula para centavos. Ex: 15,50
+                                    </small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="valorMes"
+                                        ><i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                                        Valor por Mês (R$) *</label
+                                    >
+                                    <input
+                                        type="text"
+                                        id="valorMes"
+                                        required
+                                        placeholder="0,00"
+                                        inputmode="decimal"
+                                        aria-describedby="valorMesHelp"
+                                        class="money-input"
+                                        class="no-capslock"
+                                    />
+                                    <small id="valorMesHelp" class="field-help">
+                                        Use vírgula para centavos. Ex: 15,50
+                                    </small>
+                                </div>
+
+                                <!-- Status -->
+                                <div class="form-group">
+                                    <label>
+                                        <i class="fas fa-check-circle" aria-hidden="true"></i>
+                                        Status do Equipamento *
+                                    </label>
+
+                                    <div class="radio-group-vertical">
+                                        <label class="radio-card radio-available">
+                                            <input
+                                                type="radio"
+                                                name="status"
+                                                value="disponivel"
+                                                required
+                                                checked
+                                                aria-describedby="statusDisponivelDesc"
+                                            />
+                                            <span class="radio-content">
+                                                <i
+                                                    class="fas fa-check-circle"
+                                                    aria-hidden="true"
+                                                ></i>
+                                                <span class="radio-text">
+                                                    <strong>Disponível</strong>
+                                                    <small id="statusDisponivelDesc"
+                                                        >Pode ser alugado normalmente</small
+                                                    >
+                                                </span>
+                                            </span>
+                                        </label>
+
+                                        <label class="radio-card radio-unavailable">
+                                            <input
+                                                type="radio"
+                                                name="status"
+                                                value="indisponivel"
+                                                aria-describedby="statusIndisponivelDesc"
+                                            />
+                                            <span class="radio-content">
+                                                <i
+                                                    class="fas fa-times-circle"
+                                                    aria-hidden="true"
+                                                ></i>
+                                                <span class="radio-text">
+                                                    <strong>Indisponível</strong>
+                                                    <small id="statusIndisponivelDesc"
+                                                        >Já está alugado</small
+                                                    >
+                                                </span>
+                                            </span>
+                                        </label>
+
+                                        <label class="radio-card radio-maintenance">
+                                            <input
+                                                type="radio"
+                                                name="status"
+                                                value="manutencao"
+                                                aria-describedby="statusManutencaoDesc"
+                                            />
+                                            <span class="radio-content">
+                                                <i class="fas fa-wrench" aria-hidden="true"></i>
+                                                <span class="radio-text">
+                                                    <strong>Em Manutenção</strong>
+                                                    <small id="statusManutencaoDesc"
+                                                        >Precisa de reparos</small
+                                                    >
+                                                </span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Observações -->
+                                <div class="form-group full-width">
+                                    <label for="observacoes"
+                                        ><i class="fas fa-sticky-note"></i> Observações</label
+                                    >
+                                    <textarea
+                                        id="observacoes"
+                                        rows="3"
+                                        placeholder="Detalhes do equipamento, condições especiais, etc."
+                                    ></textarea>
+                                </div>
+                            </div>
+
+                            <div class="form-buttons">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Salvar Equipamento
+                                </button>
+                                <button
+                                    type="button"
+                                    class="btn btn-secondary"
+                                    onclick="limparFormularioEquipamento()"
+                                >
+                                    <i class="fas fa-eraser"></i> Limpar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Lista de Equipamentos Cadastrados -->
+                <section class="list-section">
+                    <div class="list-card">
+                        <div class="list-header-actions">
+                            <h3>Equipamentos Cadastrados</h3>
+
+                            <button
+                                type="button"
+                                class="btn btn-primary btn-lg"
+                                onclick="abrirModalNovoEquipamento()"
+                            >
+                                <i class="fas fa-box-open"></i> Novo Equipamento
+                            </button>
+                        </div>
+                        <div class="search-box">
+                            <input
+                                type="text"
+                                id="searchEquipamentos"
+                                placeholder="Buscar equipamento por nome..."
+                                onkeyup="buscarEquipamentos()"
+                            />
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div class="table-container">
+                            <table
+                                id="equipamentosTable"
+                                aria-label="Lista de equipamentos cadastrados"
+                            >
+                                <caption class="sr-only">
+                                    Tabela de equipamentos - mostra nome, quantidade, valor e status
+                                </caption>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Equipamento</th>
+                                        <th scope="col">Quantidade</th>
+                                        <th scope="col">Valor/Dia</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="equipamentosList">
+                                    <!-- Lista de equipamentos será carregada aqui -->
+                                    <tr>
+                                        <td colspan="5" class="empty-message">
+                                            <i class="fas fa-box"></i>
+                                            <p>Nenhum equipamento cadastrado ainda</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div
+                            id="equipamentosPaginacao"
+                            class="pagination-container"
+                            aria-label="Paginação da tabela de equipamentos"
+                        ></div>
+                    </div>
+                </section>
+
+                <!-- Estatísticas Rápidas -->
+                <section class="info-section">
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <i class="fas fa-check-circle"></i>
+                            <h3 id="totalDisponivel">0</h3>
+                            <p>Equipamentos Disponíveis</p>
+                        </div>
+                        <div class="feature-card">
+                            <i class="fas fa-times-circle"></i>
+                            <h3 id="totalIndisponivel">0</h3>
+                            <p>Equipamentos Indisponíveis</p>
+                        </div>
+                        <div class="feature-card">
+                            <i class="fas fa-wrench"></i>
+                            <h3 id="totalManutencao">0</h3>
+                            <p>Em Manutenção</p>
+                        </div>
+                        <div class="feature-card">
+                            <i class="fas fa-boxes"></i>
+                            <h3 id="totalEquipamentos">0</h3>
+                            <p>Total de Equipamentos</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="container">
+                <p>Sistema desenvolvido para Ouroguel LTDA - TCC em IHC</p>
+                <p class="footer-small">Foco em usabilidade para pessoas idosas</p>
+            </div>
+        </footer>
+
+        <script src="/js/firebase-config.js"></script>
+        <script src="/js/auth.js"></script>
+        <script src="/js/main.js"></script>
+        <script src="/js/services/equipamentosService.js"></script>
+        <script src="/js/equipamentos.js"></script>
+    </body>
 </html>
