@@ -1,6 +1,8 @@
 // Variáveis globais
 let clientes = [];
 let clienteEditando = null;
+let paginaAtualClientes = 1;
+const CLIENTES_POR_PAGINA = 8;
 
 function abrirModalCliente() {
     const modal = document.getElementById("clienteModal");
@@ -37,9 +39,9 @@ function abrirModalNovoCliente() {
     }, 100);
 }
 
-window.abrirModalCliente = abrirModalCliente;
-window.fecharModalCliente = fecharModalCliente;
-window.abrirModalNovoCliente = abrirModalNovoCliente;
+globalThis.abrirModalCliente = abrirModalCliente;
+globalThis.fecharModalCliente = fecharModalCliente;
+globalThis.abrirModalNovoCliente = abrirModalNovoCliente;
 
 function alternarTipoCliente(tipo) {
     const tipoCliente = tipo === "juridica" ? "juridica" : "fisica";
@@ -75,12 +77,12 @@ function alternarTipoCliente(tipo) {
     }
 }
 
-window.alternarTipoCliente = alternarTipoCliente;
+globalThis.alternarTipoCliente = alternarTipoCliente;
 
 document.addEventListener("DOMContentLoaded", async function () {
     try {
-        if (window.firebaseReady) {
-            await window.firebaseReady;
+        if (globalThis.firebaseReady) {
+            await globalThis.firebaseReady;
         }
 
         configurarFormularioCliente();
@@ -335,129 +337,233 @@ async function carregarClientes() {
 
     try {
         clientesList.innerHTML = `
-      <tr>
-        <td colspan="5" style="text-align: center; padding: 40px;">
-          <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #3498db;"></i>
-          <p>Carregando clientes...</p>
-        </td>
-      </tr>
-    `;
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 40px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #3498db;"></i>
+                    <p>Carregando clientes...</p>
+                </td>
+            </tr>
+        `;
 
         clientes = await clientesService.listar();
+        paginaAtualClientes = 1;
 
-        if (!clientes.length) {
-            clientesList.innerHTML = `
-        <tr>
-          <td colspan="5" class="empty-message">
-            <i class="fas fa-users"></i>
-            <p>Nenhum cliente cadastrado ainda</p>
-          </td>
-        </tr>
-      `;
-            return;
-        }
-
-        clientesList.innerHTML = clientes
-            .map((cliente) => {
-                const tipoCliente = cliente.tipoCliente || "fisica";
-                const nomeExibicao = escaparHTML(
-                    cliente.nomeExibicao ||
-                        cliente.nomeFantasia ||
-                        cliente.razaoSocial ||
-                        cliente.nome
-                );
-                const email = escaparHTML(cliente.email);
-                const documento = escaparHTML(
-                    tipoCliente === "juridica" ? cliente.cnpj : cliente.cpf
-                );
-                const celular = escaparHTML(cliente.celular);
-                const cidade = escaparHTML(cliente.cidade);
-                const estado = escaparHTML(cliente.estado);
-                const tipoTexto = tipoCliente === "juridica" ? "PJ" : "PF";
-                const observacaoRestricao = escaparHTML(cliente.observacaoRestricao);
-
-                return `
-          <tr class="${cliente.estaNoSpc ? "cliente-spc-row" : ""}">
-            <td>
-              <span class="badge-tipo-cliente">${tipoTexto}</span>
-
-              <strong class="${cliente.estaNoSpc ? "cliente-nome-spc" : ""}">
-                ${nomeExibicao}
-              </strong>
-
-              ${
-                  cliente.estaNoSpc
-                      ? `<span class="badge-spc">
-                      <i class="fas fa-ban"></i> Restrição
-                    </span>`
-                      : ""
-              }
-
-              ${
-                  tipoCliente === "juridica" && cliente.razaoSocial
-                      ? `<br><small>Razão Social: ${escaparHTML(cliente.razaoSocial)}</small>`
-                      : ""
-              }
-
-              ${email ? `<br><small>${email}</small>` : ""}
-
-              ${
-                  observacaoRestricao
-                      ? `<br><small class="texto-restricao">${observacaoRestricao}</small>`
-                      : ""
-              }
-            </td>
-
-            <td>${documento}</td>
-            <td>${celular || escaparHTML(cliente.telefone)}</td>
-            <td>${cidade}${estado ? "/" + estado : ""}</td>
-
-            <td>
-              <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                <button class="btn btn-small btn-primary" onclick="editarCliente('${cliente.id}')">
-                  <i class="fas fa-edit"></i>
-                </button>
-
-                <button class="btn btn-small btn-success" onclick="selecionarClienteParaAluguel('${cliente.id}')">
-                  <i class="fas fa-handshake"></i>
-                </button>
-
-                <button class="btn btn-small btn-danger" onclick="excluirCliente('${cliente.id}')">
-                  <i class="fas fa-trash"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        `;
-            })
-            .join("");
+        renderizarTabelaClientes();
     } catch (error) {
         console.error("Erro ao carregar clientes:", error);
 
         clientesList.innerHTML = `
-      <tr>
-        <td colspan="5" style="text-align: center; padding: 40px; color: #e74c3c;">
-          <i class="fas fa-exclamation-triangle"></i>
-          <p>Erro ao carregar clientes</p>
-          <small>${escaparHTML(error.message)}</small>
-        </td>
-      </tr>
-    `;
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 40px; color: #e74c3c;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Erro ao carregar clientes</p>
+                    <small>${escaparHTML(error.message)}</small>
+                </td>
+            </tr>
+        `;
     }
 }
 
-function buscarClientes() {
-    const termo = document.getElementById("searchClientes").value.toLowerCase();
-    const linhas = document.querySelectorAll("#clientesList tr");
+function obterClientesFiltrados() {
+    const termo = document.getElementById("searchClientes")?.value.toLowerCase().trim() || "";
 
-    linhas.forEach((linha) => {
-        const textoLinha = linha.textContent.toLowerCase();
-        if (textoLinha.includes(termo)) {
-            linha.style.display = "";
-        } else {
-            linha.style.display = "none";
-        }
+    if (!termo) {
+        return clientes;
+    }
+
+    return clientes.filter((cliente) => {
+        const textoCliente = [
+            cliente.nomeExibicao,
+            cliente.nomeFantasia,
+            cliente.razaoSocial,
+            cliente.nome,
+            cliente.cpf,
+            cliente.cnpj,
+            cliente.celular,
+            cliente.telefone,
+            cliente.email,
+            cliente.cidade,
+            cliente.estado,
+            cliente.observacaoRestricao,
+        ]
+            .join(" ")
+            .toLowerCase();
+
+        return textoCliente.includes(termo);
     });
+}
+
+function renderizarTabelaClientes() {
+    const clientesList = document.getElementById("clientesList");
+
+    if (!clientesList) {
+        return;
+    }
+
+    const clientesFiltrados = obterClientesFiltrados();
+
+    if (!clientesFiltrados.length) {
+        clientesList.innerHTML = `
+            <tr>
+                <td colspan="5" class="empty-message">
+                    <i class="fas fa-users"></i>
+                    <p>Nenhum cliente encontrado</p>
+                </td>
+            </tr>
+        `;
+
+        renderizarPaginacaoClientes(0);
+        return;
+    }
+
+    const totalPaginas = Math.ceil(clientesFiltrados.length / CLIENTES_POR_PAGINA);
+
+    if (paginaAtualClientes > totalPaginas) {
+        paginaAtualClientes = totalPaginas;
+    }
+
+    const inicio = (paginaAtualClientes - 1) * CLIENTES_POR_PAGINA;
+    const fim = inicio + CLIENTES_POR_PAGINA;
+    const clientesDaPagina = clientesFiltrados.slice(inicio, fim);
+
+    clientesList.innerHTML = clientesDaPagina
+        .map((cliente) => {
+            const tipoCliente = cliente.tipoCliente || "fisica";
+            const nomeExibicao = escaparHTML(
+                cliente.nomeExibicao || cliente.nomeFantasia || cliente.razaoSocial || cliente.nome
+            );
+            const email = escaparHTML(cliente.email);
+            const documento = escaparHTML(tipoCliente === "juridica" ? cliente.cnpj : cliente.cpf);
+            const celular = escaparHTML(cliente.celular);
+            const cidade = escaparHTML(cliente.cidade);
+            const estado = escaparHTML(cliente.estado);
+            const tipoTexto = tipoCliente === "juridica" ? "PJ" : "PF";
+            const observacaoRestricao = escaparHTML(cliente.observacaoRestricao);
+
+            return `
+                <tr class="${cliente.estaNoSpc ? "cliente-spc-row" : ""}">
+                    <td>
+                        <span class="badge-tipo-cliente">${tipoTexto}</span>
+
+                        <strong class="${cliente.estaNoSpc ? "cliente-nome-spc" : ""}">
+                            ${nomeExibicao}
+                        </strong>
+
+                        ${
+                            cliente.estaNoSpc
+                                ? `<span class="badge-spc">
+                                    <i class="fas fa-ban"></i> Restrição
+                                </span>`
+                                : ""
+                        }
+
+                        ${
+                            tipoCliente === "juridica" && cliente.razaoSocial
+                                ? `<br><small>Razão Social: ${escaparHTML(cliente.razaoSocial)}</small>`
+                                : ""
+                        }
+
+                        ${email ? `<br><small>${email}</small>` : ""}
+
+                        ${
+                            observacaoRestricao
+                                ? `<br><small class="texto-restricao">${observacaoRestricao}</small>`
+                                : ""
+                        }
+                    </td>
+
+                    <td>${documento}</td>
+                    <td>${celular || escaparHTML(cliente.telefone)}</td>
+                    <td>${cidade}${estado ? "/" + estado : ""}</td>
+
+                    <td>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <button class="btn btn-small btn-primary" onclick="editarCliente('${cliente.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+
+                            <button class="btn btn-small btn-success" onclick="selecionarClienteParaAluguel('${cliente.id}')">
+                                <i class="fas fa-handshake"></i>
+                            </button>
+
+                            <button class="btn btn-small btn-danger" onclick="excluirCliente('${cliente.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        })
+        .join("");
+
+    renderizarPaginacaoClientes(clientesFiltrados.length);
+}
+
+function renderizarPaginacaoClientes(totalClientes) {
+    const paginacao = document.getElementById("clientesPaginacao");
+
+    if (!paginacao) {
+        return;
+    }
+
+    const totalPaginas = Math.ceil(totalClientes / CLIENTES_POR_PAGINA);
+
+    if (totalPaginas <= 1) {
+        paginacao.innerHTML = "";
+        return;
+    }
+
+    const inicio = (paginaAtualClientes - 1) * CLIENTES_POR_PAGINA + 1;
+    const fim = Math.min(paginaAtualClientes * CLIENTES_POR_PAGINA, totalClientes);
+
+    paginacao.innerHTML = `
+        <div class="pagination-info">
+            Mostrando ${inicio} a ${fim} de ${totalClientes} clientes
+        </div>
+
+        <div class="pagination-actions">
+            <button
+                type="button"
+                class="btn btn-secondary pagination-btn"
+                onclick="mudarPaginaClientes(${paginaAtualClientes - 1})"
+                ${paginaAtualClientes === 1 ? "disabled" : ""}
+            >
+                <i class="fas fa-chevron-left"></i> Anterior
+            </button>
+
+            <span class="pagination-current">
+                Página ${paginaAtualClientes} de ${totalPaginas}
+            </span>
+
+            <button
+                type="button"
+                class="btn btn-secondary pagination-btn"
+                onclick="mudarPaginaClientes(${paginaAtualClientes + 1})"
+                ${paginaAtualClientes === totalPaginas ? "disabled" : ""}
+            >
+                Próxima <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    `;
+}
+
+function mudarPaginaClientes(novaPagina) {
+    const totalClientes = obterClientesFiltrados().length;
+    const totalPaginas = Math.ceil(totalClientes / CLIENTES_POR_PAGINA);
+
+    if (novaPagina < 1 || novaPagina > totalPaginas) {
+        return;
+    }
+
+    paginaAtualClientes = novaPagina;
+    renderizarTabelaClientes();
+}
+
+globalThis.mudarPaginaClientes = mudarPaginaClientes;
+
+function buscarClientes() {
+    paginaAtualClientes = 1;
+    renderizarTabelaClientes();
 }
 
 async function editarCliente(clienteId) {
@@ -556,7 +662,7 @@ async function excluirCliente(clienteId) {
 
 function selecionarClienteParaAluguel(clienteId) {
     localStorage.setItem("clienteSelecionado", clienteId);
-    window.location.href = "aluguel.html";
+    globalThis.location.href = "aluguel.html";
 }
 
 function limparFormulario() {
