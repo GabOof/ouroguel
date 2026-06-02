@@ -1,49 +1,9 @@
 let estoque = [];
 let ajustesHistorico = [];
-let paginaAtualEstoque = 1;
-const ESTOQUE_POR_PAGINA = 8;
-let paginaAtualHistorico = 1;
-const HISTORICO_POR_PAGINA = 8;
 
 // ============================================
 // FUNÇÕES AUXILIARES DE INTERFACE
 // ============================================
-
-function garantirContainerPaginacao(idTabela, idPaginacao, ariaLabel) {
-    let paginacao = document.getElementById(idPaginacao);
-
-    if (paginacao) {
-        paginacao.style.display = "flex";
-        paginacao.style.visibility = "visible";
-        paginacao.style.opacity = "1";
-        return paginacao;
-    }
-
-    const tabela = document.getElementById(idTabela);
-
-    if (!tabela) {
-        return null;
-    }
-
-    const tableContainer = tabela.closest(".table-container");
-
-    if (!tableContainer) {
-        return null;
-    }
-
-    paginacao = document.createElement("div");
-    paginacao.id = idPaginacao;
-    paginacao.className = "pagination-container";
-    paginacao.setAttribute("aria-label", ariaLabel);
-
-    paginacao.style.display = "flex";
-    paginacao.style.visibility = "visible";
-    paginacao.style.opacity = "1";
-
-    tableContainer.insertAdjacentElement("afterend", paginacao);
-
-    return paginacao;
-}
 
 function valorCampoEstoque(id) {
     const campo = document.getElementById(id);
@@ -202,9 +162,87 @@ async function carregarEstoque() {
     `;
 
         estoque = await EstoqueService.listarEstoque();
-        paginaAtualEstoque = 1;
 
-        renderizarTabelaEstoque();
+        if (!estoque.length) {
+            estoqueList.innerHTML = `
+        <tr>
+          <td colspan="8" class="empty-message">
+            <i class="fas fa-clipboard-list"></i>
+            <p>Nenhum equipamento cadastrado no estoque</p>
+          </td>
+        </tr>
+      `;
+
+            atualizarEstatisticasEstoque();
+            return;
+        }
+
+        estoqueList.innerHTML = estoque
+            .map((item) => {
+                const status = obterStatusEstoque(item);
+
+                const quantidadeTotal = Number(item.quantidadeTotal || 0);
+                const quantidadeDisponivel = Number(item.quantidadeDisponivel || 0);
+                const quantidadeAlugada = Number(item.quantidadeAlugada || 0);
+
+                const porcentagemDisponivel =
+                    quantidadeTotal > 0
+                        ? Math.round((quantidadeDisponivel / quantidadeTotal) * 100)
+                        : 0;
+
+                const corBarra =
+                    porcentagemDisponivel >= 50
+                        ? "#27ae60"
+                        : porcentagemDisponivel >= 25
+                          ? "#f39c12"
+                          : "#e74c3c";
+
+                return `
+          <tr>
+            <td>
+              <strong>${escaparHTMLEstoque(item.nomeEquipamento)}</strong>
+              <br><small>${escaparHTMLEstoque(item.categoria)}</small>
+            </td>
+
+            <td>${escaparHTMLEstoque(item.categoria)}</td>
+
+            <td>${quantidadeTotal}</td>
+
+            <td>
+              <strong style="color: ${corBarra}">
+                ${quantidadeDisponivel}
+              </strong>
+              <div style="width: 100px; height: 8px; background: #eee; border-radius: 4px; margin-top: 5px;">
+                <div style="width: ${porcentagemDisponivel}%; height: 100%; background: ${corBarra}; border-radius: 4px;"></div>
+              </div>
+            </td>
+
+            <td>${quantidadeAlugada}</td>
+
+            <td>
+              <span class="status-badge ${status.classe}">
+                <i class="fas ${status.icone}"></i>
+                ${status.texto}
+              </span>
+            </td>
+
+            <td>${formatarMoedaEstoque(item.valorDia || 0)}</td>
+
+            <td>
+              <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                <button class="btn btn-small btn-primary" onclick="ajustarEstoqueRapido('${item.id}')">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-small btn-info" onclick="visualizarDetalhes('${item.id}')">
+                  <i class="fas fa-chart-bar"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+            })
+            .join("");
+
         atualizarEstatisticasEstoque();
     } catch (error) {
         console.error("Erro ao carregar estoque:", error);
@@ -220,234 +258,6 @@ async function carregarEstoque() {
     `;
     }
 }
-
-function obterEstoqueFiltrado() {
-    const categoria = valorCampoEstoque("filtroCategoria").toLowerCase();
-    const statusFiltro = valorCampoEstoque("filtroStatus");
-    const busca = valorCampoEstoque("filtroBusca").toLowerCase();
-
-    return estoque.filter((item) => {
-        const status = obterStatusEstoque(item);
-
-        const textoItem = [
-            item.nomeEquipamento,
-            item.categoria,
-            item.quantidadeTotal,
-            item.quantidadeDisponivel,
-            item.quantidadeAlugada,
-            item.status,
-            status.texto,
-            item.valorDia,
-        ]
-            .join(" ")
-            .toLowerCase();
-
-        const categoriaItem = String(item.categoria || "").toLowerCase();
-        const statusTexto = status.texto.toLowerCase();
-
-        if (categoria && !categoriaItem.includes(categoria)) {
-            return false;
-        }
-
-        if (statusFiltro) {
-            if (statusFiltro === "disponivel" && !statusTexto.includes("disponível")) {
-                return false;
-            }
-
-            if (statusFiltro === "alugado" && !statusTexto.includes("parcial")) {
-                return false;
-            }
-
-            if (
-                statusFiltro === "indisponivel" &&
-                !statusTexto.includes("indisponível") &&
-                !statusTexto.includes("esgotado")
-            ) {
-                return false;
-            }
-
-            if (statusFiltro === "manutencao" && !statusTexto.includes("manutenção")) {
-                return false;
-            }
-        }
-
-        if (busca && !textoItem.includes(busca)) {
-            return false;
-        }
-
-        return true;
-    });
-}
-
-function renderizarTabelaEstoque() {
-    const estoqueList = document.getElementById("estoqueList");
-
-    if (!estoqueList) {
-        return;
-    }
-
-    const estoqueFiltrado = obterEstoqueFiltrado();
-
-    if (!estoqueFiltrado.length) {
-        estoqueList.innerHTML = `
-      <tr>
-        <td colspan="8" class="empty-message">
-          <i class="fas fa-search"></i>
-          <p>Nenhum equipamento encontrado com os filtros selecionados</p>
-        </td>
-      </tr>
-    `;
-
-        renderizarPaginacaoEstoque(0);
-        return;
-    }
-
-    const totalPaginas = Math.ceil(estoqueFiltrado.length / ESTOQUE_POR_PAGINA);
-
-    if (paginaAtualEstoque > totalPaginas) {
-        paginaAtualEstoque = totalPaginas;
-    }
-
-    const inicio = (paginaAtualEstoque - 1) * ESTOQUE_POR_PAGINA;
-    const fim = inicio + ESTOQUE_POR_PAGINA;
-    const estoqueDaPagina = estoqueFiltrado.slice(inicio, fim);
-
-    estoqueList.innerHTML = estoqueDaPagina
-        .map((item) => {
-            const status = obterStatusEstoque(item);
-
-            const quantidadeTotal = Number(item.quantidadeTotal || 0);
-            const quantidadeDisponivel = Number(item.quantidadeDisponivel || 0);
-            const quantidadeAlugada = Number(item.quantidadeAlugada || 0);
-
-            const porcentagemDisponivel =
-                quantidadeTotal > 0
-                    ? Math.round((quantidadeDisponivel / quantidadeTotal) * 100)
-                    : 0;
-
-            const corBarra =
-                porcentagemDisponivel >= 50
-                    ? "#27ae60"
-                    : porcentagemDisponivel >= 25
-                      ? "#f39c12"
-                      : "#e74c3c";
-
-            return `
-        <tr>
-          <td>
-            <strong>${escaparHTMLEstoque(item.nomeEquipamento)}</strong>
-            <br><small>${escaparHTMLEstoque(item.categoria)}</small>
-          </td>
-
-          <td>${escaparHTMLEstoque(item.categoria)}</td>
-
-          <td>${quantidadeTotal}</td>
-
-          <td>
-            <strong style="color: ${corBarra}">
-              ${quantidadeDisponivel}
-            </strong>
-            <div style="width: 100px; height: 8px; background: #eee; border-radius: 4px; margin-top: 5px;">
-              <div style="width: ${porcentagemDisponivel}%; height: 100%; background: ${corBarra}; border-radius: 4px;"></div>
-            </div>
-          </td>
-
-          <td>${quantidadeAlugada}</td>
-
-          <td>
-            <span class="status-badge ${status.classe}">
-              <i class="fas ${status.icone}"></i>
-              ${status.texto}
-            </span>
-          </td>
-
-          <td>${formatarMoedaEstoque(item.valorDia || 0)}</td>
-
-          <td>
-            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-              <button class="btn btn-small btn-primary" onclick="ajustarEstoqueRapido('${item.id}')">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="btn btn-small btn-info" onclick="visualizarDetalhes('${item.id}')">
-                <i class="fas fa-chart-bar"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
-      `;
-        })
-        .join("");
-
-    renderizarPaginacaoEstoque(estoqueFiltrado.length);
-}
-
-function renderizarPaginacaoEstoque(totalItens) {
-    const paginacao = garantirContainerPaginacao(
-        "estoqueTable",
-        "estoquePaginacao",
-        "Paginação da tabela de estoque"
-    );
-
-    if (!paginacao) {
-        console.warn("Container estoquePaginacao não encontrado/criado.");
-        return;
-    }
-
-    if (totalItens <= 0) {
-        paginacao.innerHTML = `
-            <div class="pagination-info">
-                Nenhum item para paginar
-            </div>
-        `;
-        return;
-    }
-
-    const totalPaginas = Math.ceil(totalItens / ESTOQUE_POR_PAGINA);
-    const inicio = (paginaAtualEstoque - 1) * ESTOQUE_POR_PAGINA + 1;
-    const fim = Math.min(paginaAtualEstoque * ESTOQUE_POR_PAGINA, totalItens);
-
-    paginacao.innerHTML = `
-        <div class="pagination-info">
-            Mostrando ${inicio} a ${fim} de ${totalItens} itens
-        </div>
-        <div class="pagination-actions">
-            <button
-                type="button"
-                class="btn btn-secondary pagination-btn"
-                onclick="mudarPaginaEstoque(${paginaAtualEstoque - 1})"
-                ${paginaAtualEstoque === 1 ? "disabled" : ""}
-            >
-                <i class="fas fa-chevron-left"></i> Anterior
-            </button>
-            <span class="pagination-current">
-                Página ${paginaAtualEstoque} de ${totalPaginas}
-            </span>
-
-            <button
-                type="button"
-                class="btn btn-secondary pagination-btn"
-                onclick="mudarPaginaEstoque(${paginaAtualEstoque + 1})"
-                ${paginaAtualEstoque === totalPaginas ? "disabled" : ""}
-            >
-                Próxima <i class="fas fa-chevron-right"></i>
-            </button>
-        </div>
-    `;
-}
-
-function mudarPaginaEstoque(novaPagina) {
-    const totalItens = obterEstoqueFiltrado().length;
-    const totalPaginas = Math.ceil(totalItens / ESTOQUE_POR_PAGINA);
-
-    if (novaPagina < 1 || novaPagina > totalPaginas) {
-        return;
-    }
-
-    paginaAtualEstoque = novaPagina;
-    renderizarTabelaEstoque();
-}
-
-window.mudarPaginaEstoque = mudarPaginaEstoque;
 
 async function carregarEquipamentosParaAjuste() {
     const select = document.getElementById("ajusteEquipamento");
@@ -480,8 +290,82 @@ async function carregarEquipamentosParaAjuste() {
 // ============================================
 
 function filtrarEstoque() {
-    paginaAtualEstoque = 1;
-    renderizarTabelaEstoque();
+    const categoria = valorCampoEstoque("filtroCategoria").toLowerCase();
+    const status = valorCampoEstoque("filtroStatus");
+    const busca = valorCampoEstoque("filtroBusca").toLowerCase();
+
+    const linhas = document.querySelectorAll("#estoqueList tr");
+    let visiveis = 0;
+
+    linhas.forEach((linha) => {
+        if (linha.classList.contains("no-results")) {
+            linha.remove();
+            return;
+        }
+
+        if (linha.cells.length < 2) {
+            return;
+        }
+
+        const textoLinha = linha.textContent.toLowerCase();
+        const dadosCategoria = linha.cells[1]?.textContent.toLowerCase() || "";
+        const dadosStatus = linha.querySelector(".status-badge")?.textContent.toLowerCase() || "";
+
+        let mostrar = true;
+
+        if (categoria && !dadosCategoria.includes(categoria)) {
+            mostrar = false;
+        }
+
+        if (status) {
+            if (status === "disponivel" && !dadosStatus.includes("disponível")) {
+                mostrar = false;
+            }
+
+            if (status === "alugado" && !dadosStatus.includes("parcial")) {
+                mostrar = false;
+            }
+
+            if (
+                status === "indisponivel" &&
+                !dadosStatus.includes("indisponível") &&
+                !dadosStatus.includes("esgotado")
+            ) {
+                mostrar = false;
+            }
+
+            if (status === "manutencao" && !dadosStatus.includes("manutenção")) {
+                mostrar = false;
+            }
+        }
+
+        if (busca && !textoLinha.includes(busca)) {
+            mostrar = false;
+        }
+
+        linha.style.display = mostrar ? "" : "none";
+
+        if (mostrar) {
+            visiveis++;
+        }
+    });
+
+    if (visiveis === 0) {
+        const tbody = document.getElementById("estoqueList");
+
+        if (tbody && !tbody.querySelector(".no-results")) {
+            const tr = document.createElement("tr");
+            tr.className = "no-results";
+            tr.innerHTML = `
+        <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+          <i class="fas fa-search"></i>
+          <p>Nenhum equipamento encontrado com os filtros selecionados</p>
+        </td>
+      `;
+
+            tbody.appendChild(tr);
+        }
+    }
 }
 
 function limparFiltros() {
@@ -489,8 +373,17 @@ function limparFiltros() {
     preencherCampoEstoque("filtroStatus", "");
     preencherCampoEstoque("filtroBusca", "");
 
-    paginaAtualEstoque = 1;
-    renderizarTabelaEstoque();
+    const linhas = document.querySelectorAll("#estoqueList tr");
+
+    linhas.forEach((linha) => {
+        linha.style.display = "";
+    });
+
+    const noResults = document.querySelector(".no-results");
+
+    if (noResults) {
+        noResults.remove();
+    }
 }
 
 // ============================================
@@ -597,9 +490,85 @@ async function carregarHistoricoAjustes() {
     `;
 
         ajustesHistorico = await EstoqueService.listarHistorico(50);
-        paginaAtualHistorico = 1;
 
-        renderizarTabelaHistorico();
+        if (!ajustesHistorico.length) {
+            historicoList.innerHTML = `
+        <tr>
+          <td colspan="6" class="empty-message">
+            <i class="fas fa-history"></i>
+            <p>Nenhum ajuste registrado</p>
+          </td>
+        </tr>
+      `;
+            return;
+        }
+
+        historicoList.innerHTML = ajustesHistorico
+            .map((ajuste) => {
+                let tipoTexto = "";
+                let tipoIcon = "";
+                let tipoClass = "";
+
+                switch (ajuste.tipo) {
+                    case "entrada":
+                        tipoTexto = "Entrada";
+                        tipoIcon = "fa-arrow-circle-up";
+                        tipoClass = "text-success";
+                        break;
+
+                    case "saida":
+                        tipoTexto = "Saída";
+                        tipoIcon = "fa-arrow-circle-down";
+                        tipoClass = "text-danger";
+                        break;
+
+                    case "manutencao":
+                        tipoTexto = "Manutenção";
+                        tipoIcon = "fa-wrench";
+                        tipoClass = "text-warning";
+                        break;
+
+                    case "retorno":
+                        tipoTexto = "Retorno";
+                        tipoIcon = "fa-undo";
+                        tipoClass = "text-info";
+                        break;
+
+                    default:
+                        tipoTexto = "Ajuste";
+                        tipoIcon = "fa-edit";
+                        tipoClass = "";
+                }
+
+                const sinal = ajuste.tipo === "entrada" || ajuste.tipo === "retorno" ? "+" : "-";
+
+                return `
+          <tr>
+            <td>${formatarDataEstoque(ajuste.data)}</td>
+
+            <td>${escaparHTMLEstoque(ajuste.equipamentoNome)}</td>
+
+            <td class="${tipoClass}">
+              <i class="fas ${tipoIcon}"></i>
+              ${tipoTexto}
+            </td>
+            <td>
+              <strong class="${
+                  ajuste.tipo === "entrada" || ajuste.tipo === "retorno"
+                      ? "text-success"
+                      : "text-danger"
+              }">
+                ${sinal}${ajuste.quantidade}
+              </strong>
+            </td>
+
+            <td>${escaparHTMLEstoque(ajuste.motivo)}</td>
+
+            <td>${escaparHTMLEstoque(ajuste.usuario || "Sistema")}</td>
+          </tr>
+        `;
+            })
+            .join("");
     } catch (error) {
         console.error("Erro ao carregar histórico:", error);
 
@@ -614,175 +583,6 @@ async function carregarHistoricoAjustes() {
     `;
     }
 }
-
-function montarLinhaHistorico(ajuste) {
-    let tipoTexto = "";
-    let tipoIcon = "";
-    let tipoClass = "";
-
-    switch (ajuste.tipo) {
-        case "entrada":
-            tipoTexto = "Entrada";
-            tipoIcon = "fa-arrow-circle-up";
-            tipoClass = "text-success";
-            break;
-
-        case "saida":
-            tipoTexto = "Saída";
-            tipoIcon = "fa-arrow-circle-down";
-            tipoClass = "text-danger";
-            break;
-
-        case "manutencao":
-            tipoTexto = "Manutenção";
-            tipoIcon = "fa-wrench";
-            tipoClass = "text-warning";
-            break;
-
-        case "retorno":
-            tipoTexto = "Retorno";
-            tipoIcon = "fa-undo";
-            tipoClass = "text-info";
-            break;
-
-        default:
-            tipoTexto = "Ajuste";
-            tipoIcon = "fa-edit";
-            tipoClass = "";
-    }
-
-    const sinal = ajuste.tipo === "entrada" || ajuste.tipo === "retorno" ? "+" : "-";
-
-    return `
-    <tr>
-      <td>${formatarDataEstoque(ajuste.data)}</td>
-
-      <td>${escaparHTMLEstoque(ajuste.equipamentoNome)}</td>
-
-      <td class="${tipoClass}">
-        <i class="fas ${tipoIcon}"></i>
-        ${tipoTexto}
-      </td>
-      <td>
-        <strong class="${
-            ajuste.tipo === "entrada" || ajuste.tipo === "retorno" ? "text-success" : "text-danger"
-        }">
-          ${sinal}${ajuste.quantidade}
-        </strong>
-      </td>
-
-      <td>${escaparHTMLEstoque(ajuste.motivo)}</td>
-
-      <td>${escaparHTMLEstoque(ajuste.usuario || "Sistema")}</td>
-    </tr>
-  `;
-}
-
-function renderizarTabelaHistorico() {
-    const historicoList = document.getElementById("historicoList");
-
-    if (!historicoList) {
-        return;
-    }
-
-    if (!ajustesHistorico.length) {
-        historicoList.innerHTML = `
-      <tr>
-        <td colspan="6" class="empty-message">
-          <i class="fas fa-history"></i>
-          <p>Nenhum ajuste registrado</p>
-        </td>
-      </tr>
-    `;
-
-        renderizarPaginacaoHistorico(0);
-        return;
-    }
-
-    const totalPaginas = Math.ceil(ajustesHistorico.length / HISTORICO_POR_PAGINA);
-
-    if (paginaAtualHistorico > totalPaginas) {
-        paginaAtualHistorico = totalPaginas;
-    }
-
-    const inicio = (paginaAtualHistorico - 1) * HISTORICO_POR_PAGINA;
-    const fim = inicio + HISTORICO_POR_PAGINA;
-    const historicoDaPagina = ajustesHistorico.slice(inicio, fim);
-
-    historicoList.innerHTML = historicoDaPagina
-        .map((ajuste) => montarLinhaHistorico(ajuste))
-        .join("");
-
-    renderizarPaginacaoHistorico(ajustesHistorico.length);
-}
-
-function renderizarPaginacaoHistorico(totalItens) {
-    const paginacao = garantirContainerPaginacao(
-        "historicoTable",
-        "historicoPaginacao",
-        "Paginação da tabela de histórico de ajustes"
-    );
-
-    if (!paginacao) {
-        console.warn("Container historicoPaginacao não encontrado/criado.");
-        return;
-    }
-
-    if (totalItens <= 0) {
-        paginacao.innerHTML = `
-            <div class="pagination-info">
-                Nenhum ajuste para paginar
-            </div>
-        `;
-        return;
-    }
-
-    const totalPaginas = Math.ceil(totalItens / HISTORICO_POR_PAGINA);
-    const inicio = (paginaAtualHistorico - 1) * HISTORICO_POR_PAGINA + 1;
-    const fim = Math.min(paginaAtualHistorico * HISTORICO_POR_PAGINA, totalItens);
-
-    paginacao.innerHTML = `
-        <div class="pagination-info">
-            Mostrando ${inicio} a ${fim} de ${totalItens} ajustes
-        </div>
-        <div class="pagination-actions">
-            <button
-                type="button"
-                class="btn btn-secondary pagination-btn"
-                onclick="mudarPaginaHistorico(${paginaAtualHistorico - 1})"
-                ${paginaAtualHistorico === 1 ? "disabled" : ""}
-            >
-                <i class="fas fa-chevron-left"></i> Anterior
-            </button>
-            <span class="pagination-current">
-                Página ${paginaAtualHistorico} de ${totalPaginas}
-            </span>
-
-            <button
-                type="button"
-                class="btn btn-secondary pagination-btn"
-                onclick="mudarPaginaHistorico(${paginaAtualHistorico + 1})"
-                ${paginaAtualHistorico === totalPaginas ? "disabled" : ""}
-            >
-                Próxima <i class="fas fa-chevron-right"></i>
-            </button>
-        </div>
-    `;
-}
-
-function mudarPaginaHistorico(novaPagina) {
-    const totalItens = ajustesHistorico.length;
-    const totalPaginas = Math.ceil(totalItens / HISTORICO_POR_PAGINA);
-
-    if (novaPagina < 1 || novaPagina > totalPaginas) {
-        return;
-    }
-
-    paginaAtualHistorico = novaPagina;
-    renderizarTabelaHistorico();
-}
-
-window.mudarPaginaHistorico = mudarPaginaHistorico;
 
 // ============================================
 // DETALHES E LIMPEZA
