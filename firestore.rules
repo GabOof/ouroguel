@@ -26,5 +26,10 @@ service cloud.firestore {
     match /usuarios/{usuarioId} {
       allow read, create, update, delete: if usuarioAutenticado();
     }
+
+    match /contadores/{contadorId} {
+      allow read, create, update: if usuarioAutenticado();
+      allow delete: if false;
+    }
   }
 }
