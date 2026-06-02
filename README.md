@@ -378,7 +378,3 @@ firebase deploy --only hosting,firestore:rules,storage
 ## Licença
 
 Projeto acadêmico desenvolvido para fins educacionais como Trabalho de Conclusão de Curso.
-
-```
-
-```
