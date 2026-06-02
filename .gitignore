@@ -8,3 +8,4 @@ import.js
 .DS_Store
 .env
 seed/
+firebase-export-*/
