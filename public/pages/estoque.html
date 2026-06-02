@@ -6,7 +6,7 @@
                 const userLoggedIn = localStorage.getItem("userLoggedIn");
 
                 if (userLoggedIn !== "true") {
-                    window.location.replace("/pages/login.html");
+                    globalThis.location.replace("/pages/login.html");
                 }
             })();
         </script>
@@ -175,6 +175,12 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <div
+                            id="paginacaoEstoque"
+                            class="pagination-container"
+                            aria-label="Paginação da tabela de estoque"
+                        ></div>
                     </div>
                 </section>
                 <!-- Ajustes de Estoque -->
