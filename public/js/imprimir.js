@@ -1,6 +1,3 @@
-// imprimir.js - Página de contrato Ouroguel
-// Compatível com o sistema de aluguel: valor calculado na devolução
-
 document.addEventListener("DOMContentLoaded", function () {
     iniciarPaginaImpressao();
 });
@@ -105,7 +102,6 @@ async function carregarAluguel(firestore, aluguelId) {
         // número sequencial do aluguel
         numeroAluguel: dados.numeroAluguel || null,
         codigoContrato: dados.codigoContrato || "",
-
         clienteId: dados.clienteId || dados.cliente?.id || "",
         clienteNome: dados.clienteNome || dados.cliente?.nome || "",
         clienteCelular: dados.clienteCelular || dados.cliente?.celular || "",
@@ -117,7 +113,6 @@ async function carregarAluguel(firestore, aluguelId) {
         statusPagamento: dados.statusPagamento || "pendente",
         observacoes: dados.observacoes || "",
         equipamentos: dados.equipamentos || [],
-
         periodo: dados.periodo || dados.periodoFinal || "",
         duracaoReal: dados.duracaoReal || null,
         valorTotal: dados.valorTotal || null,
@@ -219,23 +214,20 @@ function gerarContratoHTML(aluguel, cliente, equipamentos) {
         <div class="contract-header">
             <div>
                 <div class="company-name">OUROGUEL LTDA</div>
-                <div class="company-subtitle">LOCAÇÃO DE EQUIPAMENTOS</div>
+                <div class="company-subtitle">LOCAÇÃO E VENDAS DE ANDAIMES, ESCADAS, MÁQUINAS E FERRAMENTAS EM GERAL</div>
                 <div class="company-info">
-                    CNPJ: 00.000.000/0001-00 | Telefone: (31) 00000-0000<br>
-                    Ouro Branco/MG
+                    CNPJ: 03.580.915/0001-01 | Telefone: (31) 3742-1190<br>
+                    Rua Amaro Lanari, n° 300, bairro Pioneiros - Ouro Branco/MG
                 </div>
             </div>
-
             <div class="contract-badge">
                 <span>CONTRATO Nº</span>
                 <strong>${escaparHTML(codigoContrato)}</strong>
             </div>
         </div>
-
         <div class="document-title">
             CONTRATO DE LOCAÇÃO DE EQUIPAMENTOS
         </div>
-
         <!-- STATUS DO ALUGUEL -->
         <div class="section">
             <div class="section-title">SITUAÇÃO DO CONTRATO</div>
@@ -258,7 +250,6 @@ function gerarContratoHTML(aluguel, cliente, equipamentos) {
                 }
             </table>
         </div>
-
         <!-- DADOS DO CLIENTE -->
         <div class="section">
             <div class="section-title">DADOS DO LOCATÁRIO</div>
@@ -285,7 +276,6 @@ function gerarContratoHTML(aluguel, cliente, equipamentos) {
                 </tr>
             </table>
         </div>
-
         <!-- DATAS -->
         <div class="section">
             <div class="section-title">DATAS</div>
@@ -315,7 +305,6 @@ function gerarContratoHTML(aluguel, cliente, equipamentos) {
                 }
             </table>
         </div>
-
         <!-- EQUIPAMENTOS RETIRADOS -->
         <div class="section">
             <div class="section-title">EQUIPAMENTOS RETIRADOS</div>
@@ -344,100 +333,82 @@ function gerarContratoHTML(aluguel, cliente, equipamentos) {
                 O locatário declara ter recebido os equipamentos em boas condições de uso,
                 conservação, funcionamento e limpeza, após conferência no ato da retirada.
             </li>
-
             <li>
                 O equipamento deverá ser utilizado exclusivamente para a finalidade compatível
                 com sua natureza, sendo proibido o uso inadequado, abusivo ou diverso daquele
                 para o qual foi locado.
             </li>
-
             <li>
                 O locatário se responsabiliza pela guarda, conservação, transporte e uso correto
                 dos equipamentos durante todo o período da locação.
             </li>
-
             <li>
                 O equipamento deverá ser devolvido em perfeitas condições de uso e limpeza,
                 salvo desgaste natural decorrente da utilização regular.
             </li>
-
             <li>
                 A devolução será registrada com <strong>data real</strong> e a cobrança será
                 calculada conforme o período definido pelo locador.
             </li>
-
             <li>
                 Atrasos na devolução poderão gerar cobrança proporcional ao período excedente,
                 conforme a tabela de preços vigente da locadora.
             </li>
-
             <li>
                 O valor da locação será calculado <strong>no momento da devolução</strong>,
                 conforme período efetivamente utilizado e tabela vigente.
             </li>
-
             <li>
                 Danos, quebras, perdas, furtos, roubos ou extravios são de
                 <strong>total responsabilidade do locatário</strong>.
             </li>
-
             <li>
                 Em caso de perda, extravio, furto, roubo ou dano total, o locatário deverá pagar
                 o valor de reposição integral do equipamento.
             </li>
-
             <li>
                 Em caso de dano parcial, o locatário deverá arcar com os custos de reparo,
                 peças, mão de obra, transporte técnico e demais despesas necessárias para
                 restaurar o equipamento.
             </li>
-
             <li>
                 Caso o equipamento seja devolvido sujo, com resíduos, concreto, tinta, óleo,
                 terra ou qualquer material que exija limpeza extraordinária, poderá ser cobrada
                 taxa adicional de limpeza.
             </li>
-
             <li>
                 É proibida a sublocação, cessão, empréstimo ou transferência do equipamento
                 a terceiros sem autorização prévia por escrito da locadora.
             </li>
-
             <li>
                 É proibido desmontar, adulterar, modificar, remover peças, retirar etiquetas de
                 identificação, lacres ou realizar qualquer intervenção técnica no equipamento
                 sem autorização da locadora.
             </li>
-
             <li>
                 O locatário deverá comunicar imediatamente à locadora qualquer defeito, dano,
                 acidente, perda, furto, roubo ou irregularidade envolvendo o equipamento.
             </li>
-
             <li>
                 A continuidade do uso do equipamento após a identificação de defeito ou
                 funcionamento anormal será considerada uso indevido, podendo gerar
                 responsabilidade por danos adicionais.
             </li>
-
             <li>
                 A locadora não se responsabiliza por acidentes, prejuízos, danos materiais ou
                 pessoais decorrentes do uso inadequado, imprudente, negligente ou contrário
                 às orientações de uso do equipamento.
             </li>
-
             <li>
                 A locação somente será considerada encerrada após a devolução efetiva dos
                 equipamentos e conferência pela locadora.
             </li>
-
             <li>
                 A assinatura deste contrato confirma a ciência e concordância do locatário com
                 os equipamentos locados, quantidades, valores, prazo de devolução e condições
                 gerais da locação.
             </li>
         </ul>
-
         <div class="warning">
             <strong>ATENÇÃO:</strong> Confira os equipamentos no ato da retirada.
             Ao assinar, o locatário declara que recebeu os itens descritos neste contrato
@@ -445,7 +416,6 @@ function gerarContratoHTML(aluguel, cliente, equipamentos) {
         </div>
     </div>
 </div>
-
         <!-- ASSINATURAS -->
         <div class="section">
             <div class="section-title">ASSINATURAS</div>
@@ -455,7 +425,6 @@ function gerarContratoHTML(aluguel, cliente, equipamentos) {
                     ______________________________
                     <p>Responsável pela entrega</p>
                 </div>
-
                 <div class="signature-box">
                     <strong>LOCATÁRIO</strong>
                     ______________________________
@@ -464,7 +433,6 @@ function gerarContratoHTML(aluguel, cliente, equipamentos) {
                 </div>
             </div>
         </div>
-
         <!-- RODAPÉ -->
         <div class="footer">
             <p>
@@ -472,7 +440,6 @@ function gerarContratoHTML(aluguel, cliente, equipamentos) {
                 Documento gerado pelo Sistema Ouroguel
             </p>
         </div>
-
         <div class="timestamp">
             Documento emitido em: ${new Date().toLocaleString("pt-BR")}
         </div>
