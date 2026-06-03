@@ -258,7 +258,7 @@ Depois de importar os dados, salve o estado local:
 docker compose exec firebase-emulator firebase emulators:export /workspace/.firebase-data --force
 ```
 
-Na próxima execução, os dados locais serão carregados automaticamente se o container estiver configurado com:
+Na próxima execução, os dados locais serão carregados automaticamente porque o container está configurado com:
 
 ```bash
 --import /workspace/.firebase-data
