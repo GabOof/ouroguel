@@ -303,7 +303,7 @@ async function carregarClientesParaSelect() {
         snapshot.docs
             .map((doc) => {
                 const cliente = { id: doc.id, ...doc.data() };
-                const nome = escaparHTMLAluguel(cliente.nome || "Cliente sem nome");
+                const nome = escaparHTMLAluguel(cliente.nomeBusca || "Cliente sem nome");
                 const cpf = escaparHTMLAluguel(cliente.cpf || "");
 
                 return `<option value="${doc.id}">${nome}${cpf ? " - " + cpf : ""}</option>`;
@@ -731,7 +731,6 @@ function atualizarListaEquipamentos() {
           <td>
             <strong>${escaparHTMLAluguel(item.nomeEquipamento)}</strong>
           </td>
-
           <td>
             <strong>${Number(item.quantidadeEstoque || item.quantidade || 0)}</strong>
             <span class="linha-secundaria">unid. físicas</span>
@@ -744,7 +743,6 @@ function atualizarListaEquipamentos() {
               A calcular na devolução
             </span>
           </td>
-
           <td>
             <button
               type="button"
@@ -997,7 +995,6 @@ function renderizarPaginacaoAlugueis(totalAlugueis) {
     <div class="pagination-info">
       Mostrando ${inicio} a ${fim} de ${totalAlugueis} aluguéis
     </div>
-
     <div class="pagination-actions">
       <button
         type="button"
@@ -1007,7 +1004,6 @@ function renderizarPaginacaoAlugueis(totalAlugueis) {
       >
         <i class="fas fa-chevron-left"></i> Anterior
       </button>
-
       <span class="pagination-current">
         Página ${paginaAtualAlugueis} de ${totalPaginas}
       </span>
@@ -1097,7 +1093,6 @@ function montarLinhaAluguel(aluguel) {
         <strong>${escaparHTMLAluguel(aluguel.clienteNome || "")}</strong>
         <br><small>${escaparHTMLAluguel(aluguel.clienteCelular || "")}</small>
       </td>
-
       <td>
         <small>${equipamentosResumo}</small>
       </td>
@@ -1115,7 +1110,6 @@ function montarLinhaAluguel(aluguel) {
           ${statusText}
         </span>
       </td>
-
       <td>
         <div style="display: flex; gap: 5px; flex-wrap: wrap;">
           <button
@@ -1228,12 +1222,10 @@ function montarItensFechamento() {
             <strong>${escaparHTMLAluguel(item.nomeEquipamento || item.nome)}</strong>
             <small class="linha-secundaria">Cobrança por ${escaparHTMLAluguel(unidade)}</small>
           </td>
-
           <td>
             <strong>${quantidadeEstoque}</strong>
             <small class="linha-secundaria">unid. físicas</small>
           </td>
-
           <td>
             <input
               type="text"
@@ -1242,7 +1234,6 @@ function montarItensFechamento() {
               value="${String(quantidadeCobradaPadrao).replace(".", ",")}"
             />
           </td>
-
           <td>
             <input
               type="text"
@@ -1251,7 +1242,6 @@ function montarItensFechamento() {
               value="0,00"
             />
           </td>
-
           <td>
             <strong class="fechamento-subtotal-item" data-index="${index}">
               R$ 0,00
