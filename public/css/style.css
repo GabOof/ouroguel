@@ -1647,3 +1647,211 @@ PÁGINA DE ALUGUÉIS
         min-width: 100%;
     }
 }
+
+/* ============================
+   MODAL DE USUÁRIO
+============================ */
+
+.user-bar-name-clickable {
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    transition: opacity 0.2s ease;
+}
+
+.user-bar-name-clickable:hover,
+.user-bar-name-clickable:focus {
+    opacity: 0.75;
+    outline: none;
+}
+
+.modal-usuario-overlay[hidden] {
+    display: none !important;
+}
+
+.modal-usuario-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.modal-usuario {
+    width: 100%;
+    max-width: 560px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    animation: modalUsuarioEntrada 0.2s ease;
+}
+
+@keyframes modalUsuarioEntrada {
+    from {
+        transform: translateY(12px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-usuario-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 24px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+}
+
+.modal-usuario-header h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    color: var(--primary-color);
+}
+
+.modal-usuario-header p {
+    margin: 6px 0 0;
+    color: #555;
+    font-size: 0.95rem;
+}
+
+.modal-usuario-fechar {
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #333;
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+.modal-usuario-fechar:hover,
+.modal-usuario-fechar:focus {
+    background: #e9e9e9;
+    outline: 3px solid #c7d2fe;
+}
+
+.modal-usuario-form {
+    padding: 24px;
+}
+
+.modal-usuario-form .form-group {
+    margin-bottom: 18px;
+}
+
+.modal-usuario-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+.modal-usuario-form input {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
+    border: 2px solid #d0d0d0;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.modal-usuario-form input:focus {
+    border-color: var(--primary-color);
+    outline: 3px solid #dbeafe;
+}
+
+.modal-usuario-form input:disabled {
+    background: #f1f1f1;
+    color: #555;
+    cursor: not-allowed;
+}
+
+.modal-usuario-form small {
+    display: block;
+    margin-top: 6px;
+    color: var(--accent-color);
+    font-size: 0.85rem;
+}
+
+.modal-usuario-mensagem {
+    min-height: 24px;
+    margin: 8px 0 18px;
+    font-weight: 600;
+}
+
+.modal-usuario-mensagem.sucesso {
+    color: var(--success-color);
+}
+
+.modal-usuario-mensagem.erro {
+    color: var(--error-color);
+}
+
+.modal-usuario-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.modal-usuario-actions button {
+    min-height: 48px;
+    padding: 0 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+}
+
+.modal-usuario-actions .btn-secondary {
+    background: var(--secondary-color);
+    color: #ffffff;
+}
+
+.modal-usuario-actions .btn-primary {
+    background: var(--primary-color);
+    color: #ffffff;
+}
+
+.modal-usuario-actions .btn-secondary:hover,
+.modal-usuario-actions .btn-secondary:focus {
+    background: var(--secondary-color);
+}
+
+.modal-usuario-actions .btn-primary:hover,
+.modal-usuario-actions .btn-primary:focus {
+    background: var(--primary-color);
+}
+
+@media (max-width: 600px) {
+    .modal-usuario {
+        max-width: 100%;
+    }
+
+    .modal-usuario-header {
+        padding: 20px;
+    }
+
+    .modal-usuario-form {
+        padding: 20px;
+    }
+
+    .modal-usuario-actions {
+        flex-direction: column-reverse;
+    }
+
+    .modal-usuario-actions button {
+        width: 100%;
+    }
+}
