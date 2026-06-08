@@ -14,16 +14,13 @@
                 }
             })();
         </script>
-
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="icon" type="image/x-icon" href="./images/favicon.ico" />
-
         <title>Sistema Ouroguel - Locação de Equipamentos</title>
 
         <!-- CSS do Sistema -->
         <link rel="stylesheet" href="css/style.css" />
-
         <!-- Fontes -->
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -31,13 +28,11 @@
             href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap"
             rel="stylesheet"
         />
-
         <!-- Ícones -->
         <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         />
-
         <!-- Firebase SDKs -->
         <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -51,7 +46,6 @@
                 <div class="logo">
                     <img src="images/logo.png" alt="Logo Ouroguel" style="width: 425px" />
                 </div>
-
                 <nav class="nav">
                     <ul>
                         <li>
@@ -83,17 +77,24 @@
                 </nav>
             </div>
         </header>
-
         <!-- BARRA DO USUÁRIO - Abaixo do menu -->
         <div class="user-bar" id="userBar">
             <div class="container">
                 <div class="user-bar-welcome">
                     <i class="fas fa-user-circle"></i>
                     <div class="user-bar-info">
-                        <span class="user-bar-name" id="userBarName">Carregando...</span>
+                        <span
+                            class="user-bar-name user-bar-name-clickable"
+                            id="userBarName"
+                            role="button"
+                            tabindex="0"
+                            aria-haspopup="dialog"
+                            aria-controls="modalUsuario"
+                        >
+                            Carregando...
+                        </span>
                     </div>
                 </div>
-
                 <div class="user-bar-actions">
                     <div class="user-bar-role" id="userBarRole">
                         <i class="fas fa-shield-alt"></i>
@@ -103,9 +104,104 @@
                         <i class="fas fa-sign-out-alt"></i> Sair
                     </button>
                 </div>
+                <!-- MODAL DE USUÁRIO -->
+                <div class="modal-usuario-overlay" id="modalUsuario" hidden>
+                    <div
+                        class="modal-usuario"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="modalUsuarioTitulo"
+                    >
+                        <div class="modal-usuario-header">
+                            <div>
+                                <h2 id="modalUsuarioTitulo">
+                                    <i class="fas fa-user-edit"></i>
+                                    Dados do usuário
+                                </h2>
+                                <p>Edite suas informações de perfil.</p>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="modal-usuario-fechar"
+                                id="fecharModalUsuario"
+                                aria-label="Fechar modal"
+                            >
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <form id="formUsuario" class="modal-usuario-form">
+                            <div class="form-group">
+                                <label for="usuarioNome">Nome do usuário</label>
+                                <input
+                                    type="text"
+                                    id="usuarioNome"
+                                    name="usuarioNome"
+                                    placeholder="Digite o nome do usuário"
+                                    required
+                                    autocomplete="name"
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label for="usuarioEmail">E-mail de acesso</label>
+                                <input
+                                    type="email"
+                                    id="usuarioEmail"
+                                    name="usuarioEmail"
+                                    placeholder="Digite o novo e-mail"
+                                    required
+                                    autocomplete="email"
+                                />
+                                <small>
+                                    Ao alterar o e-mail, será enviada uma confirmação para o novo
+                                    endereço. A troca só será concluída após a confirmação.
+                                </small>
+                            </div>
+                            <div class="form-group">
+                                <label for="usuarioTelefone">Telefone</label>
+                                <input
+                                    type="tel"
+                                    id="usuarioTelefone"
+                                    name="usuarioTelefone"
+                                    placeholder="(31) 99999-9999"
+                                    autocomplete="tel"
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label for="usuarioCargo">Função</label>
+                                <input
+                                    type="text"
+                                    id="usuarioCargo"
+                                    name="usuarioCargo"
+                                    disabled
+                                    aria-describedby="usuarioCargoAjuda"
+                                />
+                                <small id="usuarioCargoAjuda">
+                                    Para alterar a função do usuário, entre em contato com o
+                                    suporte.
+                                </small>
+                            </div>
+
+                            <p class="modal-usuario-mensagem" id="modalUsuarioMensagem"></p>
+
+                            <div class="modal-usuario-actions">
+                                <button
+                                    type="button"
+                                    class="btn-secondary"
+                                    id="cancelarModalUsuario"
+                                >
+                                    Cancelar
+                                </button>
+                                <button type="submit" class="btn-primary" id="salvarUsuarioBtn">
+                                    <i class="fas fa-save"></i>
+                                    Salvar alterações
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
-
         <!-- Conteúdo principal -->
         <main class="main-content">
             <div class="container">
@@ -122,7 +218,6 @@
                 </section>
             </div>
         </main>
-
         <!-- Rodapé -->
         <footer class="footer">
             <div class="container">
