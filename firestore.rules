@@ -31,5 +31,17 @@ service cloud.firestore {
       allow read, create, update: if usuarioAutenticado();
       allow delete: if false;
     }
+
+    match /usuarios/{userId} {
+        allow read: if request.auth != null
+                    && request.auth.uid == userId;
+
+        allow create: if request.auth != null
+                        && request.auth.uid == userId;
+
+        allow update: if request.auth != null
+                        && request.auth.uid == userId
+                        && request.resource.data.cargo == resource.data.cargo;
+    }
   }
 }
