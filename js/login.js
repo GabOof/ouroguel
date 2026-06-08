@@ -211,6 +211,7 @@ async function handleRegister(e) {
 
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
+
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando conta...';
     submitBtn.disabled = true;
 
@@ -226,35 +227,65 @@ async function handleRegister(e) {
         const userCredential = await window.auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
 
+        if (!user.emailVerified) {
+            await user.sendEmailVerification({
+                url: window.location.origin + "/pages/login.html",
+                handleCodeInApp: false,
+            });
+
+            await window.auth.signOut();
+
+            alert(
+                "Seu e-mail ainda não foi confirmado. Enviamos um novo link de confirmação para sua caixa de entrada."
+            );
+
+            submitBtn.innerHTML = textoOriginal;
+            submitBtn.disabled = false;
+            isProcessingLogin = false;
+            return;
+        }
+
         await user.updateProfile({
             displayName: name,
         });
 
         await window.db.collection("usuarios").doc(user.uid).set({
+            uid: user.uid,
             nome: name,
-            email: email,
+            email: user.email,
             role: "user",
+            emailVerificado: user.emailVerified,
             dataCriacao: new Date().toISOString(),
             ultimoLogin: new Date().toISOString(),
             status: "ativo",
         });
 
-        localStorage.setItem("userLoggedIn", "true");
-        localStorage.setItem("userEmail", user.email);
-        localStorage.setItem("userId", user.uid);
-        localStorage.setItem("userRole", "user");
+        await user.sendEmailVerification({
+            url: window.location.origin + "/pages/login.html",
+            handleCodeInApp: false,
+        });
 
-        alert("✅ Conta criada com sucesso! Redirecionando...");
+        await window.auth.signOut();
 
-        setTimeout(() => {
-            window.location.href = "../index.html";
-        }, 1500);
+        localStorage.removeItem("userLoggedIn");
+        localStorage.removeItem("userEmail");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("userRole");
+        localStorage.removeItem("userName");
+
+        alert(
+            "✅ Conta criada com sucesso! Enviamos um e-mail de confirmação. Verifique sua caixa de entrada antes de fazer login."
+        );
+
+        showLogin();
+
+        document.getElementById("email").value = email;
+        document.getElementById("password").value = "";
     } catch (error) {
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-        isProcessingRegister = false;
+        console.error("Erro no registro:", error);
 
         let mensagem = "";
+
         switch (error.code) {
             case "auth/email-already-in-use":
                 mensagem = "❌ Este e-mail já está cadastrado.";
@@ -268,14 +299,21 @@ async function handleRegister(e) {
             case "auth/network-request-failed":
                 mensagem = "❌ Erro de conexão. Verifique sua internet.";
                 break;
+            case "auth/unauthorized-continue-uri":
+                mensagem = "❌ O domínio de redirecionamento não está autorizado no Firebase.";
+                break;
             case "permission-denied":
                 mensagem = "❌ Erro de permissão. Contate o administrador.";
                 break;
             default:
                 mensagem = "❌ Erro ao criar conta: " + error.message;
         }
+
         alert(mensagem);
-        console.error("Erro no registro:", error);
+    } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        isProcessingRegister = false;
     }
 }
 
