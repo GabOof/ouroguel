@@ -723,7 +723,10 @@ td {
 
 /* Página de login */
 .login-page {
-    background: linear-gradient(135deg, var(--primary-color) 40%, var(--secondary-color) 50%);
+    background:
+        linear-gradient(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.3)),
+        linear-gradient(135deg, var(--primary-color) 40%, var(--secondary-color) 50%);
+
     min-height: 100vh;
     display: flex;
     align-items: center;
