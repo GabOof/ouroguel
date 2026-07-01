@@ -411,12 +411,12 @@
         try {
             estoqueList.innerHTML = `
         <tr>
-          <td colspan="8" style="text-align: center; padding: 40px;">
-            <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #3498db;"></i>
-            <p>Carregando estoque...</p>
-          </td>
+            <td colspan="8" style="text-align: center; padding: 40px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #3498db;"></i>
+                <p>Carregando estoque...</p>
+            </td>
         </tr>
-      `;
+        `;
 
             estado.estoque = await EstoqueService.listarEstoque();
             estado.estoqueFiltrado = [...estado.estoque];
@@ -429,13 +429,13 @@
 
             estoqueList.innerHTML = `
         <tr>
-          <td colspan="8" style="text-align: center; padding: 40px; color: #e74c3c;">
-            <i class="fas fa-exclamation-triangle"></i>
-            <p>Erro ao carregar estoque</p>
-            <small>${escaparHTMLEstoque(error.message)}</small>
-          </td>
+            <td colspan="8" style="text-align: center; padding: 40px; color: #e74c3c;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Erro ao carregar estoque</p>
+                <small>${escaparHTMLEstoque(error.message)}</small>
+            </td>
         </tr>
-      `;
+        `;
 
             renderizarPaginacaoEstoque(0);
         }
@@ -460,47 +460,47 @@
 
         return `
         <tr>
-          <td>
-            <strong>${escaparHTMLEstoque(item.nomeEquipamento)}</strong>
-            <br><small>${escaparHTMLEstoque(item.categoria)}</small>
-          </td>
+            <td>
+                <strong>${escaparHTMLEstoque(item.nomeEquipamento)}</strong>
+                <br><small>${escaparHTMLEstoque(item.categoria)}</small>
+            </td>
 
-          <td>${escaparHTMLEstoque(item.categoria)}</td>
+            <td>${escaparHTMLEstoque(item.categoria)}</td>
 
-          <td>${quantidadeTotal}</td>
+            <td>${quantidadeTotal}</td>
 
-          <td>
-            <strong style="color: ${corBarra}">
-              ${quantidadeDisponivel}
-            </strong>
-            <div style="width: 100px; height: 8px; background: #eee; border-radius: 4px; margin-top: 5px;">
-              <div style="width: ${porcentagemDisponivel}%; height: 100%; background: ${corBarra}; border-radius: 4px;"></div>
-            </div>
-          </td>
+            <td>
+                <strong style="color: ${corBarra}">
+                ${quantidadeDisponivel}
+                </strong>
+                <div style="width: 100px; height: 8px; background: #eee; border-radius: 4px; margin-top: 5px;">
+                <div style="width: ${porcentagemDisponivel}%; height: 100%; background: ${corBarra}; border-radius: 4px;"></div>
+                </div>
+            </td>
 
-          <td>${quantidadeAlugada}</td>
+            <td>${quantidadeAlugada}</td>
 
-          <td>
-            <span class="status-badge ${status.classe}">
-              <i class="fas ${status.icone}"></i>
-              ${status.texto}
-            </span>
-          </td>
+            <td>
+                <span class="status-badge ${status.classe}">
+                <i class="fas ${status.icone}"></i>
+                ${status.texto}
+                </span>
+            </td>
 
-          <td>${formatarMoedaEstoque(item.valorDia || 0)}</td>
+            <td>${formatarMoedaEstoque(item.valorDia || 0)}</td>
 
-          <td>
-            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-              <button class="btn btn-small btn-primary" onclick="ajustarEstoqueRapido('${item.id}')">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="btn btn-small btn-info" onclick="visualizarDetalhes('${item.id}')">
-                <i class="fas fa-chart-bar"></i>
-              </button>
-            </div>
-          </td>
+            <td>
+                <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                <button title="Ajustar Estoque" class="btn btn-medium btn-primary" onclick="ajustarEstoqueRapido('${item.id}')">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button title="Visualizar Detalhes" class="btn btn-medium btn-info" onclick="visualizarDetalhes('${item.id}')">
+                    <i class="fas fa-chart-bar"></i>
+                </button>
+                </div>
+            </td>
         </tr>
-      `;
+        `;
     }
 
     function renderizarTabelaEstoque() {
@@ -513,12 +513,12 @@
         if (!estado.estoque.length) {
             estoqueList.innerHTML = `
         <tr>
-          <td colspan="8" class="empty-message">
-            <i class="fas fa-clipboard-list"></i>
-            <p>Nenhum equipamento cadastrado no estoque</p>
-          </td>
+            <td colspan="8" class="empty-message">
+                <i class="fas fa-clipboard-list"></i>
+                <p>Nenhum equipamento cadastrado no estoque</p>
+            </td>
         </tr>
-      `;
+        `;
 
             renderizarPaginacaoEstoque(0);
             return;
@@ -527,12 +527,12 @@
         if (!estado.estoqueFiltrado.length) {
             estoqueList.innerHTML = `
         <tr>
-          <td colspan="8" class="empty-message">
-            <i class="fas fa-search"></i>
-            <p>Nenhum equipamento encontrado</p>
-          </td>
+            <td colspan="8" class="empty-message">
+                <i class="fas fa-search"></i>
+                <p>Nenhum equipamento encontrado</p>
+            </td>
         </tr>
-      `;
+        `;
 
             renderizarPaginacaoEstoque(0);
             return;
@@ -576,31 +576,33 @@
 
         paginacao.innerHTML = `
         <div class="pagination-info">
-          Mostrando ${inicio} a ${fim} de ${totalEstoque} equipamentos
+            Mostrando ${inicio} a ${fim} de ${totalEstoque} equipamentos
         </div>
         <div class="pagination-actions">
-          <button
-            type="button"
-            class="btn btn-secondary pagination-btn"
-            onclick="mudarPaginaEstoque(${estado.paginaAtualEstoque - 1})"
-            ${estado.paginaAtualEstoque === 1 ? "disabled" : ""}
-          >
-            <i class="fas fa-chevron-left"></i> Anterior
-          </button>
-          <span class="pagination-current">
-            Página ${estado.paginaAtualEstoque} de ${totalPaginas}
-          </span>
+            <button
+            title="Página Anterior"
+                type="button"
+                class="btn btn-secondary pagination-btn"
+                onclick="mudarPaginaEstoque(${estado.paginaAtualEstoque - 1})"
+                ${estado.paginaAtualEstoque === 1 ? "disabled" : ""}
+            >
+                <i class="fas fa-chevron-left"></i> Anterior
+            </button>
+            <span class="pagination-current">
+                Página ${estado.paginaAtualEstoque} de ${totalPaginas}
+            </span>
 
-          <button
-            type="button"
-            class="btn btn-secondary pagination-btn"
-            onclick="mudarPaginaEstoque(${estado.paginaAtualEstoque + 1})"
-            ${estado.paginaAtualEstoque === totalPaginas ? "disabled" : ""}
-          >
-            Próxima <i class="fas fa-chevron-right"></i>
-          </button>
+            <button
+                title="Próxima Página"
+                type="button"
+                class="btn btn-secondary pagination-btn"
+                onclick="mudarPaginaEstoque(${estado.paginaAtualEstoque + 1})"
+                ${estado.paginaAtualEstoque === totalPaginas ? "disabled" : ""}
+            >
+                Próxima <i class="fas fa-chevron-right"></i>
+            </button>
         </div>
-      `;
+        `;
     }
 
     function mudarPaginaEstoque(novaPagina) {
@@ -825,23 +827,23 @@
         try {
             historicoList.innerHTML = `
         <tr>
-          <td colspan="6" style="text-align: center; padding: 40px;">
-            <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #3498db;"></i>
-            <p>Carregando histórico...</p>
-          </td>
-        </tr>
-      `;
+            <td colspan="6" style="text-align: center; padding: 40px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #3498db;"></i>
+                <p>Carregando histórico...</p>
+            </td>
+            </tr>
+        `;
 
             estado.ajustesHistorico = await EstoqueService.listarHistorico(50);
 
             if (!estado.ajustesHistorico.length) {
                 historicoList.innerHTML = `
-          <tr>
-            <td colspan="6" class="empty-message">
-              <i class="fas fa-history"></i>
-              <p>Nenhum ajuste registrado</p>
-            </td>
-          </tr>
+            <tr>
+                <td colspan="6" class="empty-message">
+                <i class="fas fa-history"></i>
+                <p>Nenhum ajuste registrado</p>
+                </td>
+        </tr>
         `;
                 return;
             }
@@ -887,29 +889,29 @@
 
                     return `
             <tr>
-              <td>${formatarDataEstoque(ajuste.data)}</td>
+                <td>${formatarDataEstoque(ajuste.data)}</td>
 
-              <td>${escaparHTMLEstoque(ajuste.equipamentoNome)}</td>
+                <td>${escaparHTMLEstoque(ajuste.equipamentoNome)}</td>
 
-              <td class="${tipoClass}">
-                <i class="fas ${tipoIcon}"></i>
-                ${tipoTexto}
-              </td>
-              <td>
-                <strong class="${
-                    ajuste.tipo === "entrada" || ajuste.tipo === "retorno"
-                        ? "text-success"
-                        : "text-danger"
-                }">
-                  ${sinal}${ajuste.quantidade}
-                </strong>
-              </td>
+                <td class="${tipoClass}">
+                    <i class="fas ${tipoIcon}"></i>
+                    ${tipoTexto}
+                </td>
+                <td>
+                    <strong class="${
+                        ajuste.tipo === "entrada" || ajuste.tipo === "retorno"
+                            ? "text-success"
+                            : "text-danger"
+                    }">
+                    ${sinal}${ajuste.quantidade}
+                    </strong>
+                </td>
 
-              <td>${escaparHTMLEstoque(ajuste.motivo)}</td>
+                <td>${escaparHTMLEstoque(ajuste.motivo)}</td>
 
-              <td>${escaparHTMLEstoque(ajuste.usuario || "Sistema")}</td>
+                <td>${escaparHTMLEstoque(ajuste.usuario || "Sistema")}</td>
             </tr>
-          `;
+            `;
                 })
                 .join("");
         } catch (error) {
@@ -917,13 +919,13 @@
 
             historicoList.innerHTML = `
         <tr>
-          <td colspan="6" style="text-align: center; padding: 40px; color: #e74c3c;">
-            <i class="fas fa-exclamation-triangle"></i>
-            <p>Erro ao carregar histórico</p>
-            <small>${escaparHTMLEstoque(error.message)}</small>
-          </td>
+            <td colspan="6" style="text-align: center; padding: 40px; color: #e74c3c;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Erro ao carregar histórico</p>
+                <small>${escaparHTMLEstoque(error.message)}</small>
+            </td>
         </tr>
-      `;
+        `;
         }
     }
 
