@@ -189,7 +189,11 @@
                     tipo: dadosAjuste.tipo,
                     quantidade,
                     motivo: dadosAjuste.motivo || "Ajuste manual",
-                    usuario: localStorage.getItem("userEmail") || "Sistema",
+                    usuario:
+                        localStorage.getItem("userName") ||
+                        firebase.auth().currentUser?.displayName ||
+                        firebase.auth().currentUser?.email ||
+                        "Sistema",
                     data: firebase.firestore.FieldValue.serverTimestamp(),
                 });
 
