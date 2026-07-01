@@ -728,32 +728,33 @@ function atualizarListaEquipamentos() {
 
             return `
         <tr>
-          <td>
-            <strong>${escaparHTMLAluguel(item.nomeEquipamento)}</strong>
-          </td>
-          <td>
-            <strong>${Number(item.quantidadeEstoque || item.quantidade || 0)}</strong>
-            <span class="linha-secundaria">unid. físicas</span>
-          </td>
+            <td>
+                <strong>${escaparHTMLAluguel(item.nomeEquipamento)}</strong>
+            </td>
+            <td>
+                <strong>${Number(item.quantidadeEstoque || item.quantidade || 0)}</strong>
+                <span class="linha-secundaria">unid. físicas</span>
+            </td>
 
-          <td>${escaparHTMLAluguel(unidade)}</td>
+            <td>${escaparHTMLAluguel(unidade)}</td>
 
-          <td>
-            <span class="status-badge status-warning">
-              A calcular na devolução
-            </span>
-          </td>
-          <td>
-            <button
-              type="button"
-              class="btn btn-small btn-danger"
-              onclick="removerEquipamento(${index})"
-            >
-              <i class="fas fa-trash"></i>
-            </button>
-          </td>
-        </tr>
-      `;
+            <td>
+                <span class="status-badge status-warning">
+                A calcular na devolução
+                </span>
+            </td>
+            <td>
+                <button
+                type="button"
+                title="Remover equipamento"
+                class="btn btn-medium btn-danger"
+                onclick="removerEquipamento(${index})"
+                >
+                <i class="fas fa-trash"></i>
+                </button>
+            </td>
+            </tr>
+        `;
         })
         .join("");
 }
@@ -867,12 +868,12 @@ async function carregarAlugueis() {
 
     try {
         alugueisList.innerHTML = `
-      <tr>
-        <td colspan="8" style="text-align: center; padding: 40px;">
-          <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #3498db;"></i>
-          <p>Carregando aluguéis...</p>
-        </td>
-      </tr>
+        <tr>
+            <td colspan="8" style="text-align: center; padding: 40px;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #3498db;"></i>
+            <p>Carregando aluguéis...</p>
+            </td>
+        </tr>
     `;
 
         alugueis = await AluguelService.listar();
@@ -883,13 +884,13 @@ async function carregarAlugueis() {
         console.error("Erro ao carregar aluguéis:", error);
 
         alugueisList.innerHTML = `
-      <tr>
-        <td colspan="8" style="text-align: center; padding: 40px; color: #e74c3c;">
-          <i class="fas fa-exclamation-triangle"></i>
-          <p>Erro ao carregar aluguéis</p>
-          <small>${escaparHTMLAluguel(error.message)}</small>
-        </td>
-      </tr>
+        <tr>
+            <td colspan="8" style="text-align: center; padding: 40px; color: #e74c3c;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>Erro ao carregar aluguéis</p>
+            <small>${escaparHTMLAluguel(error.message)}</small>
+            </td>
+        </tr>
     `;
     }
 }
@@ -945,12 +946,12 @@ function renderizarTabelaAlugueis() {
 
     if (!alugueisFiltrados.length) {
         alugueisList.innerHTML = `
-      <tr>
-        <td colspan="8" class="empty-message">
-          <i class="fas fa-file-contract"></i>
-          <p>Nenhum aluguel encontrado</p>
-        </td>
-      </tr>
+        <tr>
+            <td colspan="8" class="empty-message">
+            <i class="fas fa-file-contract"></i>
+            <p>Nenhum aluguel encontrado</p>
+            </td>
+        </tr>
     `;
 
         renderizarPaginacaoAlugueis(0);
@@ -993,31 +994,31 @@ function renderizarPaginacaoAlugueis(totalAlugueis) {
 
     paginacao.innerHTML = `
     <div class="pagination-info">
-      Mostrando ${inicio} a ${fim} de ${totalAlugueis} aluguéis
+        Mostrando ${inicio} a ${fim} de ${totalAlugueis} aluguéis
     </div>
     <div class="pagination-actions">
-      <button
-        type="button"
-        class="btn btn-secondary pagination-btn"
-        onclick="mudarPaginaAlugueis(${paginaAtualAlugueis - 1})"
-        ${paginaAtualAlugueis === 1 ? "disabled" : ""}
-      >
+        <button
+            type="button"
+            class="btn btn-secondary pagination-btn"
+            onclick="mudarPaginaAlugueis(${paginaAtualAlugueis - 1})"
+            ${paginaAtualAlugueis === 1 ? "disabled" : ""}
+        >
         <i class="fas fa-chevron-left"></i> Anterior
-      </button>
-      <span class="pagination-current">
-        Página ${paginaAtualAlugueis} de ${totalPaginas}
-      </span>
+        </button>
+        <span class="pagination-current">
+            Página ${paginaAtualAlugueis} de ${totalPaginas}
+        </span>
 
-      <button
-        type="button"
-        class="btn btn-secondary pagination-btn"
-        onclick="mudarPaginaAlugueis(${paginaAtualAlugueis + 1})"
-        ${paginaAtualAlugueis === totalPaginas ? "disabled" : ""}
-      >
+        <button
+            type="button"
+            class="btn btn-secondary pagination-btn"
+            onclick="mudarPaginaAlugueis(${paginaAtualAlugueis + 1})"
+            ${paginaAtualAlugueis === totalPaginas ? "disabled" : ""}
+        >
         Próxima <i class="fas fa-chevron-right"></i>
-      </button>
+        </button>
     </div>
-  `;
+    `;
 }
 
 function mudarPaginaAlugueis(novaPagina) {
@@ -1073,66 +1074,69 @@ function montarLinhaAluguel(aluguel) {
     const botaoFinalizar =
         aluguel.status === "finalizado"
             ? `
-        <button class="btn btn-small btn-secondary" disabled>
-          <i class="fas fa-check"></i>
+        <button title="Aluguel Finalizado" class="btn btn-medium btn-secondary" disabled>
+            <i class="fas fa-check"></i>
         </button>
-      `
+        `
             : `
         <button
-          class="btn btn-small btn-danger"
-          onclick="abrirModalFechamento('${aluguel.id}')"
-          title="Finalizar e calcular cobrança"
+        title="Finalizar e calcular cobrança"
+            class="btn btn-medium btn-danger"
+            onclick="abrirModalFechamento('${aluguel.id}')"
+            title="Finalizar e calcular cobrança"
         >
-          <i class="fas fa-clipboard-check"></i>
+            <i class="fas fa-clipboard-check"></i>
         </button>
-      `;
+        `;
 
     return `
     <tr>
-      <td>
-        <strong>${escaparHTMLAluguel(aluguel.clienteNome || "")}</strong>
-        <br><small>${escaparHTMLAluguel(aluguel.clienteCelular || "")}</small>
-      </td>
-      <td>
-        <small>${equipamentosResumo}</small>
-      </td>
+        <td>
+            <strong>${escaparHTMLAluguel(aluguel.clienteNome || "")}</strong>
+            <br><small>${escaparHTMLAluguel(aluguel.clienteCelular || "")}</small>
+        </td>
+        <td>
+            <small>${equipamentosResumo}</small>
+        </td>
 
-      <td>${formatarDataAluguel(aluguel.dataInicio)}</td>
+        <td>${formatarDataAluguel(aluguel.dataInicio)}</td>
 
-      <td>${formatarDataAluguel(aluguel.dataDevolucaoReal)}</td>
+        <td>${formatarDataAluguel(aluguel.dataDevolucaoReal)}</td>
 
-      <td>${valorTexto}</td>
+        <td>${valorTexto}</td>
 
-      <td>${pagamentoTexto}</td>
+        <td>${pagamentoTexto}</td>
 
-      <td>
-        <span class="status-badge ${statusClass}">
-          ${statusText}
-        </span>
-      </td>
-      <td>
-        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-          <button
-            class="btn btn-small btn-primary"
-            onclick="visualizarAluguel('${aluguel.id}')"
+        <td>
+            <span class="status-badge ${statusClass}">
+            ${statusText}
+            </span>
+        </td>
+        <td>
+            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+            <button
             title="Visualizar"
-          >
-            <i class="fas fa-eye"></i>
-          </button>
+                class="btn btn-medium btn-primary"
+                onclick="visualizarAluguel('${aluguel.id}')"
+                title="Visualizar"
+            >
+                <i class="fas fa-eye"></i>
+            </button>
 
-          <button
-            class="btn btn-small btn-success"
-            onclick="imprimirAluguel('${aluguel.id}')"
+            <button
             title="Imprimir"
-          >
-            <i class="fas fa-print"></i>
-          </button>
+                class="btn btn-medium btn-success"
+                onclick="imprimirAluguel('${aluguel.id}')"
+                title="Imprimir"
+            >
+                <i class="fas fa-print"></i>
+            </button>
 
-          ${botaoFinalizar}
-        </div>
-      </td>
+            ${botaoFinalizar}
+            </div>
+        </td>
     </tr>
-  `;
+    `;
 }
 
 function obterTextoPagamento(aluguel) {
@@ -1218,37 +1222,37 @@ function montarItensFechamento() {
 
             return `
         <tr data-index="${index}">
-          <td>
-            <strong>${escaparHTMLAluguel(item.nomeEquipamento || item.nome)}</strong>
-            <small class="linha-secundaria">Cobrança por ${escaparHTMLAluguel(unidade)}</small>
-          </td>
-          <td>
-            <strong>${quantidadeEstoque}</strong>
-            <small class="linha-secundaria">unid. físicas</small>
-          </td>
-          <td>
-            <input
-              type="text"
-              class="fechamento-quantidade"
-              data-index="${index}"
-              value="${String(quantidadeCobradaPadrao).replace(".", ",")}"
-            />
-          </td>
-          <td>
-            <input
-              type="text"
-              class="fechamento-valor-unitario"
-              data-index="${index}"
-              value="0,00"
-            />
-          </td>
-          <td>
-            <strong class="fechamento-subtotal-item" data-index="${index}">
-              R$ 0,00
-            </strong>
-          </td>
+            <td>
+                <strong>${escaparHTMLAluguel(item.nomeEquipamento || item.nome)}</strong>
+                <small class="linha-secundaria">Cobrança por ${escaparHTMLAluguel(unidade)}</small>
+            </td>
+            <td>
+                <strong>${quantidadeEstoque}</strong>
+                <small class="linha-secundaria">unid. físicas</small>
+            </td>
+            <td>
+                <input
+                type="text"
+                class="fechamento-quantidade"
+                data-index="${index}"
+                value="${String(quantidadeCobradaPadrao).replace(".", ",")}"
+                />
+            </td>
+            <td>
+                <input
+                type="text"
+                class="fechamento-valor-unitario"
+                data-index="${index}"
+                value="0,00"
+                />
+            </td>
+            <td>
+                <strong class="fechamento-subtotal-item" data-index="${index}">
+                R$ 0,00
+                </strong>
+            </td>
         </tr>
-      `;
+        `;
         })
         .join("");
 
