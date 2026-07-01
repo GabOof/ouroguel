@@ -1114,14 +1114,37 @@ function montarLinhaAluguel(aluguel) {
         </td>
         <td>
             <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-            <button
-            title="Visualizar"
-                class="btn btn-medium btn-primary"
-                onclick="visualizarAluguel('${aluguel.id}')"
-                title="Visualizar"
-            >
-                <i class="fas fa-eye"></i>
-            </button>
+            ${
+                aluguel.status === "finalizado" && aluguel.statusPagamento !== "pago"
+                    ? `
+        <button
+            title="Cobrar aluguel"
+            class="btn btn-medium btn-primary"
+            onclick="abrirModalCobrancaAluguel('${aluguel.id}')"
+        >
+            <i class="fas fa-dollar-sign"></i>
+        </button>
+        `
+                    : aluguel.status === "finalizado" && aluguel.statusPagamento === "pago"
+                      ? `
+        <button
+            title="Pagamento finalizado"
+            class="btn btn-medium btn-secondary"
+            disabled
+        >
+            <i class="fas fa-check-circle"></i>
+        </button>
+        `
+                      : `
+        <button
+            title="Finalize a devolução antes de cobrar"
+            class="btn btn-medium btn-secondary"
+            disabled
+        >
+            <i class="fas fa-dollar-sign"></i>
+        </button>
+        `
+            }
 
             <button
             title="Imprimir"
@@ -1460,17 +1483,15 @@ async function confirmarFechamentoAluguel() {
             itensFechamento,
             desconto: parseNumeroBR(valorCampo("descontoFechamento")),
             acrescimo: parseNumeroBR(valorCampo("acrescimoFechamento")),
-            valorPago:
-                valorCampo("valorPagoFechamento") === ""
-                    ? undefined
-                    : parseNumeroBR(valorCampo("valorPagoFechamento")),
-            formaPagamento: valorCampo("formaPagamentoFechamento"),
+            valorPago: 0,
+            formaPagamento: "",
+            statusPagamento: "pendente",
             observacoesFechamento: valorCampo("observacoesFechamento"),
         });
 
         mostrarSucessoAluguel(
             "Sucesso",
-            "Aluguel finalizado, estoque devolvido e cobrança calculada."
+            "Devolução registrada, estoque devolvido e valor calculado. O pagamento ficou pendente."
         );
 
         fecharModalFechamento();
@@ -1493,7 +1514,7 @@ async function confirmarFechamentoAluguel() {
 // VISUALIZAÇÃO, IMPRESSÃO E LIMPEZA
 // ============================================
 
-function visualizarAluguel(aluguelId) {
+function abrirModalCobrancaAluguel(aluguelId) {
     const aluguel = alugueis.find((item) => item.id === aluguelId);
 
     if (!aluguel) {
@@ -1501,38 +1522,310 @@ function visualizarAluguel(aluguelId) {
         return;
     }
 
-    const equipamentos = aluguel.equipamentosDetalhes || aluguel.equipamentos || [];
+    if (aluguel.status !== "finalizado") {
+        mostrarAvisoAluguel(
+            "Atenção",
+            "É necessário finalizar a devolução antes de cobrar o aluguel."
+        );
+        return;
+    }
 
-    const listaEquipamentos = equipamentos
-        .map((item) => {
-            const quantidadeEstoque = item.quantidadeEstoque || item.quantidade || 0;
-            const quantidadeCobrada = item.quantidadeCobradaFinal || item.quantidadeCobrada || "-";
-            const unidade = obterRotuloUnidadeCobranca(item);
+    if (aluguel.statusPagamento === "pago") {
+        mostrarAvisoAluguel("Atenção", "Este aluguel já está totalmente pago.");
+        return;
+    }
 
-            return (
-                `${quantidadeEstoque}x ${item.nomeEquipamento || item.nome}` +
-                ` | Cobrança: ${quantidadeCobrada} ${unidade}`
-            );
-        })
-        .join("\n");
+    let modal = document.getElementById("modalCobrancaAluguel");
 
-    alert(
-        `Cliente: ${aluguel.clienteNome || ""}\n` +
-            `Retirada: ${formatarDataAluguel(aluguel.dataInicio)}\n` +
-            `Devolução: ${formatarDataAluguel(aluguel.dataDevolucaoReal)}\n` +
-            `Status: ${aluguel.status || ""}\n` +
-            `Período final: ${obterTextoPeriodo(aluguel.periodo || aluguel.periodoFinal)}\n` +
-            `Duração real: ${aluguel.duracaoReal || "-"}\n` +
-            `Valor total: ${
-                aluguel.status === "finalizado"
-                    ? formatarMoedaAluguel(aluguel.valorTotal || 0)
-                    : "A calcular na devolução"
-            }\n` +
-            `Valor pago: ${formatarMoedaAluguel(aluguel.valorPago || 0)}\n` +
-            `Saldo: ${formatarMoedaAluguel(aluguel.saldo || 0)}\n\n` +
-            `Equipamentos:\n${listaEquipamentos}`
-    );
+    if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "modalCobrancaAluguel";
+        modal.className = "modal-usuario-overlay";
+
+        modal.innerHTML = `
+            <div class="modal-usuario modal-cobranca-padrao">
+                <div class="modal-usuario-header">
+                    <div>
+                        <h2>
+                            <i class="fas fa-dollar-sign"></i>
+                            Cobrar Aluguel
+                        </h2>
+                        <p>Registre pagamento total ou parcial do aluguel.</p>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="modal-usuario-fechar"
+                        onclick="fecharModalCobrancaAluguel()"
+                        title="Fechar"
+                    >
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-usuario-form">
+                    <input type="hidden" id="cobrancaAluguelId">
+                    <div class="cobranca-resumo">
+                        <div>
+                            <span>Cliente</span>
+                            <strong id="cobrancaClienteNome">-</strong>
+                        </div>
+                        <div>
+                            <span>Valor total</span>
+                            <strong id="cobrancaValorTotal">R$ 0,00</strong>
+                        </div>
+                        <div>
+                            <span>Já pago</span>
+                            <strong id="cobrancaValorJaPago">R$ 0,00</strong>
+                        </div>
+                        <div>
+                            <span>Saldo atual</span>
+                            <strong id="cobrancaSaldoAtual">R$ 0,00</strong>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Valor recebido agora</label>
+                            <input
+                                type="text"
+                                id="cobrancaValorPagoAgora"
+                                placeholder="Ex.: 150,00"
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label>Forma de pagamento</label>
+                            <select id="cobrancaFormaPagamento">
+                                <option value="">Selecione</option>
+                                <option value="dinheiro">Dinheiro</option>
+                                <option value="pix">Pix</option>
+                                <option value="cartao_credito">Cartão de Crédito</option>
+                                <option value="cartao_debito">Cartão de Débito</option>
+                                <option value="boleto">Boleto</option>
+                                <option value="outro">Outro</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Observações do pagamento</label>
+                        <textarea
+                            id="cobrancaObservacoes"
+                            rows="3"
+                            placeholder="Ex.: Cliente pagou metade no Pix e combinará o restante depois."
+                        ></textarea>
+                    </div>
+                    <div class="cobranca-preview">
+                        <div>
+                            <span>Novo total pago</span>
+                            <strong id="cobrancaNovoTotalPago">R$ 0,00</strong>
+                        </div>
+                        <div>
+                            <span>Novo saldo</span>
+                            <strong id="cobrancaNovoSaldo">R$ 0,00</strong>
+                        </div>
+                        <div>
+                            <span>Status após pagamento</span>
+                            <strong id="cobrancaNovoStatus">Pendente</strong>
+                        </div>
+                    </div>
+                    <div class="modal-usuario-actions">
+                        <button
+                            type="button"
+                            class="btn-secondary"
+                            onclick="fecharModalCobrancaAluguel()"
+                        >
+                            <i class="fas fa-times"></i>
+                            Cancelar
+                        </button>
+
+                        <button
+                            type="button"
+                            class="btn-primary"
+                            onclick="confirmarPagamentoAluguel()"
+                        >
+                            <i class="fas fa-check"></i>
+                            Registrar Pagamento
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        document
+            .getElementById("cobrancaValorPagoAgora")
+            ?.addEventListener("input", recalcularPreviewCobranca);
+
+        document
+            .getElementById("cobrancaValorPagoAgora")
+            ?.addEventListener("change", recalcularPreviewCobranca);
+    }
+
+    const valorTotal = Number(aluguel.valorTotal || 0);
+    const valorPago = Number(aluguel.valorPago || 0);
+    const saldo = Number(aluguel.saldo ?? Math.max(0, valorTotal - valorPago));
+
+    preencherCampo("cobrancaAluguelId", aluguel.id);
+    preencherCampo("cobrancaValorPagoAgora", "");
+    preencherCampo("cobrancaFormaPagamento", "");
+    preencherCampo("cobrancaObservacoes", "");
+
+    document.getElementById("cobrancaClienteNome").textContent = aluguel.clienteNome || "-";
+    document.getElementById("cobrancaValorTotal").textContent = formatarMoedaAluguel(valorTotal);
+    document.getElementById("cobrancaValorJaPago").textContent = formatarMoedaAluguel(valorPago);
+    document.getElementById("cobrancaSaldoAtual").textContent = formatarMoedaAluguel(saldo);
+
+    modal.dataset.valorTotal = valorTotal;
+    modal.dataset.valorPago = valorPago;
+    modal.dataset.saldo = saldo;
+
+    recalcularPreviewCobranca();
+
+    modal.hidden = false;
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
+
+    setTimeout(() => {
+        document.getElementById("cobrancaValorPagoAgora")?.focus();
+    }, 100);
 }
+
+function fecharModalCobrancaAluguel() {
+    const modal = document.getElementById("modalCobrancaAluguel");
+
+    if (!modal) {
+        return;
+    }
+
+    modal.hidden = true;
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
+}
+
+function recalcularPreviewCobranca() {
+    const modal = document.getElementById("modalCobrancaAluguel");
+
+    if (!modal) {
+        return;
+    }
+
+    const valorTotal = Number(modal.dataset.valorTotal || 0);
+    const valorPagoAnterior = Number(modal.dataset.valorPago || 0);
+    const valorPagoAgora = parseNumeroBR(valorCampo("cobrancaValorPagoAgora"));
+
+    const novoTotalPago = Math.min(valorTotal, valorPagoAnterior + valorPagoAgora);
+    const novoSaldo = Math.max(0, valorTotal - novoTotalPago);
+
+    let novoStatus = "Pendente";
+
+    if (novoSaldo <= 0) {
+        novoStatus = "Pago";
+    } else if (novoTotalPago > 0) {
+        novoStatus = "Parcial";
+    }
+
+    document.getElementById("cobrancaNovoTotalPago").textContent =
+        formatarMoedaAluguel(novoTotalPago);
+
+    document.getElementById("cobrancaNovoSaldo").textContent = formatarMoedaAluguel(novoSaldo);
+
+    document.getElementById("cobrancaNovoStatus").textContent = novoStatus;
+}
+
+async function confirmarPagamentoAluguel() {
+    const aluguelId = valorCampo("cobrancaAluguelId");
+    const valorPagoAgora = parseNumeroBR(valorCampo("cobrancaValorPagoAgora"));
+    const formaPagamento = valorCampo("cobrancaFormaPagamento");
+    const observacoesPagamento = valorCampo("cobrancaObservacoes");
+
+    if (!aluguelId) {
+        mostrarErroAluguel("Erro", "Nenhum aluguel selecionado para cobrança.");
+        return;
+    }
+
+    if (valorPagoAgora <= 0) {
+        mostrarErroAluguel("Erro", "Informe um valor recebido maior que zero.");
+        return;
+    }
+
+    if (!formaPagamento) {
+        mostrarErroAluguel("Erro", "Selecione a forma de pagamento.");
+        return;
+    }
+
+    const aluguel = alugueis.find((item) => item.id === aluguelId);
+
+    if (!aluguel) {
+        mostrarErroAluguel("Erro", "Aluguel não encontrado.");
+        return;
+    }
+
+    const valorTotal = Number(aluguel.valorTotal || 0);
+    const valorPagoAnterior = Number(aluguel.valorPago || 0);
+    const novoValorPago = Math.min(valorTotal, valorPagoAnterior + valorPagoAgora);
+    const novoSaldo = Math.max(0, valorTotal - novoValorPago);
+
+    let novoStatusPagamento = "pendente";
+
+    if (novoSaldo <= 0) {
+        novoStatusPagamento = "pago";
+    } else if (novoValorPago > 0) {
+        novoStatusPagamento = "parcial";
+    }
+
+    const pagamento = {
+        valor: valorPagoAgora,
+        formaPagamento,
+        observacoes: observacoesPagamento,
+        dataPagamento: firebase.firestore.Timestamp.now(),
+    };
+
+    const btnConfirmar = document.querySelector("#modalCobrancaAluguel .btn-primary");
+
+    const textoOriginal = btnConfirmar ? btnConfirmar.innerHTML : "";
+
+    if (btnConfirmar) {
+        btnConfirmar.disabled = true;
+        btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+    }
+
+    try {
+        const db = await aguardarFirebaseTelaAluguel();
+
+        await db
+            .collection("alugueis")
+            .doc(aluguelId)
+            .update({
+                valorPago: novoValorPago,
+                saldo: novoSaldo,
+                statusPagamento: novoStatusPagamento,
+                formaPagamento,
+                ultimoPagamentoEm: firebase.firestore.FieldValue.serverTimestamp(),
+                pagamentos: firebase.firestore.FieldValue.arrayUnion(pagamento),
+            });
+
+        mostrarSucessoAluguel(
+            "Sucesso",
+            novoStatusPagamento === "pago"
+                ? "Pagamento finalizado com sucesso."
+                : "Pagamento parcial registrado com sucesso."
+        );
+
+        fecharModalCobrancaAluguel();
+        await carregarAlugueis();
+    } catch (error) {
+        console.error("Erro ao registrar pagamento:", error);
+        mostrarErroAluguel("Erro", "Erro ao registrar pagamento: " + error.message);
+    } finally {
+        if (btnConfirmar) {
+            btnConfirmar.disabled = false;
+            btnConfirmar.innerHTML = textoOriginal;
+        }
+    }
+}
+
+window.abrirModalCobrancaAluguel = abrirModalCobrancaAluguel;
+window.fecharModalCobrancaAluguel = fecharModalCobrancaAluguel;
+window.confirmarPagamentoAluguel = confirmarPagamentoAluguel;
 
 function imprimirAluguel(aluguelId) {
     localStorage.setItem("aluguelParaImprimir", aluguelId);
