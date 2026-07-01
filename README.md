@@ -121,7 +121,7 @@ O arquivo `.firebaserc` deve apontar para o projeto Firebase:
 Execute:
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
 Depois acesse:
