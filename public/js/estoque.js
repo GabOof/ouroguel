@@ -91,7 +91,7 @@
 
                 try {
                     const snapshot = await db
-                        .collection("historicoEstoque")
+                        .collection("historico_ajustes")
                         .orderBy("data", "desc")
                         .limit(limite)
                         .get();
@@ -183,7 +183,7 @@
                     dataAtualizacao: firebase.firestore.FieldValue.serverTimestamp(),
                 });
 
-                await db.collection("historicoEstoque").add({
+                await db.collection("historico_ajustes").add({
                     equipamentoId: dadosAjuste.equipamentoId,
                     equipamentoNome: equipamento.nomeEquipamento || "Equipamento sem nome",
                     tipo: dadosAjuste.tipo,
