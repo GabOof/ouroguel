@@ -1,267 +1,249 @@
 // Configuração de backup
 const BACKUP_CONFIG = {
-  autoBackup: true,
-  backupInterval: 24 * 60 * 60 * 1000, // 24 horas em milissegundos
-  maxBackups: 30, // Mantém últimos 30 backups
-  backupPath: "backups/",
+    autoBackup: true,
+    backupInterval: 24 * 60 * 60 * 1000, // 24 horas em milissegundos
+    maxBackups: 30, // Mantém últimos 30 backups
+    backupPath: "backups/",
 };
 
 // Inicializar sistema de backup
 function initBackupSystem() {
-  if (!BACKUP_CONFIG.autoBackup) return;
+    if (!BACKUP_CONFIG.autoBackup) return;
 
-  // Verificar se é administrador
-  if (!checkPermission("admin")) return;
+    // Verificar se é administrador
+    if (!checkPermission("admin")) return;
 
-  // Executar backup periódico
-  setInterval(async () => {
-    try {
-      await realizarBackupAutomatico();
-    } catch (error) {
-      console.error("Erro no backup automático:", error);
-    }
-  }, BACKUP_CONFIG.backupInterval);
+    // Executar backup periódico
+    setInterval(async () => {
+        try {
+            await realizarBackupAutomatico();
+        } catch (error) {
+            console.error("Erro no backup automático:", error);
+        }
+    }, BACKUP_CONFIG.backupInterval);
 
-  // Executar primeiro backup após 1 minuto
-  setTimeout(async () => {
-    try {
-      await realizarBackupAutomatico();
-    } catch (error) {
-      console.error("Erro no backup inicial:", error);
-    }
-  }, 60000);
+    // Executar primeiro backup após 1 minuto
+    setTimeout(async () => {
+        try {
+            await realizarBackupAutomatico();
+        } catch (error) {
+            console.error("Erro no backup inicial:", error);
+        }
+    }, 60000);
 }
 
 // Função para realizar backup automático
 async function realizarBackupAutomatico() {
-  try {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const backupName = `backup_auto_${timestamp}`;
+    try {
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const backupName = `backup_auto_${timestamp}`;
 
-    // Realizar backup
-    const backupData = await criarBackupCompleto();
+        // Realizar backup
+        const backupData = await criarBackupCompleto();
 
-    // Salvar no localStorage (para backups pequenos)
-    salvarBackupLocal(backupName, backupData);
+        // Salvar no localStorage (para backups pequenos)
+        salvarBackupLocal(backupName, backupData);
 
-    // Limitar número de backups
-    gerenciarBackupsLocais();
-  } catch (error) {
-    console.error("Erro no backup automático:", error);
-  }
+        // Limitar número de backups
+        gerenciarBackupsLocais();
+    } catch (error) {
+        console.error("Erro no backup automático:", error);
+    }
 }
 
 // Função para criar backup completo
 async function criarBackupCompleto() {
-  const backup = {
-    metadata: {
-      sistema: "Ouroguel Locação de Equipamentos",
-      versao: "1.0.0",
-      dataCriacao: new Date().toISOString(),
-      totalRegistros: 0,
-    },
-    dados: {},
-  };
+    const backup = {
+        metadata: {
+            sistema: "Ouroguel Locação de Equipamentos",
+            versao: "1.0.0",
+            dataCriacao: new Date().toISOString(),
+            totalRegistros: 0,
+        },
+        dados: {},
+    };
 
-  // Coleções para backup
-  const collections = [
-    "clientes",
-    "equipamentos",
-    "alugueis",
-    "usuarios",
-    "historico_ajustes",
-  ];
+    // Coleções para backup
+    const collections = ["clientes", "equipamentos", "alugueis", "usuarios", "historico_ajustes"];
 
-  for (const collectionName of collections) {
-    try {
-      const snapshot = await db.collection(collectionName).get();
-      const data = [];
+    for (const collectionName of collections) {
+        try {
+            const snapshot = await db.collection(collectionName).get();
+            const data = [];
 
-      snapshot.forEach((doc) => {
-        data.push({
-          id: doc.id,
-          ...doc.data(),
-        });
-      });
+            snapshot.forEach((doc) => {
+                data.push({
+                    id: doc.id,
+                    ...doc.data(),
+                });
+            });
 
-      backup.dados[collectionName] = data;
-      backup.metadata.totalRegistros += data.length;
-    } catch (error) {
-      console.error(`Erro ao fazer backup de ${collectionName}:`, error);
-      backup.dados[collectionName] = [];
+            backup.dados[collectionName] = data;
+            backup.metadata.totalRegistros += data.length;
+        } catch (error) {
+            console.error(`Erro ao fazer backup de ${collectionName}:`, error);
+            backup.dados[collectionName] = [];
+        }
     }
-  }
 
-  return backup;
+    return backup;
 }
 
 // Função para salvar backup localmente
 function salvarBackupLocal(backupName, backupData) {
-  try {
-    // Converter para JSON compactado
-    const backupString = JSON.stringify(backupData);
+    try {
+        // Converter para JSON compactado
+        const backupString = JSON.stringify(backupData);
 
-    // Salvar no localStorage
-    localStorage.setItem(`backup_${backupName}`, backupString);
+        // Salvar no localStorage
+        localStorage.setItem(`backup_${backupName}`, backupString);
 
-    // Atualizar lista de backups
-    const backups = JSON.parse(localStorage.getItem("backup_list") || "[]");
-    backups.unshift({
-      nome: backupName,
-      data: new Date().toISOString(),
-      tamanho: backupString.length,
-      registros: backupData.metadata.totalRegistros,
-    });
+        // Atualizar lista de backups
+        const backups = JSON.parse(localStorage.getItem("backup_list") || "[]");
+        backups.unshift({
+            nome: backupName,
+            data: new Date().toISOString(),
+            tamanho: backupString.length,
+            registros: backupData.metadata.totalRegistros,
+        });
 
-    // Manter apenas os últimos BACKUP_CONFIG.maxBackups
-    backups.splice(BACKUP_CONFIG.maxBackups);
-    localStorage.setItem("backup_list", JSON.stringify(backups));
-  } catch (error) {
-    console.error("Erro ao salvar backup local:", error);
-  }
+        // Manter apenas os últimos BACKUP_CONFIG.maxBackups
+        backups.splice(BACKUP_CONFIG.maxBackups);
+        localStorage.setItem("backup_list", JSON.stringify(backups));
+    } catch (error) {
+        console.error("Erro ao salvar backup local:", error);
+    }
 }
 
 // Função para gerenciar backups locais
 function gerenciarBackupsLocais() {
-  try {
-    const backups = JSON.parse(localStorage.getItem("backup_list") || "[]");
+    try {
+        const backups = JSON.parse(localStorage.getItem("backup_list") || "[]");
 
-    if (backups.length > BACKUP_CONFIG.maxBackups) {
-      // Remover backups antigos
-      const backupsParaRemover = backups.slice(BACKUP_CONFIG.maxBackups);
+        if (backups.length > BACKUP_CONFIG.maxBackups) {
+            // Remover backups antigos
+            const backupsParaRemover = backups.slice(BACKUP_CONFIG.maxBackups);
 
-      backupsParaRemover.forEach((backup) => {
-        localStorage.removeItem(`backup_${backup.nome}`);
-      });
+            backupsParaRemover.forEach((backup) => {
+                localStorage.removeItem(`backup_${backup.nome}`);
+            });
 
-      // Atualizar lista
-      const backupsAtuais = backups.slice(0, BACKUP_CONFIG.maxBackups);
-      localStorage.setItem("backup_list", JSON.stringify(backupsAtuais));
+            // Atualizar lista
+            const backupsAtuais = backups.slice(0, BACKUP_CONFIG.maxBackups);
+            localStorage.setItem("backup_list", JSON.stringify(backupsAtuais));
+        }
+    } catch (error) {
+        console.error("Erro ao gerenciar backups:", error);
     }
-  } catch (error) {
-    console.error("Erro ao gerenciar backups:", error);
-  }
 }
 
 // Função para exportar dados para JSON
 async function exportarParaJSON() {
-  try {
-    mostrarCarregamentoBackup();
+    try {
+        mostrarCarregamentoBackup();
 
-    const backupData = await criarBackupCompleto();
-    const dataStr = JSON.stringify(backupData, null, 2);
-    const dataUri =
-      "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
+        const backupData = await criarBackupCompleto();
+        const dataStr = JSON.stringify(backupData, null, 2);
+        const dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
 
-    const exportFileDefaultName = `backup_ouroguel_${new Date().toISOString().slice(0, 10)}.json`;
+        const exportFileDefaultName = `backup_ouroguel_${new Date().toISOString().slice(0, 10)}.json`;
 
-    const linkElement = document.createElement("a");
-    linkElement.setAttribute("href", dataUri);
-    linkElement.setAttribute("download", exportFileDefaultName);
-    linkElement.click();
+        const linkElement = document.createElement("a");
+        linkElement.setAttribute("href", dataUri);
+        linkElement.setAttribute("download", exportFileDefaultName);
+        linkElement.click();
 
-    mostrarMensagem("Sucesso", "Backup exportado com sucesso!", "success");
-  } catch (error) {
-    console.error("Erro ao exportar backup:", error);
-    mostrarMensagem(
-      "Erro",
-      "Falha ao exportar backup: " + error.message,
-      "error",
-    );
-  } finally {
-    esconderCarregamentoBackup();
-  }
+        mostrarMensagem("Sucesso", "Backup exportado com sucesso!", "success");
+    } catch (error) {
+        console.error("Erro ao exportar backup:", error);
+        mostrarMensagem("Erro", "Falha ao exportar backup: " + error.message, "error");
+    } finally {
+        esconderCarregamentoBackup();
+    }
 }
 
 // Função para importar dados de JSON
 async function importarDeJSON(event) {
-  const file = event.target.files[0];
+    const file = event.target.files[0];
 
-  if (!file) return;
+    if (!file) return;
 
-  if (
-    !confirm(
-      `ATENÇÃO: Esta ação irá RESTAURAR dados do arquivo ${file.name}. Deseja continuar?`,
-    )
-  ) {
-    return;
-  }
-
-  try {
-    mostrarCarregamentoBackup();
-
-    const fileText = await file.text();
-    const backupData = JSON.parse(fileText);
-
-    // Validar estrutura do backup
-    if (!backupData.metadata || !backupData.dados) {
-      throw new Error("Arquivo de backup inválido");
+    if (
+        !confirm(
+            `ATENÇÃO: Esta ação irá RESTAURAR dados do arquivo ${file.name}. Deseja continuar?`
+        )
+    ) {
+        return;
     }
 
-    // Restaurar dados
-    await restaurarBackup(backupData);
+    try {
+        mostrarCarregamentoBackup();
 
-    mostrarMensagem("Sucesso", "Backup restaurado com sucesso!", "success");
+        const fileText = await file.text();
+        const backupData = JSON.parse(fileText);
 
-    // Recarregar página para refletir mudanças
-    setTimeout(() => location.reload(), 2000);
-  } catch (error) {
-    console.error("Erro ao importar backup:", error);
-    mostrarMensagem(
-      "Erro",
-      "Falha ao restaurar backup: " + error.message,
-      "error",
-    );
-  } finally {
-    esconderCarregamentoBackup();
-    // Limpar input file
-    event.target.value = "";
-  }
+        // Validar estrutura do backup
+        if (!backupData.metadata || !backupData.dados) {
+            throw new Error("Arquivo de backup inválido");
+        }
+
+        // Restaurar dados
+        await restaurarBackup(backupData);
+
+        mostrarMensagem("Sucesso", "Backup restaurado com sucesso!", "success");
+
+        // Recarregar página para refletir mudanças
+        setTimeout(() => location.reload(), 2000);
+    } catch (error) {
+        console.error("Erro ao importar backup:", error);
+        mostrarMensagem("Erro", "Falha ao restaurar backup: " + error.message, "error");
+    } finally {
+        esconderCarregamentoBackup();
+        // Limpar input file
+        event.target.value = "";
+    }
 }
 
 // Função para restaurar backup
 async function restaurarBackup(backupData) {
-  const collections = Object.keys(backupData.dados);
+    const collections = Object.keys(backupData.dados);
 
-  for (const collectionName of collections) {
-    const data = backupData.dados[collectionName];
+    for (const collectionName of collections) {
+        const data = backupData.dados[collectionName];
 
-    if (!data || !Array.isArray(data)) continue;
+        if (!data || !Array.isArray(data)) continue;
 
-    // Para cada documento na coleção
-    for (const docData of data) {
-      try {
-        const { id, ...documentData } = docData;
+        // Para cada documento na coleção
+        for (const docData of data) {
+            try {
+                const { id, ...documentData } = docData;
 
-        if (id) {
-          // Usar ID original se disponível
-          await db.collection(collectionName).doc(id).set(documentData);
-        } else {
-          // Criar novo documento
-          await db.collection(collectionName).add(documentData);
+                if (id) {
+                    // Usar ID original se disponível
+                    await db.collection(collectionName).doc(id).set(documentData);
+                } else {
+                    // Criar novo documento
+                    await db.collection(collectionName).add(documentData);
+                }
+            } catch (error) {
+                console.error(`Erro ao restaurar documento em ${collectionName}:`, error);
+            }
         }
-      } catch (error) {
-        console.error(
-          `Erro ao restaurar documento em ${collectionName}:`,
-          error,
-        );
-      }
     }
-  }
 }
 
 // Função para mostrar carregamento de backup
 function mostrarCarregamentoBackup() {
-  const loadingDiv = document.createElement("div");
-  loadingDiv.id = "backup-loading";
-  loadingDiv.innerHTML = `
+    const loadingDiv = document.createElement("div");
+    loadingDiv.id = "backup-loading";
+    loadingDiv.innerHTML = `
         <div class="backup-loading-content">
             <i class="fas fa-sync fa-spin"></i>
             <p>Processando backup...</p>
             <p class="small">Não feche esta janela</p>
         </div>
     `;
-  loadingDiv.style.cssText = `
+    loadingDiv.style.cssText = `
         position: fixed;
         top: 0;
         left: 0;
@@ -276,45 +258,44 @@ function mostrarCarregamentoBackup() {
         font-size: 18px;
     `;
 
-  document.body.appendChild(loadingDiv);
+    document.body.appendChild(loadingDiv);
 }
 
 // Função para esconder carregamento de backup
 function esconderCarregamentoBackup() {
-  const loadingDiv = document.getElementById("backup-loading");
-  if (loadingDiv) loadingDiv.remove();
+    const loadingDiv = document.getElementById("backup-loading");
+    if (loadingDiv) loadingDiv.remove();
 }
 
 // Função para exibir gerenciador de backups na interface
 function mostrarGerenciadorBackups() {
-  const backups = JSON.parse(localStorage.getItem("backup_list") || "[]");
+    const backups = JSON.parse(localStorage.getItem("backup_list") || "[]");
 
-  let html = `
+    let html = `
         <div class="backup-manager">
             <h3><i class="fas fa-database"></i> Gerenciador de Backups</h3>
 
             <div class="backup-actions">
-                <button class="btn btn-primary" onclick="exportarParaJSON()">
+                <button title="Exportar Backup" class="btn btn-primary" onclick="exportarParaJSON()">
                     <i class="fas fa-download"></i> Exportar Backup Atual
                 </button>
                 <label class="btn btn-secondary">
                     <i class="fas fa-upload"></i> Importar Backup
                     <input type="file" accept=".json" style="display: none;"
-                           onchange="importarDeJSON(event)">
+                        onchange="importarDeJSON(event)">
                 </label>
-                <button class="btn btn-success" onclick="criarBackupManual()">
+                <button title="Criar Backup Manual" class="btn btn-success" onclick="criarBackupManual()">
                     <i class="fas fa-plus"></i> Criar Backup Manual
                 </button>
             </div>
-
             <div class="backup-list">
                 <h4>Backups Locais (${backups.length})</h4>
     `;
 
-  if (backups.length === 0) {
-    html += `<p class="empty">Nenhum backup local encontrado</p>`;
-  } else {
-    html += `
+    if (backups.length === 0) {
+        html += `<p class="empty">Nenhum backup local encontrado</p>`;
+    } else {
+        html += `
             <table>
                 <thead>
                     <tr>
@@ -328,32 +309,32 @@ function mostrarGerenciadorBackups() {
                 <tbody>
         `;
 
-    backups.forEach((backup) => {
-      const dataFormatada = new Date(backup.data).toLocaleString("pt-BR");
-      const tamanhoKB = Math.round(backup.tamanho / 1024);
+        backups.forEach((backup) => {
+            const dataFormatada = new Date(backup.data).toLocaleString("pt-BR");
+            const tamanhoKB = Math.round(backup.tamanho / 1024);
 
-      html += `
+            html += `
                 <tr>
                     <td>${backup.nome}</td>
                     <td>${dataFormatada}</td>
                     <td>${backup.registros}</td>
                     <td>${tamanhoKB} KB</td>
                     <td>
-                        <button class="btn btn-small btn-primary" onclick="restaurarBackupLocal('${backup.nome}')">
+                        <button title="Restaurar Backup" class="btn btn-medium btn-primary" onclick="restaurarBackupLocal('${backup.nome}')">
                             <i class="fas fa-undo"></i>
                         </button>
-                        <button class="btn btn-small btn-danger" onclick="excluirBackupLocal('${backup.nome}')">
+                        <button title="Excluir Backup" class="btn btn-medium btn-danger" onclick="excluirBackupLocal('${backup.nome}')">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
                 </tr>
             `;
-    });
+        });
 
-    html += `</tbody></table>`;
-  }
+        html += `</tbody></table>`;
+    }
 
-  html += `
+    html += `
             </div>
             <div class="backup-info">
                 <p><i class="fas fa-info-circle"></i>
@@ -362,11 +343,11 @@ function mostrarGerenciadorBackups() {
         </div>
     `;
 
-  // Criar modal
-  const modal = document.createElement("div");
-  modal.className = "modal-backup";
-  modal.innerHTML = html;
-  modal.style.cssText = `
+    // Criar modal
+    const modal = document.createElement("div");
+    modal.className = "modal-backup";
+    modal.innerHTML = html;
+    modal.style.cssText = `
         position: fixed;
         top: 0;
         left: 0;
@@ -380,11 +361,11 @@ function mostrarGerenciadorBackups() {
         padding: 20px;
     `;
 
-  // Adicionar estilos
-  if (!document.querySelector("#backup-styles")) {
-    const styles = document.createElement("style");
-    styles.id = "backup-styles";
-    styles.textContent = `
+    // Adicionar estilos
+    if (!document.querySelector("#backup-styles")) {
+        const styles = document.createElement("style");
+        styles.id = "backup-styles";
+        styles.textContent = `
             .backup-manager {
                 background: white;
                 border-radius: 10px;
@@ -446,13 +427,13 @@ function mostrarGerenciadorBackups() {
                 opacity: 0.8;
             }
         `;
-    document.head.appendChild(styles);
-  }
+        document.head.appendChild(styles);
+    }
 
-  // Adicionar botão de fechar
-  const closeBtn = document.createElement("button");
-  closeBtn.innerHTML = "&times;";
-  closeBtn.style.cssText = `
+    // Adicionar botão de fechar
+    const closeBtn = document.createElement("button");
+    closeBtn.innerHTML = "&times;";
+    closeBtn.style.cssText = `
         position: absolute;
         top: 10px;
         right: 10px;
@@ -462,124 +443,118 @@ function mostrarGerenciadorBackups() {
         color: white;
         cursor: pointer;
     `;
-  closeBtn.onclick = () => modal.remove();
-  modal.appendChild(closeBtn);
+    closeBtn.onclick = () => modal.remove();
+    modal.appendChild(closeBtn);
 
-  document.body.appendChild(modal);
+    document.body.appendChild(modal);
 }
 
 // Função para criar backup manual
 async function criarBackupManual() {
-  try {
-    mostrarCarregamentoBackup();
+    try {
+        mostrarCarregamentoBackup();
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const backupName = `backup_manual_${timestamp}`;
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const backupName = `backup_manual_${timestamp}`;
 
-    const backupData = await criarBackupCompleto();
-    salvarBackupLocal(backupName, backupData);
+        const backupData = await criarBackupCompleto();
+        salvarBackupLocal(backupName, backupData);
 
-    mostrarMensagem("Sucesso", "Backup manual criado com sucesso!", "success");
+        mostrarMensagem("Sucesso", "Backup manual criado com sucesso!", "success");
 
-    // Atualizar lista
-    setTimeout(() => {
-      document.querySelector(".modal-backup")?.remove();
-      mostrarGerenciadorBackups();
-    }, 1000);
-  } catch (error) {
-    mostrarMensagem("Erro", "Erro ao criar backup: " + error.message, "error");
-  } finally {
-    esconderCarregamentoBackup();
-  }
+        // Atualizar lista
+        setTimeout(() => {
+            document.querySelector(".modal-backup")?.remove();
+            mostrarGerenciadorBackups();
+        }, 1000);
+    } catch (error) {
+        mostrarMensagem("Erro", "Erro ao criar backup: " + error.message, "error");
+    } finally {
+        esconderCarregamentoBackup();
+    }
 }
 
 // Função para restaurar backup local
 async function restaurarBackupLocal(backupName) {
-  if (
-    !confirm(
-      `ATENÇÃO: Esta ação irá RESTAURAR dados do backup ${backupName}. Deseja continuar?`,
-    )
-  ) {
-    return;
-  }
-
-  try {
-    mostrarCarregamentoBackup();
-
-    const backupString = localStorage.getItem(`backup_${backupName}`);
-
-    if (!backupString) {
-      throw new Error("Backup não encontrado");
+    if (
+        !confirm(
+            `ATENÇÃO: Esta ação irá RESTAURAR dados do backup ${backupName}. Deseja continuar?`
+        )
+    ) {
+        return;
     }
 
-    const backupData = JSON.parse(backupString);
-    await restaurarBackup(backupData);
+    try {
+        mostrarCarregamentoBackup();
 
-    mostrarMensagem("Sucesso", "Backup restaurado com sucesso!", "success");
+        const backupString = localStorage.getItem(`backup_${backupName}`);
 
-    setTimeout(() => location.reload(), 2000);
-  } catch (error) {
-    mostrarMensagem(
-      "Erro",
-      "Erro ao restaurar backup: " + error.message,
-      "error",
-    );
-  } finally {
-    esconderCarregamentoBackup();
-  }
+        if (!backupString) {
+            throw new Error("Backup não encontrado");
+        }
+
+        const backupData = JSON.parse(backupString);
+        await restaurarBackup(backupData);
+
+        mostrarMensagem("Sucesso", "Backup restaurado com sucesso!", "success");
+
+        setTimeout(() => location.reload(), 2000);
+    } catch (error) {
+        mostrarMensagem("Erro", "Erro ao restaurar backup: " + error.message, "error");
+    } finally {
+        esconderCarregamentoBackup();
+    }
 }
 
 // Função para excluir backup local
 function excluirBackupLocal(backupName) {
-  if (
-    !confirm(`Excluir backup ${backupName}? Esta ação não pode ser desfeita.`)
-  ) {
-    return;
-  }
+    if (!confirm(`Excluir backup ${backupName}? Esta ação não pode ser desfeita.`)) {
+        return;
+    }
 
-  localStorage.removeItem(`backup_${backupName}`);
+    localStorage.removeItem(`backup_${backupName}`);
 
-  // Atualizar lista
-  const backups = JSON.parse(localStorage.getItem("backup_list") || "[]");
-  const index = backups.findIndex((b) => b.nome === backupName);
+    // Atualizar lista
+    const backups = JSON.parse(localStorage.getItem("backup_list") || "[]");
+    const index = backups.findIndex((b) => b.nome === backupName);
 
-  if (index > -1) {
-    backups.splice(index, 1);
-    localStorage.setItem("backup_list", JSON.stringify(backups));
-  }
+    if (index > -1) {
+        backups.splice(index, 1);
+        localStorage.setItem("backup_list", JSON.stringify(backups));
+    }
 
-  mostrarMensagem("Sucesso", "Backup excluído com sucesso!", "success");
+    mostrarMensagem("Sucesso", "Backup excluído com sucesso!", "success");
 
-  // Atualizar lista
-  setTimeout(() => {
-    document.querySelector(".modal-backup")?.remove();
-    mostrarGerenciadorBackups();
-  }, 500);
+    // Atualizar lista
+    setTimeout(() => {
+        document.querySelector(".modal-backup")?.remove();
+        mostrarGerenciadorBackups();
+    }, 500);
 }
 
 // Adicionar menu de backup na interface (apenas para administradores)
 function addBackupMenu() {
-  if (!checkPermission("admin")) return;
+    if (!checkPermission("admin")) return;
 
-  // Adicionar ao menu principal
-  const nav = document.querySelector(".nav ul");
-  if (nav) {
-    const backupItem = document.createElement("li");
-    backupItem.innerHTML = `
+    // Adicionar ao menu principal
+    const nav = document.querySelector(".nav ul");
+    if (nav) {
+        const backupItem = document.createElement("li");
+        backupItem.innerHTML = `
             <a href="#" onclick="mostrarGerenciadorBackups(); return false;">
                 <i class="fas fa-database"></i> Backup
             </a>
         `;
-    nav.appendChild(backupItem);
-  }
+        nav.appendChild(backupItem);
+    }
 
-  // Inicializar sistema de backup
-  initBackupSystem();
+    // Inicializar sistema de backup
+    initBackupSystem();
 }
 
 // Inicializar quando a página carregar
 if (checkPermission("admin")) {
-  document.addEventListener("DOMContentLoaded", function () {
-    setTimeout(addBackupMenu, 1000);
-  });
+    document.addEventListener("DOMContentLoaded", function () {
+        setTimeout(addBackupMenu, 1000);
+    });
 }
