@@ -204,13 +204,11 @@ function coletarDadosCliente() {
 
     return {
         tipoCliente,
-
         nome: valorCampo("nome"),
         dataNascimento: valorCampo("dataNascimento"),
         cpf,
         cpfLimpo: somenteNumeros(cpf),
         identidade: valorCampo("identidade"),
-
         razaoSocial: valorCampo("razaoSocial"),
         nomeFantasia: valorCampo("nomeFantasia"),
         cnpj,
@@ -220,21 +218,17 @@ function coletarDadosCliente() {
         inscricaoMunicipal: valorCampo("inscricaoMunicipal"),
         proprietario: valorCampo("proprietario"),
         cpfProprietario: valorCampo("cpfProprietario"),
-
         telefone: valorCampo("telefone"),
         celular: valorCampo("celular"),
         email: valorCampo("email"),
-
         cep: valorCampo("cep"),
         endereco: valorCampo("endereco"),
         bairro: valorCampo("bairro"),
         cidade: valorCampo("cidade"),
         estado: valorCampo("estado"),
-
         naturalidade: valorCampo("naturalidade"),
         nomePai: valorCampo("nomePai"),
         nomeMae: valorCampo("nomeMae"),
-
         estaNoSpc: clienteSpc ? clienteSpc.checked : false,
         observacaoRestricao: valorCampo("observacaoRestricao"),
     };
@@ -478,15 +472,13 @@ function renderizarTabelaClientes() {
 
                     <td>
                         <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                            <button class="btn btn-small btn-primary" onclick="editarCliente('${cliente.id}')">
+                            <button title="Editar" class="btn btn-medium btn-primary" onclick="editarCliente('${cliente.id}')">
                                 <i class="fas fa-edit"></i>
                             </button>
-
-                            <button class="btn btn-small btn-success" onclick="selecionarClienteParaAluguel('${cliente.id}')">
+                            <button title="Alugar" class="btn btn-medium btn-success" onclick="selecionarClienteParaAluguel('${cliente.id}')">
                                 <i class="fas fa-handshake"></i>
                             </button>
-
-                            <button class="btn btn-small btn-danger" onclick="excluirCliente('${cliente.id}')">
+                            <button title="Excluir" class="btn btn-medium btn-danger" onclick="excluirCliente('${cliente.id}')">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -520,7 +512,6 @@ function renderizarPaginacaoClientes(totalClientes) {
         <div class="pagination-info">
             Mostrando ${inicio} a ${fim} de ${totalClientes} clientes
         </div>
-
         <div class="pagination-actions">
             <button
                 type="button"
@@ -530,7 +521,6 @@ function renderizarPaginacaoClientes(totalClientes) {
             >
                 <i class="fas fa-chevron-left"></i> Anterior
             </button>
-
             <span class="pagination-current">
                 Página ${paginaAtualClientes} de ${totalPaginas}
             </span>
