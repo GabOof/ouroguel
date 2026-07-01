@@ -946,25 +946,136 @@
                 return;
             }
 
-            const mensagem =
-                `Equipamento: ${equipamento.nomeEquipamento || ""}\n\n` +
-                `Categoria: ${equipamento.categoria || "Não informada"}\n` +
-                `Quantidade Total: ${equipamento.quantidadeTotal || 0}\n` +
-                `Disponível: ${equipamento.quantidadeDisponivel || 0}\n` +
-                `Alugado: ${equipamento.quantidadeAlugada || 0}\n` +
-                `Manutenção: ${equipamento.quantidadeManutencao || 0}\n` +
-                `Status: ${equipamento.status || "desconhecido"}\n\n` +
-                `Valores:\n` +
-                `Hora: ${formatarMoedaEstoque(equipamento.valorHora || 0)}\n` +
-                `Dia: ${formatarMoedaEstoque(equipamento.valorDia || 0)}\n` +
-                `Mês: ${formatarMoedaEstoque(equipamento.valorMes || 0)}\n\n` +
-                `Observações:\n${equipamento.observacoes || "Nenhuma observação."}`;
+            const status = obterStatusEstoque(equipamento);
 
-            alert(mensagem);
+            let modal = document.getElementById("modalDetalhesEstoque");
+
+            if (!modal) {
+                modal = document.createElement("div");
+                modal.id = "modalDetalhesEstoque";
+                modal.className = "modal-overlay";
+                modal.innerHTML = `
+                <div class="modal-card modal-estoque-detalhes">
+                    <div class="modal-header">
+                        <h3>
+                            <i class="fas fa-chart-bar"></i>
+                            Estatísticas do Estoque
+                        </h3>
+
+                        <button
+                            type="button"
+                            class="modal-close"
+                            onclick="fecharModalDetalhesEstoque()"
+                            title="Fechar modal"
+                        >
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div id="conteudoDetalhesEstoque"></div>
+
+                    <div class="form-buttons">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            onclick="fecharModalDetalhesEstoque()"
+                        >
+                            <i class="fas fa-times"></i>
+                            Fechar
+                        </button>
+                    </div>
+                </div>
+            `;
+
+                document.body.appendChild(modal);
+            }
+
+            const conteudo = document.getElementById("conteudoDetalhesEstoque");
+
+            conteudo.innerHTML = `
+            <div class="details-section">
+                <h3>
+                    <i class="fas fa-box"></i>
+                    ${escaparHTMLEstoque(equipamento.nomeEquipamento || "Equipamento sem nome")}
+                </h3>
+                <span class="status-badge ${status.classe}">
+                    <i class="fas ${status.icone}"></i>
+                    ${status.texto}
+                </span>
+            </div>
+            <section class="info-section">
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <i class="fas fa-boxes"></i>
+                            <h3>${Number(equipamento.quantidadeTotal || 0)}</h3>
+                            <p>Total de Itens</p>
+                        </div>
+                        <div class="feature-card">
+                            <i class="fas fa-check-circle" style="color: #27ae60"></i>
+                            <h3>${Number(equipamento.quantidadeDisponivel || 0)}</h3>
+                            <p>Disponíveis</p>
+                        </div>
+                        <div class="feature-card">
+                            <i class="fas fa-handshake" style="color: #3498db"></i>
+                            <h3>${Number(equipamento.quantidadeAlugada || 0)}</h3>
+                            <p>Alugados</p>
+                        </div>
+                        <div class="feature-card">
+                            <i class="fas fa-times-circle" style="color: #e74c3c"></i>
+                            <h3>${Number(equipamento.quantidadeIndisponivel || 0)}</h3>
+                            <p>Indisponíveis</p>
+                        </div>
+                    </div>
+                </section>
+            <div class="details-grid">
+                <div class="detail-item">
+                    <strong>Categoria:</strong>
+                    <span>${escaparHTMLEstoque(equipamento.categoria || "Não informada")}</span>
+                </div>
+                <div class="detail-item">
+                    <strong>Status cadastrado:</strong>
+                    <span>${escaparHTMLEstoque(equipamento.status || "desconhecido")}</span>
+                </div>
+                <div class="detail-item">
+                    <strong>Valor por hora:</strong>
+                    <span>${formatarMoedaEstoque(equipamento.valorHora || 0)}</span>
+                </div>
+                <div class="detail-item">
+                    <strong>Valor por dia:</strong>
+                    <span>${formatarMoedaEstoque(equipamento.valorDia || 0)}</span>
+                </div>
+                <div class="detail-item">
+                    <strong>Valor por mês:</strong>
+                    <span>${formatarMoedaEstoque(equipamento.valorMes || 0)}</span>
+                </div>
+            </div>
+            <div class="details-section">
+                <h3>
+                    <i class="fas fa-clipboard"></i>
+                    Observações
+                </h3>
+                <p class="detail-observacao">
+                    ${escaparHTMLEstoque(equipamento.observacoes || "Nenhuma observação.")}
+                </p>
+            </div>
+        `;
+
+            modal.classList.add("active");
+            document.body.classList.add("modal-open");
+            modal.style.display = "flex";
         } catch (error) {
             console.error("Erro ao visualizar detalhes:", error);
 
             mostrarMensagemEstoque("Erro", "Não foi possível carregar os detalhes.", "error");
+        }
+    }
+
+    function fecharModalDetalhesEstoque() {
+        const modal = document.getElementById("modalDetalhesEstoque");
+
+        if (modal) {
+            modal.classList.remove("active");
+            document.body.classList.remove("modal-open");
         }
     }
 
@@ -991,4 +1102,5 @@
     globalThis.carregarEquipamentosParaAjuste = carregarEquipamentosParaAjuste;
     globalThis.visualizarDetalhes = visualizarDetalhes;
     globalThis.limparAjuste = limparAjuste;
+    globalThis.fecharModalDetalhesEstoque = fecharModalDetalhesEstoque;
 })();
