@@ -307,12 +307,12 @@ async function carregarEquipamentos() {
 
     try {
         equipamentosList.innerHTML = `
-      <tr>
-        <td colspan="5" style="text-align: center; padding: 40px;">
-          <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #3498db;"></i>
-          <p>Carregando equipamentos...</p>
-        </td>
-      </tr>
+        <tr>
+            <td colspan="5" style="text-align: center; padding: 40px;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #3498db;"></i>
+            <p>Carregando equipamentos...</p>
+            </td>
+        </tr>
     `;
 
         equipamentos = await equipamentosService.listar();
@@ -323,14 +323,14 @@ async function carregarEquipamentos() {
         console.error("Erro ao carregar equipamentos:", error);
 
         equipamentosList.innerHTML = `
-      <tr>
-        <td colspan="5" style="text-align: center; padding: 40px; color: #e74c3c;">
-          <i class="fas fa-exclamation-triangle"></i>
-          <p>Erro ao carregar equipamentos</p>
-          <small>${escaparHTMLLocal(error.message)}</small>
-        </td>
-      </tr>
-    `;
+        <tr>
+            <td colspan="5" style="text-align: center; padding: 40px; color: #e74c3c;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>Erro ao carregar equipamentos</p>
+            <small>${escaparHTMLLocal(error.message)}</small>
+            </td>
+        </tr>
+        `;
     }
 }
 
@@ -381,12 +381,12 @@ function renderizarTabelaEquipamentos() {
 
     if (!equipamentosFiltrados.length) {
         equipamentosList.innerHTML = `
-      <tr>
-        <td colspan="5" class="empty-message">
-          <i class="fas fa-box"></i>
-          <p>Nenhum equipamento encontrado</p>
-        </td>
-      </tr>
+        <tr>
+            <td colspan="5" class="empty-message">
+            <i class="fas fa-box"></i>
+            <p>Nenhum equipamento encontrado</p>
+            </td>
+        </tr>
     `;
 
         renderizarPaginacaoEquipamentos(0);
@@ -411,47 +411,41 @@ function renderizarTabelaEquipamentos() {
 
             return `
         <tr>
-          <td class="col-nome-observacoes">
-            <strong>${nome}</strong>
-            ${observacoes ? `<br><small class="texto-observacoes">${observacoes}</small>` : ""}
-          </td>
-
-          <td class="col-quantidade">
-            <strong>${equipamento.quantidadeTotal || 0}</strong>
-            <small style="display: block; color: #666;">
-              Disp: ${equipamento.quantidadeDisponivel || 0} |
-              Alug: ${equipamento.quantidadeAlugada || 0}
-            </small>
-          </td>
-
-          <td class="col-valor">
-            ${formatarValorTabelaEquipamento(equipamento.valorDia)}
-          </td>
-
-          <td class="col-status">
-            <span class="status-badge ${status.classe}">
-              <i class="fas ${status.icone}"></i>
-              ${status.texto}
-            </span>
-          </td>
-
-          <td class="col-acoes">
-            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-              <button class="btn btn-small btn-primary" onclick="editarEquipamento('${equipamento.id}')">
-                <i class="fas fa-edit"></i>
-              </button>
-
-              <button class="btn btn-small btn-success" onclick="selecionarEquipamentoParaAluguel('${equipamento.id}')">
-                <i class="fas fa-handshake"></i>
-              </button>
-
-              <button class="btn btn-small btn-danger" onclick="excluirEquipamento('${equipamento.id}')">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </td>
+            <td class="col-nome-observacoes">
+                <strong>${nome}</strong>
+                ${observacoes ? `<br><small class="texto-observacoes">${observacoes}</small>` : ""}
+            </td>
+            <td class="col-quantidade">
+                <strong>${equipamento.quantidadeTotal || 0}</strong>
+                <small style="display: block; color: #666;">
+                Disp: ${equipamento.quantidadeDisponivel || 0} |
+                Alug: ${equipamento.quantidadeAlugada || 0}
+                </small>
+            </td>
+            <td class="col-valor">
+                ${formatarValorTabelaEquipamento(equipamento.valorDia)}
+            </td>
+            <td class="col-status">
+                <span class="status-badge ${status.classe}">
+                <i class="fas ${status.icone}"></i>
+                ${status.texto}
+                </span>
+            </td>
+            <td class="col-acoes">
+                <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                <button title="Editar Equipamento" class="btn btn-medium btn-primary" onclick="editarEquipamento('${equipamento.id}')">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button title="Selecionar para Aluguel" class="btn btn-medium btn-success" onclick="selecionarEquipamentoParaAluguel('${equipamento.id}')">
+                    <i class="fas fa-handshake"></i>
+                </button>
+                <button title="Excluir Equipamento" class="btn btn-medium btn-danger" onclick="excluirEquipamento('${equipamento.id}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+                </div>
+            </td>
         </tr>
-      `;
+        `;
         })
         .join("");
 
@@ -478,33 +472,31 @@ function renderizarPaginacaoEquipamentos(totalEquipamentos) {
 
     paginacao.innerHTML = `
     <div class="pagination-info">
-      Mostrando ${inicio} a ${fim} de ${totalEquipamentos} equipamentos
+        Mostrando ${inicio} a ${fim} de ${totalEquipamentos} equipamentos
     </div>
-
     <div class="pagination-actions">
-      <button
-        type="button"
-        class="btn btn-secondary pagination-btn"
-        onclick="mudarPaginaEquipamentos(${paginaAtualEquipamentos - 1})"
-        ${paginaAtualEquipamentos === 1 ? "disabled" : ""}
-      >
-        <i class="fas fa-chevron-left"></i> Anterior
-      </button>
+        <button
+            type="button"
+            class="btn btn-secondary pagination-btn"
+            onclick="mudarPaginaEquipamentos(${paginaAtualEquipamentos - 1})"
+            ${paginaAtualEquipamentos === 1 ? "disabled" : ""}
+        >
+            <i class="fas fa-chevron-left"></i> Anterior
+        </button>
+        <span class="pagination-current">
+            Página ${paginaAtualEquipamentos} de ${totalPaginas}
+        </span>
 
-      <span class="pagination-current">
-        Página ${paginaAtualEquipamentos} de ${totalPaginas}
-      </span>
-
-      <button
-        type="button"
-        class="btn btn-secondary pagination-btn"
-        onclick="mudarPaginaEquipamentos(${paginaAtualEquipamentos + 1})"
-        ${paginaAtualEquipamentos === totalPaginas ? "disabled" : ""}
-      >
-        Próxima <i class="fas fa-chevron-right"></i>
-      </button>
+        <button
+            type="button"
+            class="btn btn-secondary pagination-btn"
+            onclick="mudarPaginaEquipamentos(${paginaAtualEquipamentos + 1})"
+            ${paginaAtualEquipamentos === totalPaginas ? "disabled" : ""}
+        >
+            Próxima <i class="fas fa-chevron-right"></i>
+        </button>
     </div>
-  `;
+    `;
 }
 
 function mudarPaginaEquipamentos(novaPagina) {
