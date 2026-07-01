@@ -1905,3 +1905,63 @@ PÁGINA DE ALUGUÉIS
         width: 100%;
     }
 }
+
+/* ============================================
+   MODAL DE ESTATÍSTICAS DO ESTOQUE
+============================================ */
+
+.modal-estoque-detalhes {
+    width: min(850px, 100%);
+}
+
+.modal-overlay.active {
+    display: flex !important;
+}
+
+.details-section {
+    margin-bottom: 24px;
+}
+
+.details-section h3 {
+    margin-bottom: 12px;
+    color: var(--primary-color);
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 24px;
+}
+
+.detail-item {
+    background-color: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.detail-item strong {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--primary-color);
+}
+
+.detail-item span {
+    color: var(--dark-color);
+}
+
+.detail-observacao {
+    background-color: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px;
+    margin: 0;
+    color: var(--dark-color);
+}
+
+@media (max-width: 768px) {
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+}
