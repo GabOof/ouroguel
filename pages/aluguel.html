@@ -10,7 +10,6 @@
                 }
             })();
         </script>
-
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="icon" type="image/x-icon" href="../images/favicon.ico" />
@@ -21,19 +20,16 @@
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         />
-
         <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
     </head>
-
     <body>
         <header class="header">
             <div class="container">
                 <div class="logo">
                     <img src="../images/logo.png" alt="Logo Ouroguel" style="width: 425px" />
                 </div>
-
                 <nav class="nav">
                     <ul>
                         <li>
@@ -61,7 +57,6 @@
                 </nav>
             </div>
         </header>
-
         <main class="main-content">
             <div class="container">
                 <h2 class="page-title">
@@ -92,7 +87,6 @@
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
-
                         <form id="aluguelForm">
                             <div class="form-group">
                                 <label for="clienteSelect">
@@ -102,31 +96,26 @@
                                     <option value="">Carregando clientes...</option>
                                 </select>
                             </div>
-
                             <div id="infoCliente" style="display: none">
                                 <div class="form-grid">
                                     <div class="form-group">
                                         <label for="clienteTelefone">Telefone</label>
                                         <input type="text" id="clienteTelefone" readonly />
                                     </div>
-
                                     <div class="form-group">
                                         <label for="clienteCelular">Celular</label>
                                         <input type="text" id="clienteCelular" readonly />
                                     </div>
-
                                     <div class="form-group">
                                         <label for="clienteCPF">CPF/CNPJ</label>
                                         <input type="text" id="clienteCPF" readonly />
                                     </div>
-
                                     <div class="form-group">
                                         <label for="clienteCidade">Cidade</label>
                                         <input type="text" id="clienteCidade" readonly />
                                     </div>
                                 </div>
                             </div>
-
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label for="dataInicio">
@@ -134,7 +123,6 @@
                                     </label>
                                     <input type="date" id="dataInicio" required />
                                 </div>
-
                                 <div class="form-group">
                                     <label>
                                         <i class="fas fa-money-bill-wave"></i> Valor do Aluguel
@@ -145,7 +133,6 @@
                                         readonly
                                     />
                                 </div>
-
                                 <div class="form-group">
                                     <label>
                                         <i class="fas fa-clock"></i> Período de Cobrança
@@ -153,12 +140,10 @@
                                     <input type="text" value="Definido no fechamento" readonly />
                                 </div>
                             </div>
-
                             <div class="form-group">
                                 <label for="equipamentoSelect">
                                     <i class="fas fa-box"></i> Equipamento *
                                 </label>
-
                                 <div class="equipamento-selecao">
                                     <select id="equipamentoSelect">
                                         <option value="">Carregando equipamentos...</option>
@@ -173,24 +158,20 @@
                                     </button>
                                 </div>
                             </div>
-
                             <div id="infoEquipamento" style="display: none">
                                 <div class="form-grid">
                                     <div class="form-group">
                                         <label for="equipamentoDisponivel">Disponível</label>
                                         <input type="text" id="equipamentoDisponivel" readonly />
                                     </div>
-
                                     <div class="form-group">
                                         <label for="equipamentoUnidade">Unidade de cobrança</label>
                                         <input type="text" id="equipamentoUnidade" readonly />
                                     </div>
-
                                     <div class="form-group">
                                         <label for="equipamentoPrecos">Preços cadastrados</label>
                                         <input type="text" id="equipamentoPrecos" readonly />
                                     </div>
-
                                     <div class="form-group">
                                         <label for="quantidadeAlugar">Quantidade retirada *</label>
                                         <input
@@ -229,7 +210,6 @@
                                     </table>
                                 </div>
                             </div>
-
                             <div class="form-group full-width">
                                 <label for="observacoesAluguel">
                                     <i class="fas fa-sticky-note"></i> Observações da retirada
@@ -240,13 +220,11 @@
                                     placeholder="Ex.: local de entrega, responsável pela retirada, estado visual do equipamento..."
                                 ></textarea>
                             </div>
-
                             <div class="form-buttons">
                                 <button type="submit" class="btn btn-secondary btn-lg">
                                     <i class="fas fa-check-circle" aria-hidden="true"></i>
                                     Registrar Retirada
                                 </button>
-
                                 <button type="button" class="btn btn-danger" id="btnLimparAluguel">
                                     <i class="fas fa-eraser" aria-hidden="true"></i> Limpar Tudo
                                 </button>
@@ -265,7 +243,6 @@
                         </form>
                     </div>
                 </div>
-
                 <section class="list-section">
                     <div class="list-card">
                         <div class="list-header-actions">
@@ -279,7 +256,6 @@
                                 <i class="fas fa-plus-circle"></i> Novo Aluguel
                             </button>
                         </div>
-
                         <div class="search-box">
                             <input
                                 type="text"
@@ -288,7 +264,6 @@
                             />
                             <i class="fas fa-search"></i>
                         </div>
-
                         <div class="table-container">
                             <table id="alugueisTable">
                                 <thead>
@@ -303,7 +278,6 @@
                                         <th>Ações</th>
                                     </tr>
                                 </thead>
-
                                 <tbody id="alugueisList">
                                     <tr>
                                         <td colspan="8" class="empty-message">
@@ -324,7 +298,6 @@
                 </section>
             </div>
         </main>
-
         <div id="modalFechamento" class="fechamento-overlay" style="background-color: white">
             <div class="form-card fechamento-modal">
                 <div class="fechamento-header">
@@ -335,12 +308,10 @@
                             <strong id="fechamentoDataInicio">-</strong>
                         </p>
                     </div>
-
                     <button type="button" class="btn btn-danger" id="btnCancelarFechamento">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="dataDevolucaoReal">
@@ -348,7 +319,6 @@
                         </label>
                         <input type="date" id="dataDevolucaoReal" />
                     </div>
-
                     <div class="form-group">
                         <label for="periodoFechamento">
                             <i class="fas fa-clock"></i> Tipo de cobrança *
@@ -360,7 +330,6 @@
                             <option value="mes">Por Mês</option>
                         </select>
                     </div>
-
                     <div class="form-group">
                         <label for="duracaoReal">
                             <i class="fas fa-hourglass-end"></i> Duração real *
@@ -371,7 +340,6 @@
                         </small>
                     </div>
                 </div>
-
                 <div class="table-container">
                     <table>
                         <thead>
@@ -386,23 +354,19 @@
                         <tbody id="fechamentoItens"></tbody>
                     </table>
                 </div>
-
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Subtotal final</label>
                         <input type="text" id="subtotalFinalTexto" readonly value="R$ 0,00" />
                     </div>
-
                     <div class="form-group">
                         <label for="descontoFechamento">Desconto R$</label>
                         <input type="text" id="descontoFechamento" value="0,00" />
                     </div>
-
                     <div class="form-group">
                         <label for="acrescimoFechamento">Acréscimo R$</label>
                         <input type="text" id="acrescimoFechamento" value="0,00" />
                     </div>
-
                     <div class="form-group">
                         <label>Valor total</label>
                         <input
@@ -413,7 +377,6 @@
                             value="R$ 0,00"
                         />
                     </div>
-
                     <div class="form-group">
                         <label for="valorPagoFechamento">Valor pago R$</label>
                         <input
@@ -422,7 +385,6 @@
                             placeholder="Deixe vazio para pagamento total"
                         />
                     </div>
-
                     <div class="form-group">
                         <label for="formaPagamentoFechamento">Forma de pagamento</label>
                         <select id="formaPagamentoFechamento">
@@ -435,18 +397,15 @@
                             <option value="Outro">Outro</option>
                         </select>
                     </div>
-
                     <div class="form-group">
                         <label>Saldo</label>
                         <input type="text" id="saldoFinalTexto" readonly value="R$ 0,00" />
                     </div>
-
                     <div class="form-group">
                         <label>Status pagamento</label>
                         <input type="text" id="statusPagamentoTexto" readonly value="-" />
                     </div>
                 </div>
-
                 <div class="form-group full-width">
                     <label for="observacoesFechamento">
                         <i class="fas fa-sticky-note"></i> Observações do fechamento
@@ -457,19 +416,16 @@
                         placeholder="Ex.: avaria, pagamento parcial, desconto combinado..."
                     ></textarea>
                 </div>
-
                 <div class="form-buttons space-between">
                     <button type="button" class="btn btn-danger" id="btnFecharModalRodape">
                         <i class="fas fa-times"></i> Cancelar
                     </button>
-
                     <button type="button" class="btn btn-success" id="btnConfirmarFechamento">
                         <i class="fas fa-check"></i> Confirmar Devolução e Calcular
                     </button>
                 </div>
             </div>
         </div>
-
         <footer class="footer">
             <div class="container">
                 <p>Sistema desenvolvido para Ouroguel LTDA - TCC em IHC</p>
@@ -482,5 +438,18 @@
         <script src="../js/services/aluguelService.js"></script>
         <script src="../js/aluguel.js"></script>
         <script src="../js/auth.js"></script>
+
+        <!-- Acessibilidade em Libras - VLibras -->
+        <div vw class="enabled">
+            <div vw-access-button class="active"></div>
+            <div vw-plugin-wrapper>
+                <div class="vw-plugin-top-wrapper"></div>
+            </div>
+        </div>
+
+        <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+        <script>
+            new window.VLibras.Widget("https://vlibras.gov.br/app");
+        </script>
     </body>
 </html>
