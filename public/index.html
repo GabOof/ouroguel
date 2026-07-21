@@ -230,6 +230,89 @@
         </footer>
 
         <script src="./js/firebase-config.js"></script>
+
+        <script src="./js/firebase-config.js"></script>
+
+        <script>
+            firebase.auth().onAuthStateChanged(async function (usuario) {
+                if (!usuario) {
+                    window.location.replace("./pages/login.html");
+                    return;
+                }
+
+                try {
+                    const documentoUsuario = await firebase
+                        .firestore()
+                        .collection("usuarios")
+                        .doc(usuario.uid)
+                        .get();
+
+                    const dadosUsuario = documentoUsuario.exists ? documentoUsuario.data() : {};
+
+                    // Aceita tanto o campo "role" quanto "tipo"
+                    const nivelAcesso = String(
+                        dadosUsuario.role || dadosUsuario.tipo || "USER"
+                    ).toUpperCase();
+
+                    if (nivelAcesso === "USER") {
+                        bloquearAcessoUsuario();
+                    }
+                } catch (erro) {
+                    console.error("Erro ao verificar o nível de acesso:", erro);
+                }
+            });
+
+            function bloquearAcessoUsuario() {
+                // Bloqueia os links para as outras páginas
+                const linksMenu = document.querySelectorAll(".nav a");
+
+                linksMenu.forEach(function (link) {
+                    const destino = link.getAttribute("href");
+
+                    // Mantém apenas o botão Início liberado
+                    if (destino && !destino.includes("index.html")) {
+                        link.style.opacity = "0.45";
+                        link.style.cursor = "not-allowed";
+                        link.style.pointerEvents = "none";
+
+                        link.setAttribute("aria-disabled", "true");
+                        link.setAttribute(
+                            "title",
+                            "Acesso bloqueado. Entre em contato com o administrador."
+                        );
+                    }
+                });
+
+                // Troca a mensagem inicial
+                const welcomeCard = document.querySelector(".welcome-card");
+
+                if (welcomeCard) {
+                    welcomeCard.innerHTML = `
+                <i class="fas fa-lock welcome-icon"></i>
+
+                <h2>Acesso ainda não liberado</h2>
+
+                <p class="subtitle">
+                    Seu cadastro foi realizado com sucesso, mas sua conta ainda
+                    não possui permissão para acessar as funcionalidades do sistema.
+                </p>
+
+                <p class="subtitle">
+                    Entre em contato com o administrador para solicitar a liberação
+                    do seu acesso ao Sistema Ouroguel.
+                </p>
+            `;
+                }
+
+                // Atualiza o nível exibido na barra do usuário
+                const textoNivel = document.getElementById("userRoleText");
+
+                if (textoNivel) {
+                    textoNivel.textContent = "Aguardando liberação";
+                }
+            }
+        </script>
+
         <script src="./js/main.js"></script>
         <script src="./js/auth.js"></script>
 
