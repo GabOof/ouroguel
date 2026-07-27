@@ -2,17 +2,20 @@
 <html lang="pt-BR">
     <head>
         <script>
-            // Verificação IMEDIATA de autenticação
-            (function () {
-                const userLoggedIn = localStorage.getItem("userLoggedIn");
-                const userEmail = localStorage.getItem("userEmail");
+            // Evita loop no GitHub Pages e mantém compatibilidade local
+            function getBasePath() {
+                const path = window.location.pathname;
 
-                if (userLoggedIn !== "true" || !userEmail) {
-                    document.write = function () {};
-                    window.location.replace("./pages/login.html");
-                    throw new Error("Redirecionando para login");
+                if (path.startsWith("/ouroguel/")) {
+                    return "/ouroguel";
                 }
-            })();
+
+                return "";
+            }
+
+            function irParaLogin() {
+                window.location.replace(`${getBasePath()}/pages/login.html`);
+            }
         </script>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -234,9 +237,17 @@
         <script>
             firebase.auth().onAuthStateChanged(async function (usuario) {
                 if (!usuario) {
-                    window.location.replace("./pages/login.html");
+                    localStorage.removeItem("userLoggedIn");
+                    localStorage.removeItem("userEmail");
+                    localStorage.removeItem("userName");
+                    localStorage.removeItem("userRole");
+
+                    irParaLogin();
                     return;
                 }
+
+                localStorage.setItem("userLoggedIn", "true");
+                localStorage.setItem("userEmail", usuario.email || "");
 
                 try {
                     const documentoUsuario = await firebase
