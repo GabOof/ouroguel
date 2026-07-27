@@ -19,12 +19,12 @@ O projeto digitaliza o processo de locação de equipamentos da empresa **Ourogu
 - **CSS3** - Estilização com foco em acessibilidade e usabilidade
 - **JavaScript Vanilla** - Interatividade sem frameworks complexos
 
-### Backend & Infraestrutura
+### Backend, Banco de Dados e Infraestrutura
 
 - **Firebase Authentication** - Autenticação de usuários
 - **Firebase Firestore** - Banco de dados NoSQL
 - **Firebase Storage** - Armazenamento de arquivos, caso aplicável
-- **Firebase Hosting** - Hospedagem do sistema em produção
+- **GitHub Pages** - Hospedagem gratuita do frontend em produção
 - **Firebase Emulator Suite** - Simulação local dos serviços Firebase
 - **Docker** - Ambiente local padronizado e reprodutível
 - **Nginx** - Servidor web local para servir os arquivos estáticos
@@ -55,7 +55,7 @@ Antes de executar o projeto, instale:
 - [Docker](https://www.docker.com/)
 - [Docker Compose](https://docs.docker.com/compose/)
 - [Node.js](https://nodejs.org/), recomendado versão 20 ou superior
-- Firebase CLI, caso vá fazer deploy ou importar/exportar dados
+- Firebase CLI, caso vá utilizar emuladores, regras ou scripts de importação/exportação
 
 Instale o Firebase CLI globalmente:
 
@@ -267,81 +267,75 @@ Na próxima execução, os dados locais serão carregados automaticamente porque
 
 ---
 
-## Deploy no Firebase
+# Deploy em Produção com GitHub Pages
 
-O deploy publica o sistema em produção.
+O deploy do frontend é realizado pelo **GitHub Pages**.
 
-Antes de fazer deploy, confira se você está autenticado:
+A hospedagem do site não é mais feita pelo Firebase Hosting. O Firebase continua sendo utilizado apenas para autenticação, banco de dados e armazenamento.
+
+---
+
+## 1. Conferir a Pasta Pública
+
+O GitHub Pages irá publicar o conteúdo da pasta `public`.
+
+Antes do deploy, confirme se existe um arquivo `.nojekyll` dentro de `public`:
 
 ```bash
-firebase login
+touch public/.nojekyll
 ```
 
-Confira o projeto configurado:
+Esse arquivo evita que o GitHub Pages tente processar o projeto com Jekyll.
+
+---
+
+## 2. Publicar no GitHub Pages
+
+O repositório utiliza a branch `main` para armazenar o código completo do projeto.
+
+A branch `gh-pages` é usada apenas para publicar o conteúdo da pasta `public`.
+
+Execute após dar commit e push na branch `main`:
 
 ```bash
-firebase projects:list
-```
-
-O projeto esperado é:
-
-```bash
-ouroguel-1190
+git subtree split --prefix public -b gh-pages
+git push -f origin gh-pages:gh-pages
+git branch -D gh-pages
 ```
 
 ---
 
-## 1. Inicializar Firebase no Projeto
+## 4. Configurar GitHub Pages no Repositório
 
-Caso o projeto ainda não tenha sido inicializado:
+No GitHub, acesse:
 
-```bash
-firebase init
+```text
+Settings > Pages
 ```
 
-Durante a configuração, selecione:
+Em **Build and deployment**, configure:
 
-```bash
-Hosting
-Firestore
-Storage
+```text
+Source: Deploy from a branch
+Branch: gh-pages
+Folder: /root
 ```
 
-Quando perguntado sobre a pasta pública:
+Depois clique em **Save**.
 
-```bash
-public
-```
+O sistema ficará disponível em:
 
-Quando perguntado se deseja configurar como SPA:
-
-```bash
-No
-```
-
-Quando perguntado se deseja configurar deploy automático com GitHub:
-
-```bash
-No
-```
-
-Quando perguntado se deseja sobrescrever `public/index.html`:
-
-```bash
-No
+```text
+https://gaboof.github.io/ouroguel/
 ```
 
 ---
 
-## 2. Fazer Deploy do Hosting
+## 5. Atualizar Regras do Firestore
 
-```bash
-firebase deploy --only hosting
-```
+Mesmo utilizando GitHub Pages para hospedar o frontend, as regras do Firestore continuam sendo gerenciadas pelo Firebase.
 
----
-
-## 3. Fazer Deploy das Regras do Firestore
+Para publicar alterações nas regras do Firestore:
 
 ```bash
 firebase deploy --only firestore:rules
@@ -349,28 +343,12 @@ firebase deploy --only firestore:rules
 
 ---
 
-## 4. Fazer Deploy das Regras do Storage
+## 6. Atualizar Regras do Storage
 
-Caso o projeto utilize Firebase Storage:
+Caso o projeto utilize Firebase Storage, publique alterações nas regras com:
 
 ```bash
 firebase deploy --only storage
-```
-
----
-
-## 5. Deploy Completo
-
-Para publicar hosting, regras do Firestore e Storage:
-
-```bash
-firebase deploy
-```
-
-Ou de forma explícita:
-
-```bash
-firebase deploy --only hosting,firestore:rules,storage
 ```
 
 ---
