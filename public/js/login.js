@@ -6,6 +6,20 @@ window.onpopstate = function () {
     history.go(1);
 };
 
+function getBasePath() {
+    const path = window.location.pathname;
+
+    if (path.startsWith("/ouroguel/")) {
+        return "/ouroguel";
+    }
+
+    return "";
+}
+
+function irParaInicio() {
+    window.location.replace(`${getBasePath()}/index.html`);
+}
+
 function togglePassword() {
     const passwordInput = document.getElementById("password");
     const eyeIcon = document.querySelector("#togglePasswordBtn i");
@@ -140,7 +154,7 @@ async function handleLogin(e) {
             });
         }
 
-        window.location.replace("../index.html");
+        irParaInicio();
     } catch (error) {
         console.error("Erro no login:", error);
 
