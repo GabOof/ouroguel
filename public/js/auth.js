@@ -1,20 +1,30 @@
 let currentUser = null;
 let authInitialized = false;
 
+function getBasePath() {
+    const path = window.location.pathname;
+
+    if (path.startsWith("/ouroguel/")) {
+        return "/ouroguel";
+    }
+
+    return "";
+}
+
 function isLoginPage() {
-    return window.location.pathname.includes("../pages/login.html");
+    return window.location.pathname.endsWith("/pages/login.html");
 }
 
 function isPrintPage() {
-    return window.location.pathname.includes("../pages/imprimir.html");
+    return window.location.pathname.endsWith("/pages/imprimir.html");
 }
 
 function getLoginPath() {
-    return "../pages/login.html";
+    return `${getBasePath()}/pages/login.html`;
 }
 
 function getHomePath() {
-    return "../index.html";
+    return `${getBasePath()}/index.html`;
 }
 
 async function aguardarFirebaseAuth() {
