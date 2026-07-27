@@ -2,19 +2,19 @@ let currentUser = null;
 let authInitialized = false;
 
 function isLoginPage() {
-    return window.location.pathname.includes("/pages/login.html");
+    return window.location.pathname.includes("../pages/login.html");
 }
 
 function isPrintPage() {
-    return window.location.pathname.includes("/pages/imprimir.html");
+    return window.location.pathname.includes("../pages/imprimir.html");
 }
 
 function getLoginPath() {
-    return "/pages/login.html";
+    return "../pages/login.html";
 }
 
 function getHomePath() {
-    return "/index.html";
+    return "../index.html";
 }
 
 async function aguardarFirebaseAuth() {
@@ -462,7 +462,7 @@ window.initializeAuth = initializeAuth;
                     }
 
                     await usuario.verifyBeforeUpdateEmail(novoEmail, {
-                        url: window.location.origin + "/index.html",
+                        url: window.location.origin + "../index.html",
                         handleCodeInApp: false,
                     });
 

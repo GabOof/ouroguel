@@ -229,7 +229,7 @@ async function handleRegister(e) {
 
         if (!user.emailVerified) {
             await user.sendEmailVerification({
-                url: window.location.origin + "/pages/login.html",
+                url: window.location.origin + "../pages/login.html",
                 handleCodeInApp: false,
             });
 
@@ -261,7 +261,7 @@ async function handleRegister(e) {
         });
 
         await user.sendEmailVerification({
-            url: window.location.origin + "/pages/login.html",
+            url: window.location.origin + "../pages/login.html",
             handleCodeInApp: false,
         });
 
