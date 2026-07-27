@@ -22,5 +22,6 @@
   "bugs": {
     "url": "https://github.com/GabOof/ouroguel/issues"
   },
-  "homepage": "https://github.com/GabOof/ouroguel#readme"
+  "homepage": "https://github.com/GabOof/ouroguel#readme",
+  "devDependencies": {}
 }

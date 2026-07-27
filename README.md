@@ -7,7 +7,7 @@ Sistema web desenvolvido como Trabalho de Conclusão de Curso (TCC) em Interaç�
 O projeto digitaliza o processo de locação de equipamentos da empresa **Ouroguel LTDA**, substituindo controles manuais em papel por uma aplicação web acessível, responsiva e de baixa complexidade operacional.
 
 **URL do Sistema em Produção:**
-[https://ouroguel-1190.web.app](https://ouroguel-1190.web.app)
+[https://gaboof.github.io/ouroguel/](https://gaboof.github.io/ouroguel/)
 
 ---
 
