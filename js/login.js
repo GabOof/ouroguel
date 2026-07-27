@@ -140,7 +140,7 @@ async function handleLogin(e) {
             });
         }
 
-        window.location.replace("/index.html");
+        window.location.replace("../index.html");
     } catch (error) {
         console.error("Erro no login:", error);
 
