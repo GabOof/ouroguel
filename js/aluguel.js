@@ -1551,7 +1551,10 @@ function abrirModalFechamento(aluguelId) {
     const modal = document.getElementById("modalFechamento");
 
     if (modal) {
-        modal.style.display = "flex";
+        modal.classList.add("active");
+        modal.setAttribute("aria-hidden", "false");
+
+        document.body.classList.add("modal-open");
     }
 
     recalcularFechamento();
@@ -1561,8 +1564,11 @@ function fecharModalFechamento() {
     const modal = document.getElementById("modalFechamento");
 
     if (modal) {
-        modal.style.display = "none";
+        modal.classList.remove("active");
+        modal.setAttribute("aria-hidden", "true");
     }
+
+    document.body.classList.remove("modal-open");
 
     aluguelFechando = null;
 }

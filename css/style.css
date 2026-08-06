@@ -2065,3 +2065,113 @@ PÁGINA DE ALUGUÉIS
         padding: 14px 18px;
     }
 }
+
+/* ============================================
+   CORREÇÃO VISUAL — MODAL FINALIZAR ALUGUEL
+============================================ */
+
+#modalFechamento.fechamento-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw;
+    height: 100dvh;
+    z-index: 10000;
+
+    display: none;
+    align-items: center;
+    justify-content: center;
+
+    padding: 32px;
+
+    /* Fundo escuro fora do modal */
+    background-color: rgba(15, 23, 42, 0.72) !important;
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+/* Modal aberto */
+#modalFechamento.fechamento-overlay.active {
+    display: flex !important;
+}
+
+/* Caixa branca real do modal */
+#modalFechamento .fechamento-modal {
+    position: relative;
+
+    width: min(1050px, calc(100vw - 64px));
+    max-height: calc(100dvh - 64px);
+
+    margin: auto !important;
+    padding: 28px;
+
+    background-color: #ffffff;
+    border: 1px solid #d9d9d9;
+    border-radius: 18px;
+
+    box-shadow:
+        0 24px 70px rgba(0, 0, 0, 0.35),
+        0 8px 24px rgba(0, 0, 0, 0.18);
+
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    animation: fechamentoModalEntrada 0.2s ease;
+}
+
+/* Evita que form-card deixe margens externas no modal */
+#modalFechamento .fechamento-modal.form-card {
+    margin: auto !important;
+    margin-bottom: 0 !important;
+}
+
+/* Cabeçalho com separação visual */
+#modalFechamento .fechamento-header {
+    position: sticky;
+    top: -28px;
+    z-index: 5;
+
+    margin: -28px -28px 24px;
+    padding: 24px 28px 18px;
+
+    background-color: #ffffff;
+    border-bottom: 1px solid #e0e0e0;
+    border-radius: 18px 18px 0 0;
+}
+
+/* Animação de entrada */
+@keyframes fechamentoModalEntrada {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (max-width: 768px) {
+    #modalFechamento.fechamento-overlay {
+        align-items: flex-start;
+        padding: 12px;
+    }
+
+    #modalFechamento .fechamento-modal {
+        width: 100%;
+        max-height: calc(100dvh - 24px);
+        padding: 20px;
+        border-radius: 14px;
+    }
+
+    #modalFechamento .fechamento-header {
+        top: -20px;
+        margin: -20px -20px 20px;
+        padding: 18px 20px;
+        border-radius: 14px 14px 0 0;
+    }
+}
