@@ -25,7 +25,9 @@
 
     function dataHojeISO() {
         const hoje = new Date();
+
         hoje.setMinutes(hoje.getMinutes() - hoje.getTimezoneOffset());
+
         return hoje.toISOString().split("T")[0];
     }
 
@@ -34,11 +36,18 @@
             const [ano, mes, dia] = String(valor || "")
                 .split("-")
                 .map(Number);
+
             return new Date(ano, mes - 1, dia);
         };
 
         const inicio = criarData(dataInicio);
+
         const fim = criarData(dataFim);
+
+        if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime())) {
+            return 1;
+        }
+
         const diffMs = Math.max(0, fim.getTime() - inicio.getTime());
 
         if (periodo === "hora") {
@@ -58,6 +67,70 @@
         }
 
         return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    }
+
+    function formatarDuracaoMinutos(totalMinutos) {
+        const minutosNormalizados = Math.max(0, Math.round(Number(totalMinutos) || 0));
+
+        const horas = Math.floor(minutosNormalizados / 60);
+
+        const minutos = minutosNormalizados % 60;
+
+        return `${horas}:${String(minutos).padStart(2, "0")}`;
+    }
+
+    function normalizarDuracaoFechamento(fechamento, aluguel, dataDevolucaoReal, periodoCobranca) {
+        const duracaoCalculada = calcularDuracaoPorDatas(
+            aluguel.dataInicio,
+            dataDevolucaoReal,
+            periodoCobranca
+        );
+
+        if (periodoCobranca === "hora") {
+            let duracaoMinutos = Number(fechamento.duracaoMinutos);
+
+            if (!Number.isFinite(duracaoMinutos) || duracaoMinutos <= 0) {
+                const horasInformadas = Number(
+                    fechamento.duracaoCobranca || fechamento.duracaoReal || duracaoCalculada
+                );
+
+                duracaoMinutos = Math.round(horasInformadas * 60);
+            }
+
+            if (!Number.isFinite(duracaoMinutos) || duracaoMinutos <= 0) {
+                return {
+                    duracaoCobranca: 0,
+                    duracaoMinutos: 0,
+                    duracaoFormatada: "",
+                };
+            }
+
+            return {
+                duracaoCobranca: duracaoMinutos / 60,
+
+                duracaoMinutos,
+
+                duracaoFormatada:
+                    fechamento.duracaoFormatada || formatarDuracaoMinutos(duracaoMinutos),
+            };
+        }
+
+        const duracaoCobranca = Number(
+            fechamento.duracaoCobranca || fechamento.duracaoReal || duracaoCalculada
+        );
+
+        return {
+            duracaoCobranca,
+
+            duracaoMinutos: null,
+
+            duracaoFormatada:
+                fechamento.duracaoFormatada || (duracaoCobranca > 0 ? String(duracaoCobranca) : ""),
+        };
+    }
+
+    function arredondarMoeda(valor) {
+        return Math.round((Number(valor) + Number.EPSILON) * 100) / 100;
     }
 
     function obterValorPorPeriodo(equipamento, periodo) {
@@ -97,7 +170,9 @@
     function normalizarItemFechamento(item) {
         return {
             equipamentoId: item.equipamentoId || item.id,
+
             quantidadeCobradaFinal: Number(item.quantidadeCobradaFinal || 0),
+
             valorUnitarioFinal: Number(item.valorUnitarioFinal || item.valorUnitario || 0),
         };
     }
@@ -106,7 +181,9 @@
         const dataBase = dataInicio ? new Date(dataInicio + "T00:00:00") : new Date();
 
         const ano = dataBase.getFullYear();
+
         const mes = String(dataBase.getMonth() + 1).padStart(2, "0");
+
         const numero = String(numeroAluguel).padStart(2, "0");
 
         return `CT-${ano}${mes}-${numero}`;
@@ -143,7 +220,9 @@
             validarDadosAbertura(dados);
 
             const db = await aguardarFirebase();
+
             const aluguelRef = db.collection("alugueis").doc();
+
             const contadorRef = db.collection("contadores").doc("alugueis");
 
             await db.runTransaction(async function (transaction) {
@@ -169,6 +248,7 @@
 
                 for (let i = 0; i < dados.equipamentos.length; i++) {
                     const itemSelecionado = dados.equipamentos[i];
+
                     const equipamentoDoc = equipamentoDocs[i];
 
                     if (!equipamentoDoc.exists) {
@@ -188,7 +268,9 @@
                     }
 
                     const quantidadeDisponivel = Number(equipamentoAtual.quantidadeDisponivel || 0);
+
                     const quantidadeAlugada = Number(equipamentoAtual.quantidadeAlugada || 0);
+
                     const quantidadeSolicitada = Number(
                         itemSelecionado.quantidadeEstoque || itemSelecionado.quantidade || 0
                     );
@@ -206,6 +288,7 @@
                     }
 
                     const equipamentoId = itemSelecionado.id || itemSelecionado.equipamentoId;
+
                     const nomeEquipamento =
                         equipamentoAtual.nomeEquipamento ||
                         itemSelecionado.nomeEquipamento ||
@@ -214,53 +297,71 @@
 
                     equipamentosDetalhes.push({
                         equipamentoId,
+
                         nome: nomeEquipamento,
+
                         nomeEquipamento,
 
                         quantidade: quantidadeSolicitada,
+
                         quantidadeEstoque: quantidadeSolicitada,
 
                         unidadeCobranca:
                             itemSelecionado.unidadeCobranca ||
                             equipamentoAtual.unidadeCobranca ||
                             "unidade",
+
                         rotuloUnidadeCobranca:
                             itemSelecionado.rotuloUnidadeCobranca ||
                             equipamentoAtual.rotuloUnidadeCobranca ||
                             "unid.",
+
                         permiteQuantidadeDecimal: Boolean(
                             itemSelecionado.permiteQuantidadeDecimal ||
                             equipamentoAtual.permiteQuantidadeDecimal
                         ),
 
                         valorHora: Number(equipamentoAtual.valorHora || 0),
+
                         valorDia: Number(equipamentoAtual.valorDia || 0),
+
                         valorMes: Number(equipamentoAtual.valorMes || 0),
                     });
 
                     transaction.update(equipamentoRefs[i], {
                         quantidadeDisponivel: quantidadeDisponivel - quantidadeSolicitada,
+
                         quantidadeAlugada: quantidadeAlugada + quantidadeSolicitada,
+
                         atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
                     });
                 }
 
                 transaction.set(aluguelRef, {
                     numeroAluguel,
+
                     codigoContrato: gerarCodigoContratoPorNumero(numeroAluguel, dados.dataInicio),
 
                     clienteId: dados.clienteId,
+
                     clienteNome: dados.cliente.nome || "",
+
                     clienteCpf: dados.cliente.cpf || "",
+
                     clienteCelular: dados.cliente.celular || "",
+
                     clienteTelefone: dados.cliente.telefone || "",
 
                     dataInicio: dados.dataInicio,
+
                     dataRetirada: dados.dataInicio,
+
                     dataDevolucaoPrevista: dados.dataDevolucaoPrevista || "",
 
                     equipamentosIds: equipamentosDetalhes.map((item) => item.equipamentoId),
+
                     equipamentos: equipamentosDetalhes,
+
                     equipamentosDetalhes,
 
                     observacoes: dados.observacoes || "",
@@ -271,13 +372,19 @@
                     valorTotal: 0,
                     valorPago: 0,
                     saldo: 0,
+
                     statusPagamento: "nao_calculado",
+
                     cobrancaCalculada: false,
 
                     status: "ativo",
+
                     dataRegistro: new Date().toISOString(),
+
                     criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+
                     atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+
                     criadoPor: window.auth?.currentUser?.uid || null,
                 });
 
@@ -285,9 +392,12 @@
                     contadorRef,
                     {
                         ultimoNumero: numeroAluguel,
+
                         atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
                     },
-                    { merge: true }
+                    {
+                        merge: true,
+                    }
                 );
             });
 
@@ -296,6 +406,7 @@
 
         async finalizar(aluguelId, fechamento = {}) {
             const db = await aguardarFirebase();
+
             const aluguelRef = db.collection("alugueis").doc(aluguelId);
 
             await db.runTransaction(async function (transaction) {
@@ -322,18 +433,22 @@
                 }
 
                 const dataDevolucaoReal = fechamento.dataDevolucaoReal || dataHojeISO();
-                const duracaoCobranca = Number(
-                    fechamento.duracaoCobranca ||
-                        fechamento.duracaoReal ||
-                        calcularDuracaoPorDatas(
-                            aluguel.dataInicio,
-                            dataDevolucaoReal,
-                            periodoCobranca
-                        )
+
+                const duracaoInfo = normalizarDuracaoFechamento(
+                    fechamento,
+                    aluguel,
+                    dataDevolucaoReal,
+                    periodoCobranca
                 );
 
-                if (duracaoCobranca <= 0) {
-                    throw new Error("Duração de cobrança inválida.");
+                const { duracaoCobranca, duracaoMinutos, duracaoFormatada } = duracaoInfo;
+
+                if (!Number.isFinite(duracaoCobranca) || duracaoCobranca <= 0) {
+                    throw new Error(
+                        periodoCobranca === "hora"
+                            ? "Duração por hora inválida. Use o formato horas:minutos."
+                            : "Duração de cobrança inválida."
+                    );
                 }
 
                 const equipamentos = aluguel.equipamentosDetalhes || aluguel.equipamentos || [];
@@ -355,10 +470,12 @@
                 }
 
                 let subtotalFinal = 0;
+
                 const equipamentosFechamento = [];
 
                 for (let i = 0; i < equipamentos.length; i++) {
                     const item = equipamentos[i];
+
                     const equipamentoDoc = equipamentoDocs[i];
 
                     if (!equipamentoDoc.exists) {
@@ -366,7 +483,9 @@
                     }
 
                     const equipamento = equipamentoDoc.data();
+
                     const equipamentoId = item.equipamentoId || item.id;
+
                     const itemFechamento = itensFechamentoMap.get(equipamentoId) || {};
 
                     const quantidadeEstoque = Number(
@@ -397,29 +516,44 @@
                         );
                     }
 
-                    const subtotalItem =
-                        valorUnitarioFinal * quantidadeCobradaFinal * duracaoCobranca;
+                    const subtotalItem = arredondarMoeda(
+                        valorUnitarioFinal * quantidadeCobradaFinal * duracaoCobranca
+                    );
 
-                    subtotalFinal += subtotalItem;
+                    subtotalFinal = arredondarMoeda(subtotalFinal + subtotalItem);
 
                     equipamentosFechamento.push({
                         ...item,
+
                         quantidadeEstoque,
+
                         quantidadeCobradaFinal,
+
                         unidadeCobranca:
                             item.unidadeCobranca || equipamento.unidadeCobranca || "unidade",
+
                         rotuloUnidadeCobranca:
                             item.rotuloUnidadeCobranca ||
                             equipamento.rotuloUnidadeCobranca ||
                             "unid.",
+
                         periodoCobranca,
+
                         duracaoCobranca,
+
+                        duracaoMinutos,
+
+                        duracaoFormatada,
+
                         valorUnitarioFinal,
+
                         subtotalFinal: subtotalItem,
                     });
 
                     const quantidadeTotal = Number(equipamento.quantidadeTotal || 0);
+
                     const quantidadeDisponivel = Number(equipamento.quantidadeDisponivel || 0);
+
                     const quantidadeAlugada = Number(equipamento.quantidadeAlugada || 0);
 
                     transaction.update(equipamentoRefs[i], {
@@ -427,21 +561,27 @@
                             quantidadeTotal,
                             quantidadeDisponivel + quantidadeEstoque
                         ),
+
                         quantidadeAlugada: Math.max(0, quantidadeAlugada - quantidadeEstoque),
+
                         atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
                     });
                 }
 
                 const desconto = Number(fechamento.desconto || 0);
+
                 const acrescimo = Number(fechamento.acrescimo || 0);
-                const valorTotal = Math.max(0, subtotalFinal + acrescimo - desconto);
+
+                const valorTotal = arredondarMoeda(
+                    Math.max(0, subtotalFinal + acrescimo - desconto)
+                );
 
                 const valorPago =
                     fechamento.valorPago === null || fechamento.valorPago === undefined
                         ? 0
                         : Number(fechamento.valorPago || 0);
 
-                const saldo = Math.max(0, valorTotal - valorPago);
+                const saldo = arredondarMoeda(Math.max(0, valorTotal - valorPago));
 
                 let statusPagamento = "pendente";
 
@@ -453,26 +593,45 @@
 
                 transaction.update(aluguelRef, {
                     status: "finalizado",
+
                     dataDevolucaoReal,
 
                     periodoCobranca,
+
                     duracaoCobranca,
+
                     duracaoReal: duracaoCobranca,
 
+                    duracaoMinutos,
+
+                    duracaoFormatada,
+
                     equipamentosFechamento,
+
                     equipamentosDetalhes: equipamentosFechamento,
 
                     subtotal: subtotalFinal,
+
                     desconto,
+
                     acrescimo,
+
                     valorTotal,
+
                     valorPago,
+
                     saldo,
+
                     formaPagamento: fechamento.formaPagamento || "",
+
                     statusPagamento,
 
                     cobrancaCalculada: true,
+
+                    observacoesFechamento: fechamento.observacoesFechamento || "",
+
                     fechadoEm: new Date().toISOString(),
+
                     atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
                 });
             });

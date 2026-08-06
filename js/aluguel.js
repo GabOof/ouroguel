@@ -181,6 +181,7 @@ function calcularDuracaoRealLocal(dataInicio, dataFim, periodo) {
         const [ano, mes, dia] = String(valor || "")
             .split("-")
             .map(Number);
+
         return new Date(ano, mes - 1, dia);
     };
 
@@ -194,19 +195,144 @@ function calcularDuracaoRealLocal(dataInicio, dataFim, periodo) {
     const diffMs = Math.max(0, fim.getTime() - inicio.getTime());
 
     if (periodo === "hora") {
-        return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60)));
+        const minutos = Math.max(60, Math.ceil(diffMs / (1000 * 60)));
+        return formatarDuracaoMinutos(minutos);
     }
 
     if (periodo === "mes") {
         let meses =
             (fim.getFullYear() - inicio.getFullYear()) * 12 + (fim.getMonth() - inicio.getMonth());
 
-        if (fim.getDate() > inicio.getDate()) meses += 1;
+        if (fim.getDate() > inicio.getDate()) {
+            meses += 1;
+        }
 
         return Math.max(1, meses);
     }
 
     return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+}
+
+function converterDuracaoHoraParaMinutos(valor) {
+    const texto = String(valor ?? "")
+        .trim()
+        .toLowerCase();
+
+    if (!texto) {
+        return 0;
+    }
+
+    // Aceita: 1:30, 01:45 ou 3:34.
+    const formatoRelogio = texto.match(/^(\d+)\s*:\s*(\d{1,2})$/);
+
+    if (formatoRelogio) {
+        const horas = Number(formatoRelogio[1]);
+        const minutos = Number(formatoRelogio[2]);
+
+        if (minutos >= 60) {
+            return 0;
+        }
+
+        return horas * 60 + minutos;
+    }
+
+    // Aceita: 1h30, 1h 30min, 3 horas 34 minutos ou 2h.
+    const formatoHorasMinutos = texto.match(
+        /^(\d+)\s*h(?:oras?)?\s*(?:(\d{1,2})\s*(?:m|min|minutos?)?)?$/
+    );
+
+    if (formatoHorasMinutos) {
+        const horas = Number(formatoHorasMinutos[1]);
+        const minutos = Number(formatoHorasMinutos[2] || 0);
+
+        if (minutos >= 60) {
+            return 0;
+        }
+
+        return horas * 60 + minutos;
+    }
+
+    // Aceita: 45min ou 90 minutos.
+    const formatoSomenteMinutos = texto.match(/^(\d+)\s*(?:m|min|minutos?)$/);
+
+    if (formatoSomenteMinutos) {
+        return Number(formatoSomenteMinutos[1]);
+    }
+
+    // Mantém compatibilidade com horas decimais: 1,5 ou 1.75.
+    const horasDecimais = Number(texto.replace(",", "."));
+
+    if (!Number.isFinite(horasDecimais) || horasDecimais <= 0) {
+        return 0;
+    }
+
+    return Math.round(horasDecimais * 60);
+}
+
+function formatarDuracaoMinutos(totalMinutos) {
+    const minutosNormalizados = Math.max(0, Math.round(Number(totalMinutos) || 0));
+
+    const horas = Math.floor(minutosNormalizados / 60);
+    const minutos = minutosNormalizados % 60;
+
+    return `${horas}:${String(minutos).padStart(2, "0")}`;
+}
+
+function obterDuracaoCobrancaInformada(valor, periodo) {
+    if (periodo === "hora") {
+        const minutos = converterDuracaoHoraParaMinutos(valor);
+
+        return {
+            unidades: minutos > 0 ? minutos / 60 : 0,
+            minutos,
+            formatada: minutos > 0 ? formatarDuracaoMinutos(minutos) : "",
+        };
+    }
+
+    const unidades = Math.trunc(parseNumeroBR(valor));
+
+    return {
+        unidades: unidades > 0 ? unidades : 0,
+        minutos: null,
+        formatada: unidades > 0 ? String(unidades) : "",
+    };
+}
+
+function configurarCampoDuracaoPorPeriodo(periodo) {
+    const campo = document.getElementById("duracaoReal");
+
+    if (!campo) {
+        return;
+    }
+
+    const label = document.querySelector('label[for="duracaoReal"]');
+
+    if (periodo === "hora") {
+        campo.type = "text";
+        campo.inputMode = "numeric";
+        campo.placeholder = "Ex.: 1:30 ou 3:34";
+        campo.title = "Informe horas e minutos, por exemplo: 1:30.";
+
+        campo.removeAttribute("min");
+        campo.removeAttribute("step");
+
+        if (label) {
+            label.textContent = "Duração real (horas:minutos)";
+        }
+
+        return;
+    }
+
+    campo.type = "number";
+    campo.inputMode = "numeric";
+    campo.min = "1";
+    campo.step = "1";
+    campo.placeholder = "Ex.: 2";
+    campo.title = "";
+
+    if (label) {
+        label.textContent = periodo === "mes" ? "Duração real (meses)" : "Duração real (dias)";
+    }
 }
 
 function obterQuantidadeCobradaPadrao(item) {
@@ -285,7 +411,9 @@ async function aguardarDependenciasAluguel() {
 async function carregarClientesParaSelect() {
     const select = document.getElementById("clienteSelect");
 
-    if (!select) return;
+    if (!select) {
+        return;
+    }
 
     const db = await aguardarFirebaseTelaAluguel();
 
@@ -295,6 +423,7 @@ async function carregarClientesParaSelect() {
 
     if (snapshot.empty) {
         select.innerHTML = '<option value="">Nenhum cliente cadastrado</option>';
+
         return;
     }
 
@@ -302,22 +431,38 @@ async function carregarClientesParaSelect() {
         '<option value="">Clique para selecionar um cliente</option>' +
         snapshot.docs
             .map((doc) => {
-                const cliente = { id: doc.id, ...doc.data() };
-                const nome = escaparHTMLAluguel(cliente.nomeBusca || "Cliente sem nome");
+                const cliente = {
+                    id: doc.id,
+                    ...doc.data(),
+                };
+
+                const nome = escaparHTMLAluguel(
+                    cliente.nomeBusca || cliente.nome || "Cliente sem nome"
+                );
+
                 const cpf = escaparHTMLAluguel(cliente.cpf || "");
 
-                return `<option value="${doc.id}">${nome}${cpf ? " - " + cpf : ""}</option>`;
+                return `
+                    <option value="${doc.id}">
+                        ${nome}${cpf ? " - " + cpf : ""}
+                    </option>
+                `;
             })
             .join("");
 }
 
 async function buscarClientePorId(clienteId) {
-    if (!clienteId) return null;
+    if (!clienteId) {
+        return null;
+    }
 
     const db = await aguardarFirebaseTelaAluguel();
+
     const doc = await db.collection("clientes").doc(clienteId).get();
 
-    if (!doc.exists) return null;
+    if (!doc.exists) {
+        return null;
+    }
 
     return {
         id: doc.id,
@@ -328,7 +473,9 @@ async function buscarClientePorId(clienteId) {
 async function carregarEquipamentosParaSelect() {
     const select = document.getElementById("equipamentoSelect");
 
-    if (!select) return;
+    if (!select) {
+        return;
+    }
 
     const db = await aguardarFirebaseTelaAluguel();
 
@@ -343,6 +490,7 @@ async function carregarEquipamentosParaSelect() {
         }))
         .filter((equipamento) => {
             const quantidadeDisponivel = Number(equipamento.quantidadeDisponivel || 0);
+
             return (
                 equipamento.ativo !== false &&
                 equipamento.status === "disponivel" &&
@@ -353,6 +501,7 @@ async function carregarEquipamentosParaSelect() {
 
     if (!equipamentosDisponiveis.length) {
         select.innerHTML = '<option value="">Nenhum equipamento alugável disponível</option>';
+
         return;
     }
 
@@ -363,10 +512,16 @@ async function carregarEquipamentosParaSelect() {
                 const nome = escaparHTMLAluguel(
                     equipamento.nomeEquipamento || "Equipamento sem nome"
                 );
+
                 const quantidade = Number(equipamento.quantidadeDisponivel || 0);
+
                 const unidade = escaparHTMLAluguel(obterRotuloUnidadeCobranca(equipamento));
 
-                return `<option value="${equipamento.id}">${nome} - Disp: ${quantidade} - Cobrança: ${unidade}</option>`;
+                return `
+                    <option value="${equipamento.id}">
+                        ${nome} - Disp: ${quantidade} - Cobrança: ${unidade}
+                    </option>
+                `;
             })
             .join("");
 }
@@ -379,9 +534,12 @@ async function buscarEquipamentoPorId(equipamentoId) {
     }
 
     const db = await aguardarFirebaseTelaAluguel();
+
     const doc = await db.collection("equipamentos").doc(equipamentoId).get();
 
-    if (!doc.exists) return null;
+    if (!doc.exists) {
+        return null;
+    }
 
     return {
         id: doc.id,
@@ -395,12 +553,19 @@ async function buscarEquipamentoPorId(equipamentoId) {
 
 function configurarFormularioAluguel() {
     const form = document.getElementById("aluguelForm");
+
     const dataInicio = document.getElementById("dataInicio");
+
     const clienteSelect = document.getElementById("clienteSelect");
+
     const equipamentoSelect = document.getElementById("equipamentoSelect");
+
     const btnAdicionar = document.getElementById("btnAdicionarEquipamento");
+
     const btnLimpar = document.getElementById("btnLimparAluguel");
+
     const btnImprimir = document.getElementById("btnImprimir");
+
     const buscaAlugueis = document.getElementById("searchAlugueis");
 
     if (form) {
@@ -431,6 +596,7 @@ function configurarFormularioAluguel() {
     if (btnImprimir) {
         btnImprimir.disabled = true;
         btnImprimir.style.display = "none";
+
         btnImprimir.addEventListener("click", imprimirContrato);
     }
 
@@ -456,12 +622,15 @@ function configurarModalFechamento() {
 
         if (campo) {
             campo.addEventListener("input", recalcularFechamento);
+
             campo.addEventListener("change", recalcularFechamento);
         }
     });
 
     const btnCancelarTopo = document.getElementById("btnCancelarFechamento");
+
     const btnCancelarRodape = document.getElementById("btnFecharModalRodape");
+
     const btnConfirmar = document.getElementById("btnConfirmarFechamento");
 
     if (btnCancelarTopo) {
@@ -511,8 +680,11 @@ async function aplicarPreSelecoes() {
 
     if (clienteId) {
         preencherCampo("clienteSelect", clienteId);
+
         await atualizarInfoCliente();
+
         localStorage.removeItem("clienteSelecionado");
+
         houvePreSelecao = true;
     }
 
@@ -520,8 +692,11 @@ async function aplicarPreSelecoes() {
 
     if (equipamentoId) {
         preencherCampo("equipamentoSelect", equipamentoId);
+
         await atualizarInfoEquipamento();
+
         localStorage.removeItem("equipamentoSelecionado");
+
         houvePreSelecao = true;
     }
 
@@ -534,10 +709,14 @@ async function aplicarPreSelecoes() {
 
 async function atualizarInfoCliente() {
     const clienteId = valorCampo("clienteSelect");
+
     const infoCliente = document.getElementById("infoCliente");
 
     if (!clienteId) {
-        if (infoCliente) infoCliente.style.display = "none";
+        if (infoCliente) {
+            infoCliente.style.display = "none";
+        }
+
         clienteSelecionado = null;
         return;
     }
@@ -547,13 +726,17 @@ async function atualizarInfoCliente() {
 
         if (!cliente) {
             mostrarErroAluguel("Erro", "Cliente não encontrado.");
+
             clienteSelecionado = null;
             return;
         }
 
         preencherCampo("clienteTelefone", cliente.telefone || "");
+
         preencherCampo("clienteCelular", cliente.celular || "");
+
         preencherCampo("clienteCPF", cliente.cpf || "");
+
         preencherCampo(
             "clienteCidade",
             `${cliente.cidade || ""}${cliente.estado ? "/" + cliente.estado : ""}`
@@ -566,16 +749,21 @@ async function atualizarInfoCliente() {
         clienteSelecionado = cliente;
     } catch (error) {
         console.error("Erro ao carregar informações do cliente:", error);
+
         mostrarErroAluguel("Erro", "Erro ao carregar cliente.");
     }
 }
 
 async function atualizarInfoEquipamento() {
     const equipamentoId = valorCampo("equipamentoSelect");
+
     const infoEquipamento = document.getElementById("infoEquipamento");
 
     if (!equipamentoId) {
-        if (infoEquipamento) infoEquipamento.style.display = "none";
+        if (infoEquipamento) {
+            infoEquipamento.style.display = "none";
+        }
+
         return;
     }
 
@@ -584,17 +772,21 @@ async function atualizarInfoEquipamento() {
 
         if (!equipamento) {
             mostrarErroAluguel("Erro", "Equipamento não encontrado.");
+
             return;
         }
 
         const quantidadeDisponivel = Number(equipamento.quantidadeDisponivel || 0);
+
         const precos = [
             Number(equipamento.valorHora || 0) > 0
                 ? `Hora: ${formatarMoedaAluguel(equipamento.valorHora)}`
                 : "",
+
             Number(equipamento.valorDia || 0) > 0
                 ? `Dia: ${formatarMoedaAluguel(equipamento.valorDia)}`
                 : "",
+
             Number(equipamento.valorMes || 0) > 0
                 ? `Mês: ${formatarMoedaAluguel(equipamento.valorMes)}`
                 : "",
@@ -603,13 +795,16 @@ async function atualizarInfoEquipamento() {
             .join(" | ");
 
         preencherCampo("equipamentoDisponivel", quantidadeDisponivel);
+
         preencherCampo("equipamentoUnidade", obterRotuloUnidadeCobranca(equipamento));
+
         preencherCampo("equipamentoPrecos", precos || "Sem preço configurado");
 
         const quantidadeInput = document.getElementById("quantidadeAlugar");
 
         if (quantidadeInput) {
             quantidadeInput.max = quantidadeDisponivel;
+
             quantidadeInput.value = quantidadeDisponivel > 0 ? 1 : 0;
         }
 
@@ -625,21 +820,25 @@ async function atualizarInfoEquipamento() {
         }
     } catch (error) {
         console.error("Erro ao carregar informações do equipamento:", error);
+
         mostrarErroAluguel("Erro", "Erro ao carregar equipamento.");
     }
 }
 
 function adicionarEquipamento() {
     const equipamentoId = valorCampo("equipamentoSelect");
+
     const quantidadeEstoque = parseInt(valorCampo("quantidadeAlugar"), 10) || 0;
 
     if (!equipamentoId) {
         mostrarAvisoAluguel("Atenção", "Selecione um equipamento primeiro.");
+
         return;
     }
 
     if (quantidadeEstoque <= 0) {
         mostrarErroAluguel("Erro", "A quantidade retirada deve ser maior que zero.");
+
         return;
     }
 
@@ -647,6 +846,7 @@ function adicionarEquipamento() {
 
     if (!equipamentoData) {
         mostrarErroAluguel("Erro", "Não foi possível ler os dados do equipamento selecionado.");
+
         return;
     }
 
@@ -663,11 +863,13 @@ function adicionarEquipamento() {
             "Erro",
             `Quantidade indisponível. Estoque disponível: ${quantidadeDisponivel}.`
         );
+
         return;
     }
 
     if (existente) {
         existente.quantidadeEstoque += quantidadeEstoque;
+
         existente.quantidade = existente.quantidadeEstoque;
     } else {
         const nomeEquipamento =
@@ -676,17 +878,25 @@ function adicionarEquipamento() {
         equipamentosSelecionados.push({
             id: equipamentoId,
             equipamentoId,
+
             nome: nomeEquipamento,
             nomeEquipamento,
+
             quantidade: quantidadeEstoque,
             quantidadeEstoque,
+
             unidadeCobranca: equipamentoData.unidadeCobranca || "unidade",
+
             rotuloUnidadeCobranca:
                 equipamentoData.rotuloUnidadeCobranca ||
                 obterRotuloUnidadeCobranca(equipamentoData),
+
             permiteQuantidadeDecimal: Boolean(equipamentoData.permiteQuantidadeDecimal),
+
             valorHora: Number(equipamentoData.valorHora || 0),
+
             valorDia: Number(equipamentoData.valorDia || 0),
+
             valorMes: Number(equipamentoData.valorMes || 0),
         });
     }
@@ -708,6 +918,7 @@ function adicionarEquipamento() {
 
 function atualizarListaEquipamentos() {
     const lista = document.getElementById("listaEquipamentos");
+
     const container = document.getElementById("listaEquipamentosContainer");
 
     if (!lista || !container) {
@@ -717,6 +928,7 @@ function atualizarListaEquipamentos() {
     if (equipamentosSelecionados.length === 0) {
         container.style.display = "none";
         lista.innerHTML = "";
+
         return;
     }
 
@@ -727,42 +939,56 @@ function atualizarListaEquipamentos() {
             const unidade = obterRotuloUnidadeCobranca(item);
 
             return `
-        <tr>
-            <td>
-                <strong>${escaparHTMLAluguel(item.nomeEquipamento)}</strong>
-            </td>
-            <td>
-                <strong>${Number(item.quantidadeEstoque || item.quantidade || 0)}</strong>
-                <span class="linha-secundaria">unid. físicas</span>
-            </td>
+                    <tr>
+                        <td>
+                            <strong>
+                                ${escaparHTMLAluguel(item.nomeEquipamento)}
+                            </strong>
+                        </td>
 
-            <td>${escaparHTMLAluguel(unidade)}</td>
+                        <td>
+                            <strong>
+                                ${Number(item.quantidadeEstoque || item.quantidade || 0)}
+                            </strong>
 
-            <td>
-                <span class="status-badge status-warning">
-                A calcular na devolução
-                </span>
-            </td>
-            <td>
-                <button
-                type="button"
-                title="Remover equipamento"
-                class="btn btn-medium btn-danger"
-                onclick="removerEquipamento(${index})"
-                >
-                <i class="fas fa-trash"></i>
-                </button>
-            </td>
-            </tr>
-        `;
+                            <span class="linha-secundaria">
+                                unid. físicas
+                            </span>
+                        </td>
+
+                        <td>
+                            ${escaparHTMLAluguel(unidade)}
+                        </td>
+
+                        <td>
+                            <span class="status-badge status-warning">
+                                A calcular na devolução
+                            </span>
+                        </td>
+
+                        <td>
+                            <button
+                                type="button"
+                                title="Remover equipamento"
+                                class="btn btn-medium btn-danger"
+                                onclick="removerEquipamento(${index})"
+                            >
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
         })
         .join("");
 }
 
 function removerEquipamento(index) {
     equipamentosSelecionados.splice(index, 1);
+
     atualizarListaEquipamentos();
 }
+
+window.removerEquipamento = removerEquipamento;
 
 // ============================================
 // REGISTRO DE ALUGUEL
@@ -770,6 +996,7 @@ function removerEquipamento(index) {
 
 function validarFormularioAluguel() {
     const clienteId = valorCampo("clienteSelect");
+
     const dataInicio = valorCampo("dataInicio");
 
     if (!clienteId) {
@@ -794,20 +1021,25 @@ async function registrarAluguel(event) {
 
     if (erro) {
         mostrarErroAluguel("Erro", erro);
+
         return;
     }
 
     const submitBtn = event.target.querySelector('button[type="submit"]');
+
     const textoOriginal = submitBtn ? submitBtn.innerHTML : "";
 
     if (submitBtn) {
         submitBtn.disabled = true;
+
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
     }
 
     try {
         const clienteId = valorCampo("clienteSelect");
+
         const dataInicio = valorCampo("dataInicio");
+
         const observacoes = valorCampo("observacoesAluguel");
 
         if (!clienteSelecionado || clienteSelecionado.id !== clienteId) {
@@ -832,14 +1064,17 @@ async function registrarAluguel(event) {
         );
 
         limparFormularioAluguel();
+
         await carregarEquipamentosParaSelect();
         await carregarAlugueis();
+
         fecharModalAluguel();
 
         const btnImprimir = document.getElementById("btnImprimir");
 
         if (btnImprimir) {
             btnImprimir.dataset.aluguelId = aluguelId;
+
             btnImprimir.disabled = false;
             btnImprimir.style.display = "inline-flex";
         }
@@ -868,15 +1103,23 @@ async function carregarAlugueis() {
 
     try {
         alugueisList.innerHTML = `
-        <tr>
-            <td colspan="8" style="text-align: center; padding: 40px;">
-            <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: #3498db;"></i>
-            <p>Carregando aluguéis...</p>
-            </td>
-        </tr>
-    `;
+            <tr>
+                <td
+                    colspan="8"
+                    style="text-align: center; padding: 40px;"
+                >
+                    <i
+                        class="fas fa-spinner fa-spin"
+                        style="font-size: 24px; color: #3498db;"
+                    ></i>
+
+                    <p>Carregando aluguéis...</p>
+                </td>
+            </tr>
+        `;
 
         alugueis = await AluguelService.listar();
+
         paginaAtualAlugueis = 1;
 
         renderizarTabelaAlugueis();
@@ -884,14 +1127,21 @@ async function carregarAlugueis() {
         console.error("Erro ao carregar aluguéis:", error);
 
         alugueisList.innerHTML = `
-        <tr>
-            <td colspan="8" style="text-align: center; padding: 40px; color: #e74c3c;">
-            <i class="fas fa-exclamation-triangle"></i>
-            <p>Erro ao carregar aluguéis</p>
-            <small>${escaparHTMLAluguel(error.message)}</small>
-            </td>
-        </tr>
-    `;
+            <tr>
+                <td
+                    colspan="8"
+                    style="text-align: center; padding: 40px; color: #e74c3c;"
+                >
+                    <i class="fas fa-exclamation-triangle"></i>
+
+                    <p>Erro ao carregar aluguéis</p>
+
+                    <small>
+                        ${escaparHTMLAluguel(error.message)}
+                    </small>
+                </td>
+            </tr>
+        `;
     }
 }
 
@@ -928,6 +1178,7 @@ function obterAlugueisFiltrados() {
             aluguel.formaPagamento,
             aluguel.valorTotal,
             aluguel.saldo,
+            aluguel.duracaoFormatada,
             equipamentosTexto,
         ].join(" ");
 
@@ -946,15 +1197,22 @@ function renderizarTabelaAlugueis() {
 
     if (!alugueisFiltrados.length) {
         alugueisList.innerHTML = `
-        <tr>
-            <td colspan="8" class="empty-message">
-            <i class="fas fa-file-contract"></i>
-            <p>Nenhum aluguel encontrado</p>
-            </td>
-        </tr>
-    `;
+            <tr>
+                <td
+                    colspan="8"
+                    class="empty-message"
+                >
+                    <i class="fas fa-file-contract"></i>
+
+                    <p>
+                        Nenhum aluguel encontrado
+                    </p>
+                </td>
+            </tr>
+        `;
 
         renderizarPaginacaoAlugueis(0);
+
         return;
     }
 
@@ -965,7 +1223,9 @@ function renderizarTabelaAlugueis() {
     }
 
     const inicio = (paginaAtualAlugueis - 1) * ALUGUEIS_POR_PAGINA;
+
     const fim = inicio + ALUGUEIS_POR_PAGINA;
+
     const alugueisDaPagina = alugueisFiltrados.slice(inicio, fim);
 
     alugueisList.innerHTML = alugueisDaPagina
@@ -990,39 +1250,47 @@ function renderizarPaginacaoAlugueis(totalAlugueis) {
     }
 
     const inicio = (paginaAtualAlugueis - 1) * ALUGUEIS_POR_PAGINA + 1;
+
     const fim = Math.min(paginaAtualAlugueis * ALUGUEIS_POR_PAGINA, totalAlugueis);
 
     paginacao.innerHTML = `
-    <div class="pagination-info">
-        Mostrando ${inicio} a ${fim} de ${totalAlugueis} aluguéis
-    </div>
-    <div class="pagination-actions">
-        <button
-            type="button"
-            class="btn btn-secondary pagination-btn"
-            onclick="mudarPaginaAlugueis(${paginaAtualAlugueis - 1})"
-            ${paginaAtualAlugueis === 1 ? "disabled" : ""}
-        >
-        <i class="fas fa-chevron-left"></i> Anterior
-        </button>
-        <span class="pagination-current">
-            Página ${paginaAtualAlugueis} de ${totalPaginas}
-        </span>
+        <div class="pagination-info">
+            Mostrando ${inicio} a ${fim}
+            de ${totalAlugueis} aluguéis
+        </div>
 
-        <button
-            type="button"
-            class="btn btn-secondary pagination-btn"
-            onclick="mudarPaginaAlugueis(${paginaAtualAlugueis + 1})"
-            ${paginaAtualAlugueis === totalPaginas ? "disabled" : ""}
-        >
-        Próxima <i class="fas fa-chevron-right"></i>
-        </button>
-    </div>
+        <div class="pagination-actions">
+            <button
+                type="button"
+                class="btn btn-secondary pagination-btn"
+                onclick="mudarPaginaAlugueis(${paginaAtualAlugueis - 1})"
+                ${paginaAtualAlugueis === 1 ? "disabled" : ""}
+            >
+                <i class="fas fa-chevron-left"></i>
+                Anterior
+            </button>
+
+            <span class="pagination-current">
+                Página ${paginaAtualAlugueis}
+                de ${totalPaginas}
+            </span>
+
+            <button
+                type="button"
+                class="btn btn-secondary pagination-btn"
+                onclick="mudarPaginaAlugueis(${paginaAtualAlugueis + 1})"
+                ${paginaAtualAlugueis === totalPaginas ? "disabled" : ""}
+            >
+                Próxima
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
     `;
 }
 
 function mudarPaginaAlugueis(novaPagina) {
     const totalAlugueis = obterAlugueisFiltrados().length;
+
     const totalPaginas = Math.ceil(totalAlugueis / ALUGUEIS_POR_PAGINA);
 
     if (novaPagina < 1 || novaPagina > totalPaginas) {
@@ -1030,6 +1298,7 @@ function mudarPaginaAlugueis(novaPagina) {
     }
 
     paginaAtualAlugueis = novaPagina;
+
     renderizarTabelaAlugueis();
 }
 
@@ -1039,20 +1308,24 @@ function montarLinhaAluguel(aluguel) {
     const equipamentos = aluguel.equipamentosDetalhes || aluguel.equipamentos || [];
 
     const equipamentosLista = equipamentos
-        .map((e) => {
-            const quantidade = Number(e.quantidadeEstoque || e.quantidade || 0);
-            const nome = e.nomeEquipamento || e.nome || "Equipamento";
+        .map((equipamento) => {
+            const quantidade = Number(equipamento.quantidadeEstoque || equipamento.quantidade || 0);
+
+            const nome = equipamento.nomeEquipamento || equipamento.nome || "Equipamento";
+
             return `${quantidade}x ${nome}`;
         })
         .join(", ");
 
     const equipamentosTexto = escaparHTMLAluguel(equipamentosLista);
+
     const equipamentosResumo =
         equipamentosTexto.length > 55
             ? equipamentosTexto.substring(0, 55) + "..."
             : equipamentosTexto;
 
     let statusClass = "status-available";
+
     let statusText = "Ativo";
 
     if (aluguel.status === "finalizado") {
@@ -1060,6 +1333,7 @@ function montarLinhaAluguel(aluguel) {
         statusText = "Finalizado";
     } else if (aluguel.status === "cancelado") {
         statusClass = "status-unavailable";
+
         statusText = "Cancelado";
     }
 
@@ -1074,104 +1348,154 @@ function montarLinhaAluguel(aluguel) {
     const botaoFinalizar =
         aluguel.status === "finalizado"
             ? `
-        <button title="Aluguel Finalizado" class="btn btn-medium btn-secondary" disabled>
-            <i class="fas fa-check"></i>
-        </button>
-        `
+                <button
+                    title="Aluguel Finalizado"
+                    class="btn btn-medium btn-secondary"
+                    disabled
+                >
+                    <i class="fas fa-check"></i>
+                </button>
+            `
             : `
-        <button
-        title="Finalizar e calcular cobrança"
-            class="btn btn-medium btn-danger"
-            onclick="abrirModalFechamento('${aluguel.id}')"
-            title="Finalizar e calcular cobrança"
-        >
-            <i class="fas fa-clipboard-check"></i>
-        </button>
-        `;
+                <button
+                    type="button"
+                    title="Finalizar e calcular cobrança"
+                    class="btn btn-medium btn-danger"
+                    onclick="abrirModalFechamento('${aluguel.id}')"
+                >
+                    <i class="fas fa-clipboard-check"></i>
+                </button>
+            `;
 
     return `
-    <tr>
-        <td>
-            <strong>${escaparHTMLAluguel(aluguel.clienteNome || "")}</strong>
-            <br><small>${escaparHTMLAluguel(aluguel.clienteCelular || "")}</small>
-        </td>
-        <td>
-            <small>${equipamentosResumo}</small>
-        </td>
+        <tr>
+            <td>
+                <strong>
+                    ${escaparHTMLAluguel(aluguel.clienteNome || "")}
+                </strong>
 
-        <td>${formatarDataAluguel(aluguel.dataInicio)}</td>
+                <br>
 
-        <td>${formatarDataAluguel(aluguel.dataDevolucaoReal)}</td>
+                <small>
+                    ${escaparHTMLAluguel(aluguel.clienteCelular || "")}
+                </small>
+            </td>
 
-        <td>${valorTexto}</td>
+            <td>
+                <small>
+                    ${equipamentosResumo}
+                </small>
+            </td>
 
-        <td>${pagamentoTexto}</td>
+            <td>
+                ${formatarDataAluguel(aluguel.dataInicio)}
+            </td>
 
-        <td>
-            <span class="status-badge ${statusClass}">
-            ${statusText}
-            </span>
-        </td>
-        <td>
-            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-            ${
-                aluguel.status === "finalizado" && aluguel.statusPagamento !== "pago"
-                    ? `
-        <button
-            title="Cobrar aluguel"
-            class="btn btn-medium btn-primary"
-            onclick="abrirModalCobrancaAluguel('${aluguel.id}')"
-        >
-            <i class="fas fa-dollar-sign"></i>
-        </button>
-        `
-                    : aluguel.status === "finalizado" && aluguel.statusPagamento === "pago"
-                      ? `
-        <button
-            title="Pagamento finalizado"
-            class="btn btn-medium btn-secondary"
-            disabled
-        >
-            <i class="fas fa-check-circle"></i>
-        </button>
-        `
-                      : `
-        <button
-            title="Finalize a devolução antes de cobrar"
-            class="btn btn-medium btn-secondary"
-            disabled
-        >
-            <i class="fas fa-dollar-sign"></i>
-        </button>
-        `
-            }
+            <td>
+                ${formatarDataAluguel(aluguel.dataDevolucaoReal)}
+            </td>
 
-            <button
-            title="Imprimir"
-                class="btn btn-medium btn-success"
-                onclick="imprimirAluguel('${aluguel.id}')"
-                title="Imprimir"
-            >
-                <i class="fas fa-print"></i>
-            </button>
+            <td>${valorTexto}</td>
 
-            ${botaoFinalizar}
-            </div>
-        </td>
-    </tr>
+            <td>${pagamentoTexto}</td>
+
+            <td>
+                <span class="status-badge ${statusClass}">
+                    ${statusText}
+                </span>
+            </td>
+
+            <td>
+                <div
+                    style="display: flex; gap: 5px; flex-wrap: wrap;"
+                >
+                    ${
+                        aluguel.status === "finalizado" && aluguel.statusPagamento !== "pago"
+                            ? `
+                                <button
+                                    type="button"
+                                    title="Cobrar aluguel"
+                                    class="btn btn-medium btn-primary"
+                                    onclick="abrirModalCobrancaAluguel('${aluguel.id}')"
+                                >
+                                    <i class="fas fa-dollar-sign"></i>
+                                </button>
+                            `
+                            : aluguel.status === "finalizado" && aluguel.statusPagamento === "pago"
+                              ? `
+                                    <button
+                                        type="button"
+                                        title="Pagamento finalizado"
+                                        class="btn btn-medium btn-secondary"
+                                        disabled
+                                    >
+                                        <i class="fas fa-check-circle"></i>
+                                    </button>
+                                `
+                              : `
+                                    <button
+                                        type="button"
+                                        title="Finalize a devolução antes de cobrar"
+                                        class="btn btn-medium btn-secondary"
+                                        disabled
+                                    >
+                                        <i class="fas fa-dollar-sign"></i>
+                                    </button>
+                                `
+                    }
+
+                    <button
+                        type="button"
+                        title="Imprimir"
+                        class="btn btn-medium btn-success"
+                        onclick="imprimirAluguel('${aluguel.id}')"
+                    >
+                        <i class="fas fa-print"></i>
+                    </button>
+
+                    ${botaoFinalizar}
+                </div>
+            </td>
+        </tr>
     `;
 }
 
 function obterTextoPagamento(aluguel) {
     if (aluguel.statusPagamento === "pago") {
-        return '<span class="status-badge status-success">Pago</span>';
+        return `
+            <span class="status-badge status-success">
+                Pago
+            </span>
+        `;
     }
 
     if (aluguel.statusPagamento === "parcial") {
-        return `<span class="status-badge status-warning">Parcial</span><br><small>Saldo: ${formatarMoedaAluguel(aluguel.saldo || 0)}</small>`;
+        return `
+            <span class="status-badge status-warning">
+                Parcial
+            </span>
+
+            <br>
+
+            <small>
+                Saldo:
+                ${formatarMoedaAluguel(aluguel.saldo || 0)}
+            </small>
+        `;
     }
 
-    return `<span class="status-badge status-unavailable">Pendente</span><br><small>Saldo: ${formatarMoedaAluguel(aluguel.saldo || aluguel.valorTotal || 0)}</small>`;
+    return `
+        <span class="status-badge status-unavailable">
+            Pendente
+        </span>
+
+        <br>
+
+        <small>
+            Saldo:
+            ${formatarMoedaAluguel(aluguel.saldo || aluguel.valorTotal || 0)}
+        </small>
+    `;
 }
 
 function buscarAlugueis() {
@@ -1188,25 +1512,38 @@ function abrirModalFechamento(aluguelId) {
 
     if (!aluguel) {
         mostrarErroAluguel("Erro", "Aluguel não encontrado na lista.");
+
         return;
     }
 
     if (aluguel.status === "finalizado") {
         mostrarAvisoAluguel("Atenção", "Este aluguel já está finalizado.");
+
         return;
     }
 
     aluguelFechando = aluguel;
 
     preencherCampo("fechamentoCliente", aluguel.clienteNome || "-");
+
     preencherCampo("fechamentoDataInicio", formatarDataAluguel(aluguel.dataInicio));
+
     preencherCampo("dataDevolucaoReal", dataHojeISO());
+
     preencherCampo("periodoFechamento", "");
+
+    configurarCampoDuracaoPorPeriodo("");
+
     preencherCampo("duracaoReal", 1);
+
     preencherCampo("descontoFechamento", "0,00");
+
     preencherCampo("acrescimoFechamento", "0,00");
+
     preencherCampo("valorPagoFechamento", "");
+
     preencherCampo("formaPagamentoFechamento", "");
+
     preencherCampo("observacoesFechamento", "");
 
     montarItensFechamento();
@@ -1233,49 +1570,71 @@ function fecharModalFechamento() {
 function montarItensFechamento() {
     const tbody = document.getElementById("fechamentoItens");
 
-    if (!tbody || !aluguelFechando) return;
+    if (!tbody || !aluguelFechando) {
+        return;
+    }
 
     const equipamentos = aluguelFechando.equipamentosDetalhes || aluguelFechando.equipamentos || [];
 
     tbody.innerHTML = equipamentos
         .map((item, index) => {
             const quantidadeEstoque = Number(item.quantidadeEstoque || item.quantidade || 0);
+
             const unidade = obterRotuloUnidadeCobranca(item);
+
             const quantidadeCobradaPadrao = obterQuantidadeCobradaPadrao(item);
 
             return `
-        <tr data-index="${index}">
-            <td>
-                <strong>${escaparHTMLAluguel(item.nomeEquipamento || item.nome)}</strong>
-                <small class="linha-secundaria">Cobrança por ${escaparHTMLAluguel(unidade)}</small>
-            </td>
-            <td>
-                <strong>${quantidadeEstoque}</strong>
-                <small class="linha-secundaria">unid. físicas</small>
-            </td>
-            <td>
-                <input
-                type="text"
-                class="fechamento-quantidade"
-                data-index="${index}"
-                value="${String(quantidadeCobradaPadrao).replace(".", ",")}"
-                />
-            </td>
-            <td>
-                <input
-                type="text"
-                class="fechamento-valor-unitario"
-                data-index="${index}"
-                value="0,00"
-                />
-            </td>
-            <td>
-                <strong class="fechamento-subtotal-item" data-index="${index}">
-                R$ 0,00
-                </strong>
-            </td>
-        </tr>
-        `;
+                    <tr data-index="${index}">
+                        <td>
+                            <strong>
+                                ${escaparHTMLAluguel(item.nomeEquipamento || item.nome)}
+                            </strong>
+
+                            <small class="linha-secundaria">
+                                Cobrança por
+                                ${escaparHTMLAluguel(unidade)}
+                            </small>
+                        </td>
+
+                        <td>
+                            <strong>
+                                ${quantidadeEstoque}
+                            </strong>
+
+                            <small class="linha-secundaria">
+                                unid. físicas
+                            </small>
+                        </td>
+
+                        <td>
+                            <input
+                                type="text"
+                                class="fechamento-quantidade"
+                                data-index="${index}"
+                                value="${String(quantidadeCobradaPadrao).replace(".", ",")}"
+                            >
+                        </td>
+
+                        <td>
+                            <input
+                                type="text"
+                                class="fechamento-valor-unitario"
+                                data-index="${index}"
+                                value="0,00"
+                            >
+                        </td>
+
+                        <td>
+                            <strong
+                                class="fechamento-subtotal-item"
+                                data-index="${index}"
+                            >
+                                R$ 0,00
+                            </strong>
+                        </td>
+                    </tr>
+                `;
         })
         .join("");
 
@@ -1283,6 +1642,7 @@ function montarItensFechamento() {
         .querySelectorAll(".fechamento-quantidade, .fechamento-valor-unitario")
         .forEach((input) => {
             input.addEventListener("input", recalcularFechamento);
+
             input.addEventListener("change", recalcularFechamento);
         });
 
@@ -1290,13 +1650,17 @@ function montarItensFechamento() {
 }
 
 function preencherValoresUnitariosPorPeriodo() {
-    if (!aluguelFechando) return;
+    if (!aluguelFechando) {
+        return;
+    }
 
     const periodo = valorCampo("periodoFechamento");
+
     const equipamentos = aluguelFechando.equipamentosDetalhes || aluguelFechando.equipamentos || [];
 
     document.querySelectorAll(".fechamento-valor-unitario").forEach((input) => {
         const index = Number(input.dataset.index);
+
         const item = equipamentos[index];
 
         if (!item || !periodo) {
@@ -1305,14 +1669,18 @@ function preencherValoresUnitariosPorPeriodo() {
         }
 
         const valor = obterValorPorPeriodo(item, periodo);
+
         input.value = valor.toFixed(2).replace(".", ",");
     });
 }
 
 function recalcularFechamento() {
-    if (!aluguelFechando) return;
+    if (!aluguelFechando) {
+        return;
+    }
 
     const periodo = valorCampo("periodoFechamento");
+
     const dataDevolucaoReal = valorCampo("dataDevolucaoReal");
 
     if (periodo && dataDevolucaoReal) {
@@ -1331,23 +1699,30 @@ function recalcularFechamento() {
                 duracaoInput.dataset.dataAtual !== dataDevolucaoReal)
         ) {
             duracaoInput.value = duracaoCalculada;
+
             duracaoInput.dataset.periodoAtual = periodo;
+
             duracaoInput.dataset.dataAtual = dataDevolucaoReal;
         }
     }
 
-    const duracao = Math.max(1, parseInt(valorCampo("duracaoReal"), 10) || 1);
+    const duracaoInfo = obterDuracaoCobrancaInformada(valorCampo("duracaoReal"), periodo);
+
+    const duracao = duracaoInfo.unidades;
 
     let subtotal = 0;
 
     document.querySelectorAll("#fechamentoItens tr").forEach((linha) => {
-        const index = linha.dataset.index;
         const quantidadeInput = linha.querySelector(".fechamento-quantidade");
+
         const valorInput = linha.querySelector(".fechamento-valor-unitario");
+
         const subtotalEl = linha.querySelector(".fechamento-subtotal-item");
 
         const quantidade = parseNumeroBR(quantidadeInput?.value || "0");
+
         const valorUnitario = parseNumeroBR(valorInput?.value || "0");
+
         const subtotalItem = quantidade * valorUnitario * duracao;
 
         subtotal += subtotalItem;
@@ -1358,10 +1733,13 @@ function recalcularFechamento() {
     });
 
     const desconto = parseNumeroBR(valorCampo("descontoFechamento"));
+
     const acrescimo = parseNumeroBR(valorCampo("acrescimoFechamento"));
+
     const valorTotal = Math.max(0, subtotal + acrescimo - desconto);
 
     const valorPagoTexto = valorCampo("valorPagoFechamento");
+
     const valorPago = valorPagoTexto === "" ? valorTotal : parseNumeroBR(valorPagoTexto);
 
     const saldo = Math.max(0, valorTotal - valorPago);
@@ -1375,8 +1753,11 @@ function recalcularFechamento() {
     }
 
     preencherCampo("subtotalFinalTexto", formatarMoedaAluguel(subtotal));
+
     preencherCampo("valorTotalFinalTexto", formatarMoedaAluguel(valorTotal));
+
     preencherCampo("saldoFinalTexto", formatarMoedaAluguel(saldo));
+
     preencherCampo("statusPagamentoTexto", statusPagamento);
 }
 
@@ -1386,6 +1767,30 @@ document.addEventListener("input", function (event) {
     }
 });
 
+document.addEventListener(
+    "blur",
+    function (event) {
+        if (event.target?.id !== "duracaoReal") {
+            return;
+        }
+
+        const periodo = valorCampo("periodoFechamento");
+
+        if (periodo !== "hora") {
+            return;
+        }
+
+        const duracaoInfo = obterDuracaoCobrancaInformada(event.target.value, periodo);
+
+        if (duracaoInfo.minutos > 0) {
+            event.target.value = duracaoInfo.formatada;
+
+            recalcularFechamento();
+        }
+    },
+    true
+);
+
 document.addEventListener("change", function (event) {
     if (event.target && event.target.id === "periodoFechamento") {
         const duracaoInput = document.getElementById("duracaoReal");
@@ -1393,6 +1798,8 @@ document.addEventListener("change", function (event) {
         if (duracaoInput) {
             delete duracaoInput.dataset.editadoManual;
         }
+
+        configurarCampoDuracaoPorPeriodo(valorCampo("periodoFechamento"));
 
         preencherValoresUnitariosPorPeriodo();
         recalcularFechamento();
@@ -1402,61 +1809,87 @@ document.addEventListener("change", function (event) {
 async function confirmarFechamentoAluguel() {
     if (!aluguelFechando) {
         mostrarErroAluguel("Erro", "Nenhum aluguel selecionado para fechamento.");
+
         return;
     }
 
     const dataDevolucaoReal = valorCampo("dataDevolucaoReal");
+
     const periodo = valorCampo("periodoFechamento");
-    const duracaoReal = parseInt(valorCampo("duracaoReal"), 10) || 0;
+
+    const duracaoInfo = obterDuracaoCobrancaInformada(valorCampo("duracaoReal"), periodo);
+
+    const duracaoReal = duracaoInfo.unidades;
+
+    const duracaoMinutos = duracaoInfo.minutos;
 
     if (!dataDevolucaoReal) {
         mostrarErroAluguel("Erro", "Informe a data real de devolução.");
+
         return;
     }
 
     if (!periodo) {
         mostrarErroAluguel("Erro", "Selecione o tipo de cobrança no fechamento.");
+
         return;
     }
 
     if (duracaoReal <= 0) {
-        mostrarErroAluguel("Erro", "Informe uma duração real válida.");
+        mostrarErroAluguel(
+            "Erro",
+            periodo === "hora"
+                ? "Informe a duração em horas e minutos. Exemplo: 1:30."
+                : "Informe uma duração real válida."
+        );
+
         return;
     }
 
     const equipamentos = aluguelFechando.equipamentosDetalhes || aluguelFechando.equipamentos || [];
+
     const itensFechamento = [];
 
     let erroItem = null;
 
     document.querySelectorAll("#fechamentoItens tr").forEach((linha) => {
-        if (erroItem) return;
+        if (erroItem) {
+            return;
+        }
 
         const index = Number(linha.dataset.index);
+
         const item = equipamentos[index];
+
         const quantidadeInput = linha.querySelector(".fechamento-quantidade");
+
         const valorInput = linha.querySelector(".fechamento-valor-unitario");
 
         const quantidadeCobradaFinal = parseNumeroBR(quantidadeInput?.value || "0");
+
         const valorUnitarioFinal = parseNumeroBR(valorInput?.value || "0");
 
         if (!item) {
             erroItem = "Item de fechamento inválido.";
+
             return;
         }
 
         if (quantidadeCobradaFinal <= 0) {
             erroItem = `Quantidade cobrada inválida para "${item.nomeEquipamento || item.nome}".`;
+
             return;
         }
 
         if (valorUnitarioFinal <= 0) {
             erroItem = `Valor unitário inválido para "${item.nomeEquipamento || item.nome}".`;
+
             return;
         }
 
         itensFechamento.push({
             equipamentoId: item.equipamentoId || item.id,
+
             quantidadeCobradaFinal,
             valorUnitarioFinal,
         });
@@ -1464,14 +1897,17 @@ async function confirmarFechamentoAluguel() {
 
     if (erroItem) {
         mostrarErroAluguel("Erro", erroItem);
+
         return;
     }
 
     const btnConfirmar = document.getElementById("btnConfirmarFechamento");
+
     const textoOriginal = btnConfirmar ? btnConfirmar.innerHTML : "";
 
     if (btnConfirmar) {
         btnConfirmar.disabled = true;
+
         btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fechando...';
     }
 
@@ -1480,12 +1916,20 @@ async function confirmarFechamentoAluguel() {
             dataDevolucaoReal,
             periodo,
             duracaoReal,
+            duracaoMinutos,
+
+            duracaoFormatada: duracaoInfo.formatada,
+
             itensFechamento,
+
             desconto: parseNumeroBR(valorCampo("descontoFechamento")),
+
             acrescimo: parseNumeroBR(valorCampo("acrescimoFechamento")),
+
             valorPago: 0,
             formaPagamento: "",
             statusPagamento: "pendente",
+
             observacoesFechamento: valorCampo("observacoesFechamento"),
         });
 
@@ -1495,8 +1939,10 @@ async function confirmarFechamentoAluguel() {
         );
 
         fecharModalFechamento();
+
         await carregarEquipamentosParaSelect();
         await carregarAlugueis();
+
         fecharModalAluguel();
     } catch (error) {
         console.error("Erro ao finalizar aluguel:", error);
@@ -1511,7 +1957,7 @@ async function confirmarFechamentoAluguel() {
 }
 
 // ============================================
-// VISUALIZAÇÃO, IMPRESSÃO E LIMPEZA
+// COBRANÇA
 // ============================================
 
 function abrirModalCobrancaAluguel(aluguelId) {
@@ -1519,6 +1965,7 @@ function abrirModalCobrancaAluguel(aluguelId) {
 
     if (!aluguel) {
         mostrarErroAluguel("Erro", "Aluguel não encontrado na lista.");
+
         return;
     }
 
@@ -1527,11 +1974,13 @@ function abrirModalCobrancaAluguel(aluguelId) {
             "Atenção",
             "É necessário finalizar a devolução antes de cobrar o aluguel."
         );
+
         return;
     }
 
     if (aluguel.statusPagamento === "pago") {
         mostrarAvisoAluguel("Atenção", "Este aluguel já está totalmente pago.");
+
         return;
     }
 
@@ -1539,8 +1988,14 @@ function abrirModalCobrancaAluguel(aluguelId) {
 
     if (!modal) {
         modal = document.createElement("div");
+
         modal.id = "modalCobrancaAluguel";
+
         modal.className = "modal-usuario-overlay";
+
+        modal.hidden = true;
+
+        modal.setAttribute("aria-hidden", "true");
 
         modal.innerHTML = `
             <div class="modal-usuario modal-cobranca-padrao">
@@ -1550,7 +2005,10 @@ function abrirModalCobrancaAluguel(aluguelId) {
                             <i class="fas fa-dollar-sign"></i>
                             Cobrar Aluguel
                         </h2>
-                        <p>Registre pagamento total ou parcial do aluguel.</p>
+
+                        <p>
+                            Registre pagamento total ou parcial do aluguel.
+                        </p>
                     </div>
 
                     <button
@@ -1562,70 +2020,137 @@ function abrirModalCobrancaAluguel(aluguelId) {
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
+
                 <div class="modal-usuario-form">
-                    <input type="hidden" id="cobrancaAluguelId">
+                    <input
+                        type="hidden"
+                        id="cobrancaAluguelId"
+                    >
+
                     <div class="cobranca-resumo">
                         <div>
                             <span>Cliente</span>
-                            <strong id="cobrancaClienteNome">-</strong>
+                            <strong id="cobrancaClienteNome">
+                                -
+                            </strong>
                         </div>
+
                         <div>
                             <span>Valor total</span>
-                            <strong id="cobrancaValorTotal">R$ 0,00</strong>
+                            <strong id="cobrancaValorTotal">
+                                R$ 0,00
+                            </strong>
                         </div>
+
                         <div>
                             <span>Já pago</span>
-                            <strong id="cobrancaValorJaPago">R$ 0,00</strong>
+                            <strong id="cobrancaValorJaPago">
+                                R$ 0,00
+                            </strong>
                         </div>
+
                         <div>
                             <span>Saldo atual</span>
-                            <strong id="cobrancaSaldoAtual">R$ 0,00</strong>
+                            <strong id="cobrancaSaldoAtual">
+                                R$ 0,00
+                            </strong>
                         </div>
                     </div>
+
                     <div class="form-grid">
                         <div class="form-group">
-                            <label>Valor recebido agora</label>
+                            <label>
+                                Valor recebido agora
+                            </label>
+
                             <input
                                 type="text"
                                 id="cobrancaValorPagoAgora"
                                 placeholder="Ex.: 150,00"
                             >
                         </div>
+
                         <div class="form-group">
-                            <label>Forma de pagamento</label>
+                            <label>
+                                Forma de pagamento
+                            </label>
+
                             <select id="cobrancaFormaPagamento">
-                                <option value="">Selecione</option>
-                                <option value="dinheiro">Dinheiro</option>
-                                <option value="pix">Pix</option>
-                                <option value="cartao_credito">Cartão de Crédito</option>
-                                <option value="cartao_debito">Cartão de Débito</option>
-                                <option value="boleto">Boleto</option>
-                                <option value="outro">Outro</option>
+                                <option value="">
+                                    Selecione
+                                </option>
+
+                                <option value="dinheiro">
+                                    Dinheiro
+                                </option>
+
+                                <option value="pix">
+                                    Pix
+                                </option>
+
+                                <option value="cartao_credito">
+                                    Cartão de Crédito
+                                </option>
+
+                                <option value="cartao_debito">
+                                    Cartão de Débito
+                                </option>
+
+                                <option value="boleto">
+                                    Boleto
+                                </option>
+
+                                <option value="outro">
+                                    Outro
+                                </option>
                             </select>
                         </div>
                     </div>
+
                     <div class="form-group">
-                        <label>Observações do pagamento</label>
+                        <label>
+                            Observações do pagamento
+                        </label>
+
                         <textarea
                             id="cobrancaObservacoes"
                             rows="3"
                             placeholder="Ex.: Cliente pagou metade no Pix e combinará o restante depois."
                         ></textarea>
                     </div>
+
                     <div class="cobranca-preview">
                         <div>
-                            <span>Novo total pago</span>
-                            <strong id="cobrancaNovoTotalPago">R$ 0,00</strong>
+                            <span>
+                                Novo total pago
+                            </span>
+
+                            <strong id="cobrancaNovoTotalPago">
+                                R$ 0,00
+                            </strong>
                         </div>
+
                         <div>
-                            <span>Novo saldo</span>
-                            <strong id="cobrancaNovoSaldo">R$ 0,00</strong>
+                            <span>
+                                Novo saldo
+                            </span>
+
+                            <strong id="cobrancaNovoSaldo">
+                                R$ 0,00
+                            </strong>
                         </div>
+
                         <div>
-                            <span>Status após pagamento</span>
-                            <strong id="cobrancaNovoStatus">Pendente</strong>
+                            <span>
+                                Status após pagamento
+                            </span>
+
+                            <strong id="cobrancaNovoStatus">
+                                Pendente
+                            </strong>
                         </div>
                     </div>
+
                     <div class="modal-usuario-actions">
                         <button
                             type="button"
@@ -1661,27 +2186,39 @@ function abrirModalCobrancaAluguel(aluguelId) {
     }
 
     const valorTotal = Number(aluguel.valorTotal || 0);
+
     const valorPago = Number(aluguel.valorPago || 0);
+
     const saldo = Number(aluguel.saldo ?? Math.max(0, valorTotal - valorPago));
 
     preencherCampo("cobrancaAluguelId", aluguel.id);
+
     preencherCampo("cobrancaValorPagoAgora", "");
+
     preencherCampo("cobrancaFormaPagamento", "");
+
     preencherCampo("cobrancaObservacoes", "");
 
     document.getElementById("cobrancaClienteNome").textContent = aluguel.clienteNome || "-";
+
     document.getElementById("cobrancaValorTotal").textContent = formatarMoedaAluguel(valorTotal);
+
     document.getElementById("cobrancaValorJaPago").textContent = formatarMoedaAluguel(valorPago);
+
     document.getElementById("cobrancaSaldoAtual").textContent = formatarMoedaAluguel(saldo);
 
-    modal.dataset.valorTotal = valorTotal;
-    modal.dataset.valorPago = valorPago;
-    modal.dataset.saldo = saldo;
+    modal.dataset.valorTotal = String(valorTotal);
+
+    modal.dataset.valorPago = String(valorPago);
+
+    modal.dataset.saldo = String(saldo);
 
     recalcularPreviewCobranca();
 
     modal.hidden = false;
+
     modal.setAttribute("aria-hidden", "false");
+
     document.body.classList.add("modal-open");
 
     setTimeout(() => {
@@ -1697,7 +2234,9 @@ function fecharModalCobrancaAluguel() {
     }
 
     modal.hidden = true;
+
     modal.setAttribute("aria-hidden", "true");
+
     document.body.classList.remove("modal-open");
 }
 
@@ -1709,10 +2248,13 @@ function recalcularPreviewCobranca() {
     }
 
     const valorTotal = Number(modal.dataset.valorTotal || 0);
+
     const valorPagoAnterior = Number(modal.dataset.valorPago || 0);
+
     const valorPagoAgora = parseNumeroBR(valorCampo("cobrancaValorPagoAgora"));
 
     const novoTotalPago = Math.min(valorTotal, valorPagoAnterior + valorPagoAgora);
+
     const novoSaldo = Math.max(0, valorTotal - novoTotalPago);
 
     let novoStatus = "Pendente";
@@ -1733,22 +2275,28 @@ function recalcularPreviewCobranca() {
 
 async function confirmarPagamentoAluguel() {
     const aluguelId = valorCampo("cobrancaAluguelId");
+
     const valorPagoAgora = parseNumeroBR(valorCampo("cobrancaValorPagoAgora"));
+
     const formaPagamento = valorCampo("cobrancaFormaPagamento");
+
     const observacoesPagamento = valorCampo("cobrancaObservacoes");
 
     if (!aluguelId) {
         mostrarErroAluguel("Erro", "Nenhum aluguel selecionado para cobrança.");
+
         return;
     }
 
     if (valorPagoAgora <= 0) {
         mostrarErroAluguel("Erro", "Informe um valor recebido maior que zero.");
+
         return;
     }
 
     if (!formaPagamento) {
         mostrarErroAluguel("Erro", "Selecione a forma de pagamento.");
+
         return;
     }
 
@@ -1756,12 +2304,16 @@ async function confirmarPagamentoAluguel() {
 
     if (!aluguel) {
         mostrarErroAluguel("Erro", "Aluguel não encontrado.");
+
         return;
     }
 
     const valorTotal = Number(aluguel.valorTotal || 0);
+
     const valorPagoAnterior = Number(aluguel.valorPago || 0);
+
     const novoValorPago = Math.min(valorTotal, valorPagoAnterior + valorPagoAgora);
+
     const novoSaldo = Math.max(0, valorTotal - novoValorPago);
 
     let novoStatusPagamento = "pendente";
@@ -1776,6 +2328,7 @@ async function confirmarPagamentoAluguel() {
         valor: valorPagoAgora,
         formaPagamento,
         observacoes: observacoesPagamento,
+
         dataPagamento: firebase.firestore.Timestamp.now(),
     };
 
@@ -1785,6 +2338,7 @@ async function confirmarPagamentoAluguel() {
 
     if (btnConfirmar) {
         btnConfirmar.disabled = true;
+
         btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
     }
 
@@ -1796,10 +2350,15 @@ async function confirmarPagamentoAluguel() {
             .doc(aluguelId)
             .update({
                 valorPago: novoValorPago,
+
                 saldo: novoSaldo,
+
                 statusPagamento: novoStatusPagamento,
+
                 formaPagamento,
+
                 ultimoPagamentoEm: firebase.firestore.FieldValue.serverTimestamp(),
+
                 pagamentos: firebase.firestore.FieldValue.arrayUnion(pagamento),
             });
 
@@ -1814,6 +2373,7 @@ async function confirmarPagamentoAluguel() {
         await carregarAlugueis();
     } catch (error) {
         console.error("Erro ao registrar pagamento:", error);
+
         mostrarErroAluguel("Erro", "Erro ao registrar pagamento: " + error.message);
     } finally {
         if (btnConfirmar) {
@@ -1824,20 +2384,27 @@ async function confirmarPagamentoAluguel() {
 }
 
 window.abrirModalCobrancaAluguel = abrirModalCobrancaAluguel;
+
 window.fecharModalCobrancaAluguel = fecharModalCobrancaAluguel;
+
 window.confirmarPagamentoAluguel = confirmarPagamentoAluguel;
 
 function imprimirAluguel(aluguelId) {
     localStorage.setItem("aluguelParaImprimir", aluguelId);
+
     window.open("imprimir.html?id=" + aluguelId, "_blank");
 }
 
+window.imprimirAluguel = imprimirAluguel;
+
 function imprimirContrato() {
     const btnImprimir = document.getElementById("btnImprimir");
+
     const aluguelId = btnImprimir?.dataset?.aluguelId;
 
     if (!aluguelId) {
         alert("Registre um aluguel primeiro para poder imprimir o contrato.");
+
         return;
     }
 
@@ -1855,14 +2422,19 @@ function limparFormularioAluguel() {
     clienteSelecionado = null;
 
     preencherCampo("dataInicio", dataHojeISO());
+
     preencherCampo("quantidadeAlugar", 1);
+
     preencherCampo("observacoesAluguel", "");
 
     const secoesParaOcultar = ["infoCliente", "infoEquipamento", "listaEquipamentosContainer"];
 
     secoesParaOcultar.forEach((id) => {
         const elemento = document.getElementById(id);
-        if (elemento) elemento.style.display = "none";
+
+        if (elemento) {
+            elemento.style.display = "none";
+        }
     });
 
     const listaEquipamentos = document.getElementById("listaEquipamentos");
@@ -1876,6 +2448,7 @@ function limparFormularioAluguel() {
     if (btnImprimir) {
         btnImprimir.disabled = true;
         btnImprimir.style.display = "none";
+
         delete btnImprimir.dataset.aluguelId;
     }
 
@@ -1898,13 +2471,15 @@ document.addEventListener("click", function (event) {
 });
 
 document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape") {
-        const modalFechamento = document.getElementById("modalFechamento");
-
-        if (modalFechamento?.style.display === "flex") {
-            return;
-        }
-
-        fecharModalAluguel();
+    if (event.key !== "Escape") {
+        return;
     }
+
+    const modalFechamento = document.getElementById("modalFechamento");
+
+    if (modalFechamento?.style.display === "flex") {
+        return;
+    }
+
+    fecharModalAluguel();
 });
