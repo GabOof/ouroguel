@@ -1965,3 +1965,103 @@ PÁGINA DE ALUGUÉIS
         grid-template-columns: 1fr;
     }
 }
+
+/* ============================================
+   CORREÇÃO DE ROLAGEM — MODAL COBRAR ALUGUEL
+============================================ */
+
+.modal-usuario-overlay {
+    /* Permite rolar o conteúdo do overlay quando o modal for maior que a tela */
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    /* Evita que o modal seja cortado verticalmente */
+    align-items: flex-start;
+
+    /* Espaço superior e inferior durante a rolagem */
+    padding: 24px;
+}
+
+.modal-cobranca-padrao {
+    width: min(850px, 100%);
+
+    /* Limita o modal à altura visível da tela */
+    max-height: calc(100vh - 48px);
+
+    /* Organiza cabeçalho e formulário verticalmente */
+    display: flex;
+    flex-direction: column;
+
+    /* Mantém o arredondamento sem impedir a rolagem interna */
+    overflow: hidden;
+
+    /* Centraliza horizontalmente dentro do overlay */
+    margin: auto;
+}
+
+.modal-cobranca-padrao .modal-usuario-header {
+    /* Impede que o cabeçalho seja comprimido */
+    flex-shrink: 0;
+}
+
+.modal-cobranca-padrao .modal-usuario-form {
+    /* Esta passa a ser a área rolável do modal */
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    /* Necessário para o scroll funcionar dentro de um flex container */
+    min-height: 0;
+
+    /* Mantém o preenchimento existente */
+    padding: 24px;
+
+    /* Rolagem mais suave em celulares */
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Mantém os botões visíveis ao final do modal */
+.modal-cobranca-padrao .modal-usuario-actions {
+    position: sticky;
+    bottom: -24px;
+    z-index: 5;
+
+    margin: 24px -24px -24px;
+    padding: 16px 24px;
+
+    background-color: #ffffff;
+    border-top: 1px solid #dddddd;
+}
+
+/* Evita que o foco fique cortado pela área rolável */
+.modal-cobranca-padrao input:focus,
+.modal-cobranca-padrao select:focus,
+.modal-cobranca-padrao textarea:focus,
+.modal-cobranca-padrao button:focus {
+    scroll-margin-top: 20px;
+    scroll-margin-bottom: 90px;
+}
+
+@media (max-width: 768px) {
+    .modal-usuario-overlay {
+        padding: 10px;
+    }
+
+    .modal-cobranca-padrao {
+        max-height: calc(100dvh - 20px);
+        margin: 0 auto;
+    }
+
+    .modal-cobranca-padrao .modal-usuario-header {
+        padding: 18px;
+    }
+
+    .modal-cobranca-padrao .modal-usuario-form {
+        padding: 18px;
+    }
+
+    .modal-cobranca-padrao .modal-usuario-actions {
+        bottom: -18px;
+        margin: 20px -18px -18px;
+        padding: 14px 18px;
+    }
+}
